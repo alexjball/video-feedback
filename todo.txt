@@ -1,10 +1,10 @@
 TODO:
 
 - add random jitter (spatial + background color)
-- drift mode between cool-looking states
+- drift mode between (preset) cool-looking states
 - overlay for orientation
 - auto-cycle seed colors
 - mouse input:
-	left click + drag = move xy
-	right click + drag = rotate
-	scroll wheel = move z
+	- left click + drag = move xy
+	- right click + drag = rotate
+	- scroll wheel = move z
