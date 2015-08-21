@@ -228,6 +228,7 @@ function init() {
     window.mouseDown = false;
     window.mouseX = 0, window.mouseY = 0;
     window.mouseX0 = 0, window.mouseY0 = 0;
+    window.cameraX0 = 0, window.cameraY0 = 0;
     
     document.addEventListener('mousemove', function(event) {
         mouseX = event.clientX;
@@ -237,6 +238,8 @@ function init() {
         mouseDown = true;
         mouseX0 = event.clientX;
         mouseY0 = c_height - event.clientY; // window y-coordinate flipped
+        cameraX0 = feedbackCamera.position.x;
+        cameraY0 = feedbackCamera.position.y;
     }, false);
     document.addEventListener("mouseup", function(event) {
         mouseDown = false;
@@ -253,16 +256,16 @@ function init() {
 }
 
 function animate() {
-    // Probably a better way to do this by actually retrieving the camera position
-    // instead of only handling its derivative
-    if (mouseDown){
-        feedbackCamera.translateX(inputSettings.scale * 
-            inputSettings.xyStep * (mouseX - mouseX0) / c_width);
-        feedbackCamera.translateY(inputSettings.scale * 
-            inputSettings.xyStep * (mouseY - mouseY0) / c_height);
-        
-        mouseX0 = (0.9 * mouseX0 + 0.1 * mouseX);
-        mouseY0 = (0.9 * mouseY0 + 0.1 * mouseY);
+    // I like how this currently responds, although I don't know where the factor
+    //   of 40 comes from that could be a property of the camera.
+    // Dividing by feedbackCamera.getScale keeps the response the same regardless
+    //   of how much the camera is zoomed in.
+    if (mouseDown) {
+        feedbackCamera.position.x = cameraX0 - inputSettings.xyStep
+            * (mouseX - mouseX0) * 40 / c_width / feedbackCamera.getScale();
+        feedbackCamera.position.y = cameraY0 - inputSettings.xyStep 
+            * (mouseY - mouseY0) * 40 / c_height / feedbackCamera.getScale();
+        console.log(feedbackCamera.getScale());
     }
 
     //updateInput();
