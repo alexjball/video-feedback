@@ -1,5 +1,5 @@
-var i_loop, feedbackTarget, TVMaterial, feedbackCamera, feedbackProcessor, viewScene, viewCamera,
-    symPass, colorPass, renderer, inputSettings;
+var i_loop, feedbackTarget, TVMaterial, feedbackCamera, feedbackProcessor, 
+    viewScene, viewCamera, symPass, colorPass, renderer, inputSettings;
 
 function init() {
 
@@ -8,11 +8,8 @@ function init() {
     ////////////
 
     // window.canvas   = document.getElementById("canvas");
-
-    window.c_width  = window.innerWidth; //800; 
-
-    window.c_height = window.innerHeight; //600; 
-
+    window.c_width  = window.innerWidth;
+    window.c_height = window.innerHeight;
     window.aspect = c_width / c_height;
 
     ////////////
@@ -38,7 +35,7 @@ function init() {
             {   minFilter       : THREE.LinearFilter, 
                 magFilter       : THREE.LinearFilter, 
                 format          : THREE.RGBFormat,
-                generateMipmaps : false,
+                generateMipmaps : true, /**/
                 depthBuffer     : true,
                 stencilBuffer   : false
              });
@@ -67,11 +64,9 @@ function init() {
     // Create the border, which consists of a solid colored border of some
     // thickness surrounded by a solid color background.
     // Set the background big enough so we never see the edges of it.
-    // TODO: use a better computation that takes into account the camera
-    // opening angle.
     var bgGeometry = new THREE.PlaneBufferGeometry(aspect / minimumScaleFactor * 5,
         1.0 / minimumScaleFactor * 5);
-     bgMaterial = new THREE.MeshBasicMaterial({color : 0x70b2c5});
+    bgMaterial = new THREE.MeshBasicMaterial({color : 0x70b2c5});
     var background = new THREE.Mesh(bgGeometry, bgMaterial);
     background.position.set(0, 0, -1);
 
@@ -80,8 +75,8 @@ function init() {
     // window.borderProp = .1
     var borderGeometry = new THREE.PlaneBufferGeometry(aspect,// * (1.0 + 2 * borderProp),
         1.0);// * (1.0 + 2.0 * borderProp));
-     borderMaterial = new THREE.MeshBasicMaterial({color : 0x000000});
-    var border         = new THREE.Mesh(borderGeometry, borderMaterial);
+    borderMaterial = new THREE.MeshBasicMaterial({color : 0x000000});
+    var border = new THREE.Mesh(borderGeometry, borderMaterial);
     border.scale.set(1.05, 1 + 0.05 * aspect, 1);
 
     border.position.set(0, 0, -.5);
@@ -100,13 +95,7 @@ function init() {
     feedbackScene.add(background);
 
     feedbackCamera = createScalableOrthoCam(aspect, minimumScaleFactor, maximumScaleFactor);
-    feedbackCamera.setScale(.8);
-
-    // feedbackCamera = new THREE.PerspectiveCamera(view_angle, aspect, near, far);
-
-    // var vert = .1
-    // feedbackCamera = new THREE.OrthographicCamera(-aspect * (.5 + vert) , aspect * (.5 + vert) , .5 + vert, -.5 - vert), 1, 100;
-
+    feedbackCamera.setScale(.8); // initial relative size of TV
     feedbackCamera.position.z = 5; //.5 / Math.tan((view_angle / 2.0) * Math.PI / 180.0);
     feedbackScene.add(feedbackCamera);
     feedbackCamera.lookAt(new THREE.Vector3(0, 0, 0));
@@ -204,10 +193,8 @@ function init() {
     gui.add({a : false}, 'a').name('NE-Diag').onChange(getUnifSetter(symPass.uniforms.diagNE));
     gui.add({a : false}, 'a').name('NW-Diag').onChange(getUnifSetter(symPass.uniforms.diagNW));
     gui.add({a : false}, 'a').name('Invert Color').onChange(getUnifSetter(colorPass.uniforms.invertColor));
-    // LN: added color cycle & changed the way gain works
     gui.add(colorPass.uniforms.colorStep, 'value', 0.0, 1.0).name('Color Cycle');
     gui.add(colorPass.uniforms.gain, 'value', 0.0, 1.0).name('Gain');
-    // LN: made border width uniform (also changed initialization)
     gui.add({'Border Width' : .1}, 'Border Width', 0, .5).onChange(
         function(p) { border.scale.set(1 + p, 1 + p * aspect, 1); });
     gui.addColor({'Border Color' : '#' + borderMaterial.color.getHexString()}, 
@@ -230,8 +217,8 @@ function init() {
 
     inputSettings = {
         scale : -1,
-        rotStep : 5.0 * Math.PI / 180.0,
-        zStep : .05,
+        rotStep : 2 * Math.PI / 180.0,
+        zStep : .025,
         xyStep : .025
     }
 
@@ -389,4 +376,21 @@ function keyboardHandler(evt) {
                 inputSettings.xyStep);
             break;
     }
+}
+
+
+
+
+
+// Scroll-wheel zoom. No bound-checking; that's handled in the actual scaling 
+// method.
+document.addEventListener('mousewheel', scrollHandler, false);
+document.addEventListener('DOMMouseScroll', scrollHandler, false); // for firefox
+
+function scrollHandler(evt) {
+    var d = ((typeof evt.wheelDelta != "undefined") ? (-evt.wheelDelta) : evt.detail);
+    d = ((d > 0) ? 1 : -1);
+    
+    // Factor of 5 smooths out zoom
+    feedbackCamera.translateScale(d * inputSettings.zStep / 5);
 }
