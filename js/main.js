@@ -223,6 +223,28 @@ function init() {
     }
 
     document.addEventListener('keydown', keyboardHandler, false);
+    
+    // Mouse input & handlers. Updated in animate().
+    window.mouseDown = false;
+    window.mouseX = 0, window.mouseY = 0;
+    window.mouseX0 = 0, window.mouseY0 = 0;
+    
+    document.addEventListener('mousemove', function(event) {
+        mouseX = event.clientX;
+        mouseY = c_height - event.clientY; // window y-coordinate flipped
+    }, false);
+    document.addEventListener("mousedown", function(event) {
+        mouseDown = true;
+        mouseX0 = event.clientX;
+        mouseY0 = c_height - event.clientY; // window y-coordinate flipped
+    }, false);
+    document.addEventListener("mouseup", function(event) {
+        mouseDown = false;
+    }, false);
+    
+    // Scroll-wheel zoom input
+    document.addEventListener('mousewheel', scrollHandler, false);
+    document.addEventListener('DOMMouseScroll', scrollHandler, false); // firefox
 
     n_f = 0;
     n_f_show = 120;
@@ -231,6 +253,16 @@ function init() {
 }
 
 function animate() {
+    // Probably a better way to do this
+    if (mouseDown){
+        feedbackCamera.translateX(inputSettings.scale * 
+            inputSettings.xyStep * (mouseX - mouseX0) / c_width);
+        feedbackCamera.translateY(inputSettings.scale * 
+            inputSettings.xyStep * (mouseY - mouseY0) / c_height);
+        
+        mouseX0 = (0.9 * mouseX0 + 0.1 * mouseX);
+        mouseY0 = (0.9 * mouseY0 + 0.1 * mouseY);
+    }
 
     //updateInput();
     t1 = performance.now();
@@ -378,17 +410,9 @@ function keyboardHandler(evt) {
     }
 }
 
-
-
-
-
-// Scroll-wheel zoom. No bound-checking; that's handled in the actual scaling 
-// method.
-document.addEventListener('mousewheel', scrollHandler, false);
-document.addEventListener('DOMMouseScroll', scrollHandler, false); // for firefox
-
 function scrollHandler(evt) {
-    var d = ((typeof evt.wheelDelta != "undefined") ? (-evt.wheelDelta) : evt.detail);
+    var d = ((typeof evt.wheelDelta != "undefined") ? (-evt.wheelDelta) : 
+        evt.detail);
     d = ((d > 0) ? 1 : -1);
     
     // Factor of 5 smooths out zoom
