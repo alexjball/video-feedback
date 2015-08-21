@@ -253,7 +253,8 @@ function init() {
 }
 
 function animate() {
-    // Probably a better way to do this
+    // Probably a better way to do this by actually retrieving the camera position
+    // instead of only handling its derivative
     if (mouseDown){
         feedbackCamera.translateX(inputSettings.scale * 
             inputSettings.xyStep * (mouseX - mouseX0) / c_width);
