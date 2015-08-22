@@ -11,8 +11,15 @@ TODO:
 - time reverse
 - screenshots/videos -> online image hosting
 - "poke me" mode
-- local transforms -- in mobile, a user fruit-ninja slices across the screen defining a line segment. The pixels in the vicinity of the line segment are inverted or mirrored or whatever, and that effect fades out after some distance.
-	- More generally, local effects users can control. Local effects are more intuitive, both for users to control and for incorporating into games, so I think it would add some entertainment for people too lazy to figure the feedback loops out. I'm imagining like touching the screen to seed a nice shimmery dot of light that blends/changes with the surrounding edges.
+- local transforms -- in mobile, a user fruit-ninja slices across the screen 
+    defining a line segment. The pixels in the vicinity of the line segment are 
+    inverted or mirrored or whatever, and that effect fades out after some 
+    distance.
+	- More generally, local effects users can control. Local effects are more 
+	intuitive, both for users to control and for incorporating into games, so I 
+	think it would add some entertainment for people too lazy to figure the 
+	feedback loops out. I'm imagining like touching the screen to seed a nice 
+	shimmery dot of light that blends/changes with the surrounding edges.
 - fading between scenes
 - static image checking
 - anti-strobe: difference checker or exponential averaging
