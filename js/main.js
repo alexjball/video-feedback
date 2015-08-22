@@ -195,6 +195,7 @@ function init() {
     gui.add({a : false}, 'a').name('Invert Color').onChange(getUnifSetter(colorPass.uniforms.invertColor));
     gui.add(colorPass.uniforms.colorStep, 'value', 0.0, 1.0).name('Color Cycle');
     gui.add(colorPass.uniforms.gain, 'value', 0.0, 1.0).name('Gain');
+    // not sure why p needs to be divided by 2
     gui.add({'Border Width' : 0.1}, 'Border Width', 0.0, 0.5).onChange(
         function(p) { border.scale.set(1 + p / 2, 1 + p * aspect / 2, 1); });
     gui.addColor({'Border Color' : '#' + borderMaterial.color.getHexString()}, 
@@ -239,28 +240,7 @@ function init() {
     window.cameraR0 = 0;
     window.guiOffsets = {};
     
-    // #hack
-    document.addEventListener("mousedown", function(event) {
-        // prevents canvas mouse events when clicking on gui, assuming gui is NE
-        window.guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
-        if (mouseX > (guiOffsets.left - 4) && (c_height - mouseY) < guiOffsets.bottom
-            && mouseX < guiOffsets.right) {
-            return;
-        }
-        
-        mouseDown = true;
-        mouseX0 = event.clientX;
-        cameraX0 = feedbackCamera.position.x;
-        
-        if (event.button == 2) { // probably not very compatible
-            rightClick = true;
-            cameraR0 = feedbackCamera.rotation.z;
-        }
-        else {
-            mouseY0 = c_height - event.clientY; // window y-coordinate flipped
-            cameraY0 = feedbackCamera.position.y;
-        }
-    }, false);
+    document.addEventListener("mousedown", onMouseDown, false);
     document.addEventListener('mousemove', function(event) {
         mouseX = event.clientX;
         mouseY = c_height - event.clientY; // window y-coordinate flipped
@@ -287,19 +267,24 @@ function init() {
 function animate() {
     // I like how this currently responds, although I don't know where the factor
     //   of 40 comes from that could be a property of the camera.
-    // Dividing by feedbackCamera.getScale():
-    // - keeps the response the same regardless of camera's zoom for panning
-    // - changes the rotation rate based on scaling, which feels more intuitive
     if (mouseDown) {
         if (rightClick == true) {
             feedbackCamera.rotation.z = cameraR0 - inputSettings.scale *
                 2 * Math.PI * (mouseX - mouseX0) / c_width / feedbackCamera.getScale();
         }
         else {
-            feedbackCamera.position.x = cameraX0 - inputSettings.xyStep
-                * (mouseX - mouseX0) * 40 / c_width / feedbackCamera.getScale();
-            feedbackCamera.position.y = cameraY0 - inputSettings.xyStep 
-                * (mouseY - mouseY0) * 40 / c_height / feedbackCamera.getScale();
+            var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width 
+                / feedbackCamera.getScale();
+            var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height 
+                / feedbackCamera.getScale();
+            
+            var transElements = feedbackCamera.matrixWorldInverse.elements;
+            
+            var new_dx = transElements[0] * dx + transElements[1] * dy;
+            var new_dy = transElements[4] * dx + transElements[5] * dy;
+            
+            feedbackCamera.position.x = cameraX0 - new_dx;
+            feedbackCamera.position.y = cameraY0 - new_dy;
         }
     }
 
@@ -449,6 +434,33 @@ function keyboardHandler(evt) {
             feedbackCamera.translateY(- inputSettings.scale * 
                 inputSettings.xyStep);
             break;
+    }
+}
+
+onMouseDown = function(event) {
+    // prevents canvas mouse events when clicking on gui, assuming gui is 
+    //   bound to north #hack
+    // killing event bubbling means changing the mousedown handlers in 
+    //   dat.gui, which seems more difficult than this. retrieving guiOffsets
+    //   probably doesn't need to happen every mousedown, but it also doesn't 
+    //   introduce any problems/lag
+    window.guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
+    if (mouseX > (guiOffsets.left - 4) && (c_height - mouseY) < guiOffsets.bottom
+        && mouseX < guiOffsets.right) {
+        return;
+    }
+    
+    mouseDown = true;
+    mouseX0 = event.clientX;
+    cameraX0 = feedbackCamera.position.x;
+    
+    if (event.button == 2) { // probably not very compatible
+        rightClick = true;
+        cameraR0 = feedbackCamera.rotation.z;
+    }
+    else {
+        mouseY0 = c_height - event.clientY; // window y-coordinate flipped
+        cameraY0 = feedbackCamera.position.y;
     }
 }
 
