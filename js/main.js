@@ -195,8 +195,8 @@ function init() {
     gui.add({a : false}, 'a').name('Invert Color').onChange(getUnifSetter(colorPass.uniforms.invertColor));
     gui.add(colorPass.uniforms.colorStep, 'value', 0.0, 1.0).name('Color Cycle');
     gui.add(colorPass.uniforms.gain, 'value', 0.0, 1.0).name('Gain');
-    gui.add({'Border Width' : .1}, 'Border Width', 0, .5).onChange(
-        function(p) { border.scale.set(1 + p, 1 + p * aspect, 1); });
+    gui.add({'Border Width' : 0.1}, 'Border Width', 0.0, 0.5).onChange(
+        function(p) { border.scale.set(1 + p / 2, 1 + p * aspect / 2, 1); });
     gui.addColor({'Border Color' : '#' + borderMaterial.color.getHexString()}, 
         'Border Color').onChange(getColorSetter(borderMaterial.color));
     gui.addColor({'Background Color' : '#' + bgMaterial.color.getHexString()}, 
@@ -210,15 +210,11 @@ function init() {
                 passes.pop();
             }
         });
-    
-    // Save as .png image
+    // Save as .png image using js/libs/FileSaver.js
     var saveObj = {a : function() {
                        var canvas = document.getElementsByTagName("canvas")[0];
                        canvas.toBlob(function(blob) { saveAs(blob, "image.png" ); });
-                       // var d = canvas.toDataURL("image/png");
-                       // var w = window.open("about:blank", "image from canvas");
-                       // w.document.write("<img src='"+d+"' alt='from canvas'/>");
-                   }, b : function() {}};
+                   }};
     gui.add(saveObj, 'a').name('Save Image');
 
     //////////////
@@ -230,7 +226,7 @@ function init() {
         rotStep : 2 * Math.PI / 180.0,
         zStep : .025,
         xyStep : .025
-    }
+    };
 
     document.addEventListener('keydown', keyboardHandler, false);
     
@@ -241,13 +237,17 @@ function init() {
     window.mouseX0 = 0, window.mouseY0 = 0;
     window.cameraX0 = 0, window.cameraY0 = 0;
     window.cameraR0 = 0;
+    window.guiOffsets = {};
     
-    // logic is kind of dumb
-    document.addEventListener('mousemove', function(event) {
-        mouseX = event.clientX;
-        mouseY = c_height - event.clientY; // window y-coordinate flipped
-    }, true);
+    // #hack
     document.addEventListener("mousedown", function(event) {
+        // prevents canvas mouse events when clicking on gui, assuming gui is NE
+        window.guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
+        if (mouseX > (guiOffsets.left - 4) && (c_height - mouseY) < guiOffsets.bottom
+            && mouseX < guiOffsets.right) {
+            return;
+        }
+        
         mouseDown = true;
         mouseX0 = event.clientX;
         cameraX0 = feedbackCamera.position.x;
@@ -260,11 +260,15 @@ function init() {
             mouseY0 = c_height - event.clientY; // window y-coordinate flipped
             cameraY0 = feedbackCamera.position.y;
         }
-    }, true);
+    }, false);
+    document.addEventListener('mousemove', function(event) {
+        mouseX = event.clientX;
+        mouseY = c_height - event.clientY; // window y-coordinate flipped
+    }, false);
     document.addEventListener("mouseup", function(event) {
         mouseDown = false;
         rightClick = false;
-    }, true);
+    }, false);
     
     // Scroll-wheel zoom input
     document.addEventListener('mousewheel', scrollHandler, false);
@@ -272,11 +276,6 @@ function init() {
     
     // Disable context menu
     document.addEventListener("contextmenu", function(e) { e.preventDefault() }, false);
-    
-    // OrbitControls does sort of what we'd want, but it's written at the same
-    //   level as the above and makes my computer more sad. Would also need to
-    //   include the script in the index.html; try if you dare
-    // controls = new THREE.OrbitControls( feedbackCamera );
     
     n_f = 0;
     n_f_show = 120;
@@ -288,9 +287,9 @@ function init() {
 function animate() {
     // I like how this currently responds, although I don't know where the factor
     //   of 40 comes from that could be a property of the camera.
-    // Dividing by feedbackCamera.getScale:
+    // Dividing by feedbackCamera.getScale():
     // - keeps the response the same regardless of camera's zoom for panning
-    // - changes the rotation rate based on scaling, which i think is more intuitive
+    // - changes the rotation rate based on scaling, which feels more intuitive
     if (mouseDown) {
         if (rightClick == true) {
             feedbackCamera.rotation.z = cameraR0 - inputSettings.scale *
