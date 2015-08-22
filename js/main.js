@@ -209,7 +209,7 @@ function init() {
             } else if (!shouldPass && passes[passes.length - 1] === RGBShiftPass) {
                 passes.pop();
             }
-        })
+        });
 
     //////////////
     // Input setup
@@ -226,9 +226,13 @@ function init() {
     
     // Mouse input & handlers. Updated in animate().
     window.mouseDown = false;
+    window.rightClick = false;
     window.mouseX = 0, window.mouseY = 0;
     window.mouseX0 = 0, window.mouseY0 = 0;
+    window.cameraX0 = 0, window.cameraY0 = 0;
+    window.cameraR0 = 0;
     
+    // logic is kind of dumb
     document.addEventListener('mousemove', function(event) {
         mouseX = event.clientX;
         mouseY = c_height - event.clientY; // window y-coordinate flipped
@@ -236,33 +240,58 @@ function init() {
     document.addEventListener("mousedown", function(event) {
         mouseDown = true;
         mouseX0 = event.clientX;
-        mouseY0 = c_height - event.clientY; // window y-coordinate flipped
+        cameraX0 = feedbackCamera.position.x;
+        
+        if (event.button == 2) { // probably not very compatible
+            rightClick = true;
+            cameraR0 = feedbackCamera.rotation.z;
+        }
+        else {
+            mouseY0 = c_height - event.clientY; // window y-coordinate flipped
+            cameraY0 = feedbackCamera.position.y;
+        }
     }, false);
     document.addEventListener("mouseup", function(event) {
         mouseDown = false;
+        rightClick = false;
     }, false);
     
     // Scroll-wheel zoom input
     document.addEventListener('mousewheel', scrollHandler, false);
     document.addEventListener('DOMMouseScroll', scrollHandler, false); // firefox
-
+    
+    // Disable context menu
+    document.addEventListener("contextmenu", function(e) { e.preventDefault() }, false);
+    
+    // OrbitControls does sort of what we'd want, but it's written at the same
+    //   level as the above and makes my computer more sad. Would also need to
+    //   include the script in the index.html; try if you dare
+    // controls = new THREE.OrbitControls( feedbackCamera );
+    
     n_f = 0;
     n_f_show = 120;
     render_time = 0;
     t_start = performance.now();
 }
 
+
 function animate() {
-    // Probably a better way to do this by actually retrieving the camera position
-    // instead of only handling its derivative
-    if (mouseDown){
-        feedbackCamera.translateX(inputSettings.scale * 
-            inputSettings.xyStep * (mouseX - mouseX0) / c_width);
-        feedbackCamera.translateY(inputSettings.scale * 
-            inputSettings.xyStep * (mouseY - mouseY0) / c_height);
-        
-        mouseX0 = (0.9 * mouseX0 + 0.1 * mouseX);
-        mouseY0 = (0.9 * mouseY0 + 0.1 * mouseY);
+    // I like how this currently responds, although I don't know where the factor
+    //   of 40 comes from that could be a property of the camera.
+    // Dividing by feedbackCamera.getScale:
+    // - keeps the response the same regardless of camera's zoom for panning
+    // - changes the rotation rate based on scaling, which i think is more intuitive
+    if (mouseDown) {
+        if (rightClick == true) {
+            feedbackCamera.rotation.z = cameraR0 - inputSettings.scale *
+                2 * Math.PI * (mouseX - mouseX0) / c_width / feedbackCamera.getScale();
+        }
+        else {
+            feedbackCamera.position.x = cameraX0 - inputSettings.xyStep
+                * (mouseX - mouseX0) * 40 / c_width / feedbackCamera.getScale();
+            feedbackCamera.position.y = cameraY0 - inputSettings.xyStep 
+                * (mouseY - mouseY0) * 40 / c_height / feedbackCamera.getScale();
+        }
     }
 
     //updateInput();
@@ -284,9 +313,11 @@ function animate() {
     stats.update();
 }
 
+
 function updateInput() {
     //TODO: Parse user input
 }
+
 
 function render() {
 
@@ -331,6 +362,7 @@ function render() {
 
     i_loop = (i_loop + 1) % feedbackTarget.length;
 }
+
 
 function createScalableOrthoCam(aspect, minScale, maxScale) {
     // The camera sees things as scale times larger than they actually are.
