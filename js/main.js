@@ -210,6 +210,16 @@ function init() {
                 passes.pop();
             }
         });
+    
+    // Save as .png image
+    var saveObj = {a : function() {
+                       var canvas = document.getElementsByTagName("canvas")[0];
+                       canvas.toBlob(function(blob) { saveAs(blob, "image.png" ); });
+                       // var d = canvas.toDataURL("image/png");
+                       // var w = window.open("about:blank", "image from canvas");
+                       // w.document.write("<img src='"+d+"' alt='from canvas'/>");
+                   }, b : function() {}};
+    gui.add(saveObj, 'a').name('Save Image');
 
     //////////////
     // Input setup
@@ -236,7 +246,7 @@ function init() {
     document.addEventListener('mousemove', function(event) {
         mouseX = event.clientX;
         mouseY = c_height - event.clientY; // window y-coordinate flipped
-    }, false);
+    }, true);
     document.addEventListener("mousedown", function(event) {
         mouseDown = true;
         mouseX0 = event.clientX;
@@ -250,11 +260,11 @@ function init() {
             mouseY0 = c_height - event.clientY; // window y-coordinate flipped
             cameraY0 = feedbackCamera.position.y;
         }
-    }, false);
+    }, true);
     document.addEventListener("mouseup", function(event) {
         mouseDown = false;
         rightClick = false;
-    }, false);
+    }, true);
     
     // Scroll-wheel zoom input
     document.addEventListener('mousewheel', scrollHandler, false);
