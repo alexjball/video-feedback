@@ -379,6 +379,7 @@ function init() {
                                              Math.pow(y2 - y1, 2));
             var touchZoom = 1 - newTouchDistance / touchDistance;
 
+            console.log("touchZoom = ");
             console.log(touchZoom);
 
             feedbackCamera.translateScale(touchZoom / 100);
