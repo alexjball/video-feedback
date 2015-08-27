@@ -291,11 +291,7 @@ function init() {
         eventjs.add(window, "drag", function(event, self) {
             console.log(self.gesture, self.fingers, self.state, self.start, self.x, self.y, self.bbox);
 
-            if (self.fingers != 1) {
-                return;
-            }
-
-            if (self.state == "down") {
+            if (self.fingers == 1 && self.state == "down") {
                 self.start.x = (self.start.x < 0) ? 0 : self.start.x;
                 self.start.y = (self.start.y < 0) ? 0 : self.start.y;
 
@@ -307,14 +303,14 @@ function init() {
                 onMouseDown.apply(null, [touchEvent]);
             }
 
-            else if (self.state == "move") {
+            else if (self.fingers == 1 && self.state == "move") {
                 // scrolling should be removed in index.html, but just in case:
                 eventjs.prevent(event);
                 mouseX = self.x;
                 mouseY = c_height - self.y;
             }
 
-            else if (self.state == "up") {
+            else if (self.fingers == 1 && self.state == "up") {
                 mouseDown = false;
                 rightClick = false;
             }
