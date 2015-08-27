@@ -333,7 +333,7 @@ function init() {
         }
 
         // zoom/rotate
-        if (event.targetTouches.length == 2) {
+        if (event.targetTouches.length >= 2) {
             mouseDown = false; // until pan references are set below
 
             var x1 = event.targetTouches[0].clientX;
@@ -356,7 +356,6 @@ function init() {
             touchDistance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
 
             // rotation
-            cameraR0 = feedbackCamera.rotation.z;
             touchRotationInit = Math.atan2(y2 - y1, x2 - x1);
         }
     }
@@ -369,7 +368,7 @@ function init() {
             mouseY = c_height - event.targetTouches[0].clientY;
         }
 
-        if (event.targetTouches.length == 2) {
+        if (event.targetTouches.length >= 2) {
             var x1 = event.targetTouches[0].clientX;
             var x2 = event.targetTouches[1].clientX;
             var y1 = c_height - event.targetTouches[0].clientY;
@@ -411,7 +410,7 @@ function init() {
             rightClick = false;
         }
 
-        if (event.targetTouches.length == 2) {
+        if (event.targetTouches.length >= 2) {
             // zoom/rotate setup
         }
     }
@@ -460,8 +459,18 @@ function animate() {
                 feedbackCamera.position.y = cameraY0 - new_dy;
             }
             else {
-                feedbackCamera.rotation.z = cameraR0 + 2 * Math.PI *
-                    (mouseX - mouseX0) / c_width / feedbackCamera.getScale();
+                // feedbackCamera.rotation.z = cameraR0 + 2 * Math.PI *
+                    // (mouseX - mouseX0) / c_width / feedbackCamera.getScale();
+
+                var x0 = feedbackCamera.position.x;
+                var y0 = feedbackCamera.position.y;
+                var angle = (mouseX - mouseX0) / c_width / feedbackCamera.getScale();
+                feedbackCamera.position.x = 0;
+                feedbackCamera.position.y = 0;
+                feedbackCamera.rotation.z -= angle;
+                mouseX0 = mouseX;
+                feedbackCamera.position.x = Math.cos(angle) * x0 + Math.sin(angle) * y0;
+                feedbackCamera.position.y = -Math.sin(angle) * x0 + Math.cos(angle) * y0;
             }
         }
 
