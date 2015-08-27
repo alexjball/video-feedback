@@ -499,6 +499,7 @@ function init() {
     if (touchOn == true) {
         gui.closed = true;
         document.getElementById("fps").style.display = "none";
+        document.getElementById("fps").style.visibility = "hidden";
     }
     
     n_f = 0;
