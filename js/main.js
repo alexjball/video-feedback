@@ -372,6 +372,9 @@ function init() {
             else {
                 touchRotationInit = Math.PI;
             }
+
+            console.log("touchRotationInit");
+            console.log(touchRotationInit);
         }
     }
 
@@ -408,6 +411,9 @@ function init() {
             else {
                 touchRotation = Math.PI - touchRotationInit;
             }
+
+            console.log("touchRotation");
+            console.log(touchRotation);
         }
     }
 
