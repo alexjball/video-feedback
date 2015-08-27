@@ -255,6 +255,10 @@ function init() {
     };
     
     document.addEventListener('keydown', keyboardHandler, false);
+
+    document.addEventListener('DOMContentLoaded', function() {
+                              FastClick.attach(document.body);
+                              }, false);
     
     // Mouse input & handlers. Updated in animate(). // DO NOT TAKE ANYTHING BELOW SERIOUSLY -------------
     // https://github.com/mudcube/Event.js
@@ -614,11 +618,9 @@ function keyboardHandler(evt) {
             break;
         case "W":
             feedbackCamera.translateScale(inputSettings.zStep);
-            // feedbackCamera.translateZ(-inputSettings.zStep);
             break;
         case "S":
             feedbackCamera.translateScale(-inputSettings.zStep);
-            // feedbackCamera.translateZ(inputSettings.zStep);
             break;
         case "J":
             feedbackCamera.translateX(- inputSettings.scale * 
