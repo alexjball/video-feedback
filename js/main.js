@@ -292,6 +292,8 @@ function init() {
     if (touchOn === true) {
         // Drag to pan
         document.addEventListener("touchstart", touchstart_handler, false);
+        document.addEventListener("touchmove", touchmove_handler, false);
+
         // Rotate & zoom
     }
 
@@ -302,6 +304,14 @@ function init() {
 
         if (event.targetTouches.length == 1) {
             console.log(event.targetTouches[0].clientX);
+        }
+    }
+
+    function touchmove_handler(event) {
+        console.log("touch move");
+
+        if (event.targetTouches.length == 1) {
+            console.log(event.targetTouches[0]);
         }
     }
 
