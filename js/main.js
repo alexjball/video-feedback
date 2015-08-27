@@ -366,7 +366,12 @@ function init() {
 
             // rotation
             cameraR0 = feedbackCamera.rotation.z;
-            touchRotationInit = Math.atan2(y2 - y1, x2 - x1);
+            if (x2 != x1) {
+                touchRotationInit = Math.atan2(y2 - y1, x2 - x1);
+            }
+            else {
+                touchRotationInit = Math.PI;
+            }
         }
     }
 
@@ -397,7 +402,12 @@ function init() {
 
             // rotation
             rightClick = true;
-            touchRotation = Math.atan2(y2 - y1, x2 - x1) - touchRotationInit;
+            if (x2 != x1) {
+                touchRotation = Math.atan2(y2 - y1, x2 - x1) - touchRotationInit;
+            }
+            else {
+                touchRotation = Math.PI - touchRotationInit;
+            }
         }
     }
 
@@ -452,8 +462,7 @@ function animate() {
         // Right-click drag rotation
         if (rightClick == true) {
             if (touchOn == true) {
-                feedbackCamera.rotation.z = cameraR0 + touchRotation /
-                    feedbackCamera.getScale();
+                feedbackCamera.rotation.z = cameraR0 + touchRotation;
                 console.log(touchRotation);
             }
             else {
