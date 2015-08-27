@@ -265,7 +265,9 @@ function init() {
     window.mouseX0 = 0, window.mouseY0 = 0;
     window.cameraX0 = 0, window.cameraY0 = 0;
     window.cameraR0 = 0;
-    window.touchDistance = 0;
+    window.touchDistance = 1;
+    window.newTouchDistance = 0;
+    window.touchZoom = 0;
     window.touchRotation = 0;
     window.guiOffsets = {};
     
@@ -346,22 +348,20 @@ function init() {
             cameraY0 = feedbackCamera.position.y;
 
             // disable panning when started from within gui
-            guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
+            /* guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
 
             if (mouseX > (guiOffsets.left) && (c_height - mouseY) < guiOffsets.bottom
                 && mouseX < guiOffsets.right) {
                 mouseDown = false;
                 console.log("mousedown within gui");
                 return;
-            }
+            } */
 
             // allow pan updates
             mouseDown = true;
 
             // zoom
             touchDistance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-            console.log("touchDistance = ");
-            console.log(touchDistance);
 
             // rotation
             cameraR0 = feedbackCamera.rotation.z;
@@ -388,16 +388,16 @@ function init() {
             mouseY = (y1 + y2) / 2;
 
             // zoom
-            var newTouchDistance = Math.sqrt(Math.pow(x2 - x1, 2) +
+            newTouchDistance = Math.sqrt(Math.pow(x2 - x1, 2) +
                                              Math.pow(y2 - y1, 2));
-            window.touchZoom = 1 - newTouchDistance / touchDistance;
+            var touchZoom = 1 - newTouchDistance / touchDistance;
 
             console.log("touchZoom = ");
             console.log(touchZoom);
 
-            feedbackCamera.translateScale(touchZoom / 500);
+            feedbackCamera.translateScale(touchZoom);
 
-            // touchDistance = newTouchDistance;
+            touchDistance = newTouchDistance;
         }
     }
 
