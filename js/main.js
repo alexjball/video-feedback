@@ -439,6 +439,8 @@ function animate() {
                 var transElementsI = feedbackCamera.matrixWorldInverse.elements;
 
                 // rotation
+                feedbackCamera.position.x = 0;
+                feedbackCamera.position.y = 0;
                 feedbackCamera.rotation.z = cameraR0 - touchRotation;
 
                 // panning
