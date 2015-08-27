@@ -385,7 +385,10 @@ function init() {
             newTouchDistance = Math.sqrt(Math.pow(x2 - x1, 2) +
                                              Math.pow(y2 - y1, 2));
             touchZoom = 1 - newTouchDistance / touchDistance;
-            feedbackCamera.translateScale(-1 * touchZoom);
+            feedbackCamera.translateScale(touchZoom);
+
+            console.log(touchZoom);
+
             touchDistance = newTouchDistance;
 
             // rotation
