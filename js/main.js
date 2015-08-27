@@ -334,12 +334,18 @@ function init() {
 
         // zoom/rotate
         if (event.targetTouches.length == 2) {
-            mouseDown = false;
+            mouseDown = true;
 
             var x1 = event.targetTouches[0].clientX;
             var x2 = event.targetTouches[1].clientX;
-            var y1 = event.targetTouches[0].clientY;
-            var y2 = event.targetTouches[1].clientY;
+            var y1 = c_height - event.targetTouches[0].clientY;
+            var y2 = c_height - event.targetTouches[1].clientY;
+
+            // avg. pan
+            mouseX0 = (x1 + x2) / 2;
+            mouseY0 = (y1 + y2) / 2;
+            cameraX0 = feedbackCamera.position.x;
+            cameraY0 = feedbackCamera.position.y;
 
             // zoom
             touchDistance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
@@ -356,8 +362,6 @@ function init() {
         console.log("touch move");
         event.preventDefault(); // prevents scrolling, drag-refresh, &c.
 
-
-
         if (event.targetTouches.length == 1) {
             mouseX = event.targetTouches[0].clientX;
             mouseY = c_height - event.targetTouches[0].clientY;
@@ -367,12 +371,14 @@ function init() {
         }
 
         if (event.targetTouches.length == 2) {
-            mouseDown = false;
-
             var x1 = event.targetTouches[0].clientX;
             var x2 = event.targetTouches[1].clientX;
-            var y1 = event.targetTouches[0].clientY;
-            var y2 = event.targetTouches[1].clientY;
+            var y1 = c_height - event.targetTouches[0].clientY;
+            var y2 = c_height - event.targetTouches[1].clientY;
+
+            // avg. pan
+            mouseX = (x1 + x2) / 2;
+            mouseY = (y1 + y2) / 2;
 
             // zoom
             var newTouchDistance = Math.sqrt(Math.pow(x2 - x1, 2) +
