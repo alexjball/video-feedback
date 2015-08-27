@@ -467,6 +467,8 @@ function animate() {
                 var new_dx = transElements[0] * dx + transElements[1] * dy;
                 var new_dy = transElements[4] * dx + transElements[5] * dy;
 
+                console.log(dx, dy);
+
                 feedbackCamera.position.x = cameraX0 - new_dx;
                 feedbackCamera.position.y = cameraY0 - new_dy;
             }
