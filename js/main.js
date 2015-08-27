@@ -270,7 +270,6 @@ function init() {
     window.guiOffsets = {};
     
     document.addEventListener("mousedown", onMouseDown, false);
-    document.addEventListener("click", function(event) {return;}, false);
     document.addEventListener("mousemove", function(event) {
         mouseX = event.clientX;
         mouseY = c_height - event.clientY; // window y-coordinate flipped
@@ -312,6 +311,8 @@ function init() {
             mouseX = mouseX0;
             mouseY0 = c_height - event.targetTouches[0].clientY;
             mouseY = mouseY0;
+            cameraX0 = feedbackCamera.position.x;
+            cameraY0 = feedbackCamera.position.y;
 
             // disable panning when started from within gui
             guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
@@ -325,21 +326,18 @@ function init() {
 
             mouseDown = true;
             rightClick = false;
-
-            cameraX0 = feedbackCamera.position.x;
-            cameraY0 = feedbackCamera.position.y;
         }
 
         // zoom/rotate
         if (event.targetTouches.length == 2) {
-            mouseDown = false;
+            mouseDown = false; // until pan references are set below
 
             var x1 = event.targetTouches[0].clientX;
             var x2 = event.targetTouches[1].clientX;
             var y1 = c_height - event.targetTouches[0].clientY;
             var y2 = c_height - event.targetTouches[1].clientY;
 
-            // avg. pan
+            // reset pan reference
             mouseX0 = (x1 + x2) / 2;
             mouseX = mouseX0;
             mouseY0 = (y1 + y2) / 2;
@@ -347,6 +345,17 @@ function init() {
             cameraX0 = feedbackCamera.position.x;
             cameraY0 = feedbackCamera.position.y;
 
+            // disable panning when started from within gui
+            guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
+
+            if (mouseX > (guiOffsets.left) && (c_height - mouseY) < guiOffsets.bottom
+                && mouseX < guiOffsets.right) {
+                mouseDown = false;
+                console.log("mousedown within gui");
+                return;
+            }
+
+            // allow pan updates
             mouseDown = true;
 
             // zoom
@@ -388,7 +397,7 @@ function init() {
 
             feedbackCamera.translateScale(touchZoom / 500);
 
-            touchDistance = newTouchDistance;
+            // touchDistance = newTouchDistance;
         }
     }
 
@@ -401,6 +410,7 @@ function init() {
             mouseDown = false;
         }
         if (event.targetTouches.length == 1) {
+            // reset pan reference
             mouseX0 = event.targetTouches[0].clientX;
             mouseX = mouseX0;
             mouseY0 = c_height - event.targetTouches[0].clientY;
@@ -431,12 +441,13 @@ function init() {
 
 function animate() {
     if (mouseDown) {
+        // #hardcode
         var speed = 40;
-
         if (touchOn = true) {
             speed = 20;
         }
 
+        // Right-click drag rotation
         if (rightClick == true) {
             if (touchOn == true) {
                 feedbackCamera.rotation.z = cameraR0 + touchRotation /
@@ -447,10 +458,11 @@ function animate() {
                     (mouseX - mouseX0) / c_width / feedbackCamera.getScale();
             }
         }
+
         else {
-            var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width 
+            var dx = inputSettings.xyStep * (mouseX - mouseX0) * speed / c_width
                 / feedbackCamera.getScale();
-            var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height 
+            var dy = inputSettings.xyStep * (mouseY - mouseY0) * speed / c_height
                 / feedbackCamera.getScale();
             
             var transElements = feedbackCamera.matrixWorldInverse.elements;
@@ -624,9 +636,13 @@ onMouseDown = function(event) {
     //   introduce any problems/lag
 
     mouseDown = true;
-    mouseX = event.clientX;
-    mouseX0 = mouseX;
+    mouseX0 = event.clientX;
+    mouseX = mouseX0;
+    mouseY0 = c_height - event.clientY;
+    mouseY = mouseY0;
+
     cameraX0 = feedbackCamera.position.x;
+    cameraY0 = feedbackCamera.position.y;
 
     window.guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
     if (mouseX > (guiOffsets.left - 4) && (c_height - mouseY) < guiOffsets.bottom
@@ -637,11 +653,6 @@ onMouseDown = function(event) {
     if (event.button == 2) { // probably not very compatible
         rightClick = true;
         cameraR0 = feedbackCamera.rotation.z;
-    }
-    else {
-        mouseY = c_height - event.clientY; // window y-coordinate flipped
-        mouseY0 = mouseY;
-        cameraY0 = feedbackCamera.position.y;
     }
 }
 
