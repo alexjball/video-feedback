@@ -442,8 +442,6 @@ function animate() {
                     Math.cos(touchRotation) * cameraX0 + Math.sin(touchRotation) * cameraY0;
                 feedbackCamera.position.y =
                     -Math.sin(touchRotation) * cameraX0 + Math.cos(touchRotation) * cameraY0;
-                cameraX0 = feedbackCamera.position.x;
-                cameraY0 = feedbackCamera.position.y;
 
                 // panning
                 var transElementsI = feedbackCamera.matrixWorldInverse.elements
