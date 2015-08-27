@@ -388,7 +388,7 @@ function init() {
 
             // rotation
             rightClick = true;
-            touchRotation = Math.atan2(y2 - y1, x2 - x1) - touchRotationInit;
+            touchRotation = Math.atan2(y2 - y1, x2 - x1);
         }
     }
 
@@ -441,7 +441,8 @@ function animate() {
                 var y0 = feedbackCamera.position.y;
                 feedbackCamera.position.x = 0;
                 feedbackCamera.position.y = 0;
-                feedbackCamera.rotation.z = cameraR0 - touchRotation;
+                feedbackCamera.rotation.z -= touchRotation - touchRotationInit;
+                touchRotationInit = touchRotation;
                 feedbackCamera.position.x = Math.cos(touchRotation) * x0 + Math.sin(touchRotation) * y0;
                 feedbackCamera.position.y = -Math.sin(touchRotation) * x0 + Math.cos(touchRotation) * y0;
 
