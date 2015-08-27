@@ -461,6 +461,12 @@ function init() {
 
 function animate() {
     if (mouseDown) {
+        var speed = 40;
+
+        if (touchOn = true) {
+            speed = 20;
+        }
+
         if (rightClick == true) {
             if (touchOn == true) {
                 feedbackCamera.rotation.z = cameraR0 + touchRotation /
