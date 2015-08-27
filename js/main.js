@@ -38,7 +38,7 @@ function init() {
             {   minFilter       : THREE.LinearFilter,
                 magFilter       : THREE.LinearFilter,
                 format          : THREE.RGBFormat,
-                generateMipmaps : true, /**/
+                generateMipmaps : false, /**/
                 depthBuffer     : true,
                 stencilBuffer   : false
              });
