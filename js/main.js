@@ -340,7 +340,9 @@ function init() {
 
             // avg. pan
             mouseX0 = (x1 + x2) / 2;
+            mouseX = mouseX0;
             mouseY0 = (y1 + y2) / 2;
+            mouseY = mouseY0;
             cameraX0 = feedbackCamera.position.x;
             cameraY0 = feedbackCamera.position.y;
 
@@ -396,14 +398,14 @@ function init() {
             mouseDown = false;
         }
         if (event.targetTouches.length == 1) {
-            mouseDown = true;
-
             mouseX0 = event.targetTouches[0].clientX;
             mouseX = mouseX0;
             mouseY0 = c_height - event.targetTouches[0].clientY;
             mouseY = mouseY0;
             cameraX0 = feedbackCamera.position.x;
             cameraY0 = feedbackCamera.position.y;
+
+            mouseDown = true;
         }
 
         if (event.targetTouches.length == 2) {
