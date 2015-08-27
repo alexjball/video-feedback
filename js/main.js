@@ -265,6 +265,7 @@ function init() {
     window.mouseX0 = 0, window.mouseY0 = 0;
     window.cameraX0 = 0, window.cameraY0 = 0;
     window.cameraR0 = 0;
+    window.touchDistance = 0;
     window.touchRotation = 0;
     window.guiOffsets = {};
     
@@ -304,14 +305,14 @@ function init() {
     function touchstart_handler(event) {
         console.log("touch start");
 
-        cameraR0 = feedbackCamera.rotation.z;
-
+        // panning
         if (event.targetTouches.length == 1) {
             mouseX0 = event.targetTouches[0].clientX;
             mouseX = mouseX0;
             mouseY0 = c_height - event.targetTouches[0].clientY;
             mouseY = mouseY0;
 
+            // disable panning when started from within gui
             guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
 
             if (mouseX > (guiOffsets.left) && (c_height - mouseY) < guiOffsets.bottom
@@ -330,11 +331,30 @@ function init() {
             console.log(mouseX);
             console.log(mouseY);
         }
+
+        // zoom/rotate
+        if (event.targetTouches.length == 2) {
+            var x1 = event.targetTouches[0].clientX;
+            var x2 = event.targetTouches[1].clientX;
+            var y1 = event.targetTouches[0].clientY;
+            var y2 = event.targetTouches[1].clientY;
+
+            // zoom
+            touchDistance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            console.log("touchDistance = ");
+            console.log(touchDistance);
+
+            // rotation
+            cameraR0 = feedbackCamera.rotation.z;
+            touchRotation = Math.atan((y2 - y1) / (x2 - x1));
+        }
     }
 
     function touchmove_handler(event) {
         console.log("touch move");
         event.preventDefault(); // prevents scrolling, drag-refresh, &c.
+
+
 
         if (event.targetTouches.length == 1) {
             mouseX = event.targetTouches[0].clientX;
@@ -342,6 +362,19 @@ function init() {
 
             console.log(mouseX);
             console.log(mouseY);
+        }
+
+        if (event.targetTouches.length == 2) {
+            var x1 = event.targetTouches[0].clientX;
+            var x2 = event.targetTouches[1].clientX;
+            var y1 = event.targetTouches[0].clientY;
+            var y2 = event.targetTouches[1].clientY;
+
+            // zoom
+            var newTouchDistance = Math.sqrt(Math.pow(x2 - x1, 2) +
+                                             Math.pow(y2 - y1, 2));
+            var touchZoom = 1 - newTouchDistance / touchDistance;
+            feedbackCamera.translateScale(touchZoom);
         }
     }
 
