@@ -270,6 +270,7 @@ function init() {
     window.guiOffsets = {};
     
     document.addEventListener("mousedown", onMouseDown, false);
+    document.addEventListener("click", function(event) {return;}, false);
     document.addEventListener("mousemove", function(event) {
         mouseX = event.clientX;
         mouseY = c_height - event.clientY; // window y-coordinate flipped
