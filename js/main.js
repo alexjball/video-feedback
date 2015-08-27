@@ -124,7 +124,7 @@ function init() {
     //  throw new Error("This piece of shit doesn't support WebGL");
 
     renderer = new THREE.WebGLRenderer( {
-        antialias : false, 
+        antialias : false,
         stencil   : false,
         precision : "mediump",
         preserveDrawingBuffer:true} );
@@ -187,7 +187,7 @@ function init() {
         }
     };
 
-    var gui = new dat.GUI();
+    window.gui = new dat.GUI();
 
     gui.add({a : false}, 'a').name('Invert X').onChange(getUnifSetter(symPass.uniforms.invertX));
     gui.add({a : false}, 'a').name('Invert Y').onChange(getUnifSetter(symPass.uniforms.invertY));
@@ -215,7 +215,6 @@ function init() {
             }
         });
     // Save as .png image using js/libs/FileSaver.js
-    // Doesn't work on Chrome #augh
     var saveObj = {a : function() {
         var canvas = document.getElementsByTagName("canvas")[0];
         
@@ -257,13 +256,16 @@ function init() {
     
     document.addEventListener('keydown', keyboardHandler, false);
     
-    // Mouse input & handlers. Updated in animate().
+    // Mouse input & handlers. Updated in animate(). // DO NOT TAKE ANYTHING BELOW SERIOUSLY -------------
+    // https://github.com/mudcube/Event.js
+
     window.mouseDown = false;
     window.rightClick = false;
     window.mouseX = 0, window.mouseY = 0;
     window.mouseX0 = 0, window.mouseY0 = 0;
     window.cameraX0 = 0, window.cameraY0 = 0;
     window.cameraR0 = 0;
+    window.touchRotation = 0;
     window.guiOffsets = {};
     
     document.addEventListener("mousedown", onMouseDown, false);
@@ -283,46 +285,86 @@ function init() {
     // Disable context menu
     document.addEventListener("contextmenu", function(e) { e.preventDefault() }, false);
     
-    // Touch input & handlers.
+    // Touch input & handlers. Disable scrolling & zooming in here.
     if (touchOn === true) {
         // Drag to pan
         eventjs.add(window, "drag", function(event, self) {
             console.log(self.gesture, self.fingers, self.state, self.start, self.x, self.y, self.bbox);
-            if (self.fingers == 1) {
-                if (self.state == "down") {
-                    self.start.x = (self.start.x < 0) ? 0 : self.start.x;
-                    self.start.y = (self.start.y < 0) ? 0 : self.start.y;
-                    
-                    touchEvent = {clientX : self.start.x,
-                                  clientY : self.start.y,
-                                  button  : 1};
-                    rightClick = false;
-                    
-                    onMouseDown.apply(null, [touchEvent]);
-                }
-                else if (self.state == "move") {
-                    mouseX = self.x;
-                    mouseY = c_height - self.y;
-                }
-                else if (self.state == "up") {
-                    mouseDown = false;
-                    rightClick = false;
-                }
+
+            if (self.fingers != 1) {
+                return;
+            }
+
+            if (self.state == "down") {
+                self.start.x = (self.start.x < 0) ? 0 : self.start.x;
+                self.start.y = (self.start.y < 0) ? 0 : self.start.y;
+
+                touchEvent = {clientX : self.start.x,
+                              clientY : self.start.y,
+                              button  : 1};
+                rightClick = false;
+
+                onMouseDown.apply(null, [touchEvent]);
+            }
+
+            else if (self.state == "move") {
+                // scrolling should be removed in index.html, but just in case:
+                eventjs.prevent(event);
+                mouseX = self.x;
+                mouseY = c_height - self.y;
+            }
+
+            else if (self.state == "up") {
+                mouseDown = false;
+                rightClick = false;
             }
         });
         
-        // Rotate
-        eventjs.add(window, "rotate", function(event, self) {
-                    if (self.fingers == 2) {
-                        // rotate by whatever
+        // Rotate/zoom
+        eventjs.add(window, "gesture", function(event, self) {
+                    console.log(self.gesture, self.fingers, self.state, self.rotation, self.scale);
+
+                    if (self.fingers != 2) {
+                        return;
                     }
-        });
+
+                    if (self.state == "down") {
+                        mouseDown = true;
+                    }
+
+                    else if (self.state == "rotate") {
+                        mouseDown = true;
+                        rightClick = true;
+                        cameraR0 = feedbackCamera.rotation.z;
+                        touchRotation = self.rotation;
+                    }
+
+                    else if (self.state == "scale") {
+                        // zoom should be removed in index.html, but just in case:
+                        eventjs.prevent(event);
+                        feedbackCamera.translateScale(self.rotation * inputSettings.zStep);
+                    }
+
+                    else if (self.state == "up") {
+                        mouseDown = false;
+                        rightClick = false;
+                    }
+                    });
         
-        // Zoom
         
-        
-        // something to open/close controls?
-        
+        // double-tap to open/close controls
+        eventjs.add(window, "dblclick", function(event, self) {
+                    window.guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
+                    if (self.x > (guiOffsets.left) && (c_height - self.y) < guiOffsets.bottom
+                        && self.x < guiOffsets.right) {
+                    return;
+                    }
+
+                    console.log(self.gesture, self.x, self.y);
+
+                    gui.closed = !gui.closed;
+
+                    });
         
         // eventually get rid of fps tracker on mobile
     }
@@ -335,12 +377,16 @@ function init() {
 
 
 function animate() {
-    // I like how this currently responds, although I don't know where the factor
-    //   of 40 comes from that could be a property of the camera.
     if (mouseDown) {
-        if (rightClick == true) { // || touch rotate
-            feedbackCamera.rotation.z = cameraR0 +
-                2 * Math.PI * (mouseX - mouseX0) / c_width / feedbackCamera.getScale();
+        if (rightClick == true) {
+            if (touchOn == true) {
+                feedbackCamera.rotation.z = cameraR0 + touchRotation /
+                    feedbackCamera.getScale();
+            }
+            else {
+                feedbackCamera.rotation.z = cameraR0 + 2 * Math.PI *
+                    (mouseX - mouseX0) / c_width / feedbackCamera.getScale();
+            }
         }
         else {
             var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width 
@@ -379,7 +425,7 @@ function animate() {
 
 
 function updateInput() {
-    //TODO: Parse user input
+
 }
 
 
@@ -503,6 +549,9 @@ function keyboardHandler(evt) {
         case "K":
             feedbackCamera.translateY(- inputSettings.scale * 
                 inputSettings.xyStep);
+            break;
+        case " ":
+            console.log("space");
             break;
     }
 }
