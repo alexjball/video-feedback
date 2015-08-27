@@ -436,7 +436,8 @@ function animate() {
         // Right-click drag rotation
         if (rightClick == true) {
             if (touchOn == true) {
-                var transElements = feedbackCamera.matrixWorldInverse.elements;
+                var transElements = feedbackCamera.matrixWorld.elements;
+                var transElementsI = feedbackCamera.matrixWorldInverse.elements;
 
                 // rotation
                 feedbackCamera.position.x = 0;
@@ -453,8 +454,8 @@ function animate() {
                 var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height
                 / feedbackCamera.getScale();
 
-                var new_dx = transElements[0] * dx + transElements[1] * dy;
-                var new_dy = transElements[4] * dx + transElements[5] * dy;
+                var new_dx = transElementsI[0] * dx + transElementsI[1] * dy;
+                var new_dy = transElementsI[4] * dx + transElementsI[5] * dy;
 
                 feedbackCamera.position.x = cameraX0 - new_dx;
                 feedbackCamera.position.y = cameraY0 - new_dy;
