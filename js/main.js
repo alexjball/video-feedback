@@ -310,8 +310,6 @@ function init() {
 
 
     function touchstart_handler(event) {
-        console.log("touch start");
-
         // panning
         if (event.targetTouches.length == 1) {
             mouseX0 = event.targetTouches[0].clientX;
@@ -327,7 +325,6 @@ function init() {
             if (mouseX > (guiOffsets.left) && (c_height - mouseY) < guiOffsets.bottom
                 && mouseX < guiOffsets.right) {
                 mouseDown = false;
-                console.log("mousedown within gui");
                 return;
             }
 
@@ -361,9 +358,6 @@ function init() {
             // rotation
             cameraR0 = feedbackCamera.rotation.z;
             touchRotationInit = Math.atan2(y2 - y1, x2 - x1);
-
-            console.log("touchRotationInit");
-            console.log(touchRotationInit);
         }
     }
 
@@ -389,25 +383,16 @@ function init() {
             newTouchDistance = Math.sqrt(Math.pow(x2 - x1, 2) +
                                              Math.pow(y2 - y1, 2));
             touchZoom = -1 + newTouchDistance / touchDistance;
-            feedbackCamera.translateScale(touchZoom);
-
-            console.log(touchZoom);
-
+            feedbackCamera.translateScale(touchZoom / 10);
             touchDistance = newTouchDistance;
 
             // rotation
             rightClick = true;
             touchRotation = Math.atan2(y2 - y1, x2 - x1) - touchRotationInit;
-
-            console.log("touchRotation");
-            console.log(touchRotation);
         }
     }
 
     function touchend_handler(event) {
-        console.log("touch end. length:");
-        console.log(event.targetTouches.length);
-
         if (event.targetTouches.length == 0) {
             // close shop
             mouseDown = false;
@@ -457,7 +442,6 @@ function animate() {
                 feedbackCamera.rotation.z = cameraR0 - touchRotation;
                 feedbackCamera.position.x = cameraX0;
                 feedbackCamera.position.y = cameraY0;
-                console.log(touchRotation);
 
                 // panning
                 var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
@@ -469,8 +453,6 @@ function animate() {
 
                 var new_dx = transElements[0] * dx + transElements[1] * dy;
                 var new_dy = transElements[4] * dx + transElements[5] * dy;
-
-                console.log(dx, dy);
 
                 feedbackCamera.position.x = cameraX0 - new_dx;
                 feedbackCamera.position.y = cameraY0 - new_dy;
