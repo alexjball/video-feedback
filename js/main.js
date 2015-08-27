@@ -382,7 +382,7 @@ function init() {
             console.log("touchZoom = ");
             console.log(touchZoom);
 
-            feedbackCamera.translateScale(touchZoom / 40);
+            feedbackCamera.translateScale(touchZoom);
         }
     }
 
