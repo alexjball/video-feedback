@@ -436,14 +436,8 @@ function animate() {
         if (rightClick == true) {
             if (touchOn == true) {
                 // rotation
-                var x0 = feedbackCamera.position.x;
-                var y0 = feedbackCamera.position.y;
-                feedbackCamera.position.x = 0;
-                feedbackCamera.position.y = 0;
-                feedbackCamera.rotation.z -= touchRotation - touchRotationInit;
+                feedbackCamera.rotate(touchRotation - touchRotationInit);
                 touchRotationInit = touchRotation;
-                feedbackCamera.position.x = Math.cos(touchRotation) * x0 + Math.sin(touchRotation) * y0;
-                feedbackCamera.position.y = -Math.sin(touchRotation) * x0 + Math.cos(touchRotation) * y0;
 
                 // panning
                 var transElementsI = feedbackCamera.matrixWorldInverse.elements
@@ -461,15 +455,9 @@ function animate() {
             else {
                 // feedbackCamera.rotation.z = cameraR0 + 2 * Math.PI *
                     // (mouseX - mouseX0) / c_width / feedbackCamera.getScale();
-                var x0 = feedbackCamera.position.x;
-                var y0 = feedbackCamera.position.y;
-                var angle = -(mouseX - mouseX0) / c_width / feedbackCamera.getScale();
-                feedbackCamera.position.x = 0;
-                feedbackCamera.position.y = 0;
-                feedbackCamera.rotation.z -= angle;
+                var angle = (mouseX - mouseX0) / c_width / feedbackCamera.getScale();
+                feedbackCamera.rotate(angle);
                 mouseX0 = mouseX;
-                feedbackCamera.position.x = Math.cos(angle) * x0 + Math.sin(angle) * y0;
-                feedbackCamera.position.y = -Math.sin(angle) * x0 + Math.cos(angle) * y0;
             }
         }
 
@@ -591,6 +579,17 @@ function createScalableOrthoCam(aspect, minScale, maxScale) {
         return internalScale;
     };
 
+    // rotate clockwise
+    camera.rotate = function(angle) {
+        var x0 = this.position.x;
+        var y0 = this.position.y;
+        this.position.x = 0;
+        this.position.y = 0;
+        this.rotation.z += angle;
+        this.position.x = Math.cos(angle) * x0 - Math.sin(angle) * y0;
+        this.position.y = Math.sin(angle) * x0 + Math.cos(angle) * y0;
+    };
+
     camera.translateScale = function(ds) {
         this.setScale(internalScale + ds);
     };
@@ -605,26 +604,14 @@ function keyboardHandler(evt) {
 
     switch(charStr) {
         case "A":
+            feedbackCamera.rotate(-inputSettings.rotStep);
             // feedbackCamera.rotateOnAxis(new THREE.Vector3(0, 0, -1),
                 // - inputSettings.scale * inputSettings.rotStep);
-            var x0 = feedbackCamera.position.x;
-            var y0 = feedbackCamera.position.y;
-            feedbackCamera.position.x = 0;
-            feedbackCamera.position.y = 0;
-            feedbackCamera.rotation.z -= inputSettings.rotStep;
-            feedbackCamera.position.x = Math.cos(inputSettings.rotStep) * x0 + Math.sin(inputSettings.rotStep) * y0;
-            feedbackCamera.position.y = -Math.sin(inputSettings.rotStep) * x0 + Math.cos(inputSettings.rotStep) * y0;
             break;
         case "D":
+            feedbackCamera.rotate(inputSettings.rotStep);
             // feedbackCamera.rotateOnAxis(new THREE.Vector3(0, 0, -1),
                 // inputSettings.scale * inputSettings.rotStep);
-            var x0 = feedbackCamera.position.x;
-            var y0 = feedbackCamera.position.y;
-            feedbackCamera.position.x = 0;
-            feedbackCamera.position.y = 0;
-            feedbackCamera.rotation.z -= -inputSettings.rotStep;
-            feedbackCamera.position.x = Math.cos(-inputSettings.rotStep) * x0 + Math.sin(-inputSettings.rotStep) * y0;
-            feedbackCamera.position.y = -Math.sin(-inputSettings.rotStep) * x0 + Math.cos(-inputSettings.rotStep) * y0;
             break;
         case "W":
             feedbackCamera.translateScale(inputSettings.zStep);
