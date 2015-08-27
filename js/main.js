@@ -437,11 +437,7 @@ function animate() {
         if (rightClick == true) {
             if (touchOn == true) {
                 // rotation
-                feedbackCamera.position.x = 0;
-                feedbackCamera.position.y = 0;
                 feedbackCamera.rotation.z = cameraR0 - touchRotation;
-                feedbackCamera.position.x = cameraX0;
-                feedbackCamera.position.y = cameraY0;
 
                 // panning
                 var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
