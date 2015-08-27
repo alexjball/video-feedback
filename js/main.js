@@ -442,7 +442,6 @@ function animate() {
                 feedbackCamera.rotation.z = cameraR0 - (touchRotation - touchRotationInit);
                 feedbackCamera.position.x = cameraX0;
                 feedbackCamera.position.y = cameraY0;
-                touchRotationInit = touchRotation;
 
                 // panning
                 var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
