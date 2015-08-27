@@ -35,8 +35,8 @@ function init() {
     // All render targets should be the same.
     var createRenderTarget = function () {
         return new THREE.WebGLRenderTarget(c_width, c_width, 
-            {   minFilter       : THREE.NearestFilter,
-                magFilter       : THREE.NearestFilter,
+            {   minFilter       : THREE.LinearFilter,
+                magFilter       : THREE.LinearFilter,
                 format          : THREE.RGBFormat,
                 generateMipmaps : true, /**/
                 depthBuffer     : true,
