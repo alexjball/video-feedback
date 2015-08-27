@@ -390,7 +390,7 @@ function init() {
             // zoom
             newTouchDistance = Math.sqrt(Math.pow(x2 - x1, 2) +
                                              Math.pow(y2 - y1, 2));
-            var touchZoom = -1 + newTouchDistance / touchDistance;
+            var touchZoom = 1 - newTouchDistance / touchDistance;
 
             console.log("touchZoom = ");
             console.log(touchZoom);
