@@ -452,8 +452,23 @@ function animate() {
         // Right-click drag rotation
         if (rightClick == true) {
             if (touchOn == true) {
+                // rotation
                 feedbackCamera.rotation.z = cameraR0 - touchRotation;
                 console.log(touchRotation);
+
+                // panning
+                var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
+                / feedbackCamera.getScale();
+                var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height
+                / feedbackCamera.getScale();
+
+                var transElements = feedbackCamera.matrixWorldInverse.elements;
+
+                var new_dx = transElements[0] * dx + transElements[1] * dy;
+                var new_dy = transElements[4] * dx + transElements[5] * dy;
+
+                feedbackCamera.position.x = cameraX0 - new_dx;
+                feedbackCamera.position.y = cameraY0 - new_dy;
             }
             else {
                 feedbackCamera.rotation.z = cameraR0 + 2 * Math.PI *
