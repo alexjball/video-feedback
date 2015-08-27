@@ -449,12 +449,6 @@ function init() {
 
 function animate() {
     if (mouseDown) {
-        // #hardcode
-        var speed = 40;
-        if (touchOn = true) {
-            speed = 20;
-        }
-
         // Right-click drag rotation
         if (rightClick == true) {
             if (touchOn == true) {
@@ -468,9 +462,9 @@ function animate() {
         }
 
         else {
-            var dx = inputSettings.xyStep * (mouseX - mouseX0) * speed / c_width
+            var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
                 / feedbackCamera.getScale();
-            var dy = inputSettings.xyStep * (mouseY - mouseY0) * speed / c_height
+            var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height
                 / feedbackCamera.getScale();
             
             var transElements = feedbackCamera.matrixWorldInverse.elements;
