@@ -406,6 +406,7 @@ function init() {
         if (event.targetTouches.length == 0) {
             // close shop
             mouseDown = false;
+            rightClick = false;
         }
         if (event.targetTouches.length == 1) {
             // reset pan reference
@@ -417,6 +418,7 @@ function init() {
             cameraY0 = feedbackCamera.position.y;
 
             mouseDown = true;
+            rightClick = false;
         }
 
         if (event.targetTouches.length == 2) {
