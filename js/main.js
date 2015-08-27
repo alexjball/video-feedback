@@ -452,6 +452,7 @@ function animate() {
             if (touchOn == true) {
                 feedbackCamera.rotation.z = cameraR0 + touchRotation /
                     feedbackCamera.getScale();
+                console.log(touchRotation);
             }
             else {
                 feedbackCamera.rotation.z = cameraR0 + 2 * Math.PI *
