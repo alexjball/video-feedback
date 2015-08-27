@@ -452,7 +452,7 @@ function animate() {
         // Right-click drag rotation
         if (rightClick == true) {
             if (touchOn == true) {
-                feedbackCamera.rotation.z = cameraR0 - touchRotation;
+                feedbackCamera.rotation.z = cameraR0 + touchRotation;
                 console.log(touchRotation);
             }
             else {
