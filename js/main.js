@@ -385,7 +385,7 @@ function init() {
             console.log("touchZoom = ");
             console.log(touchZoom);
 
-            feedbackCamera.translateScale(touchZoom / c_height);
+            feedbackCamera.translateScale(touchZoom / 500);
 
             touchDistance = newTouchDistance;
         }
@@ -413,93 +413,10 @@ function init() {
         }
     }
 
-
-
-
-    /* if (touchOn === true) {
-        // Drag to pan
-        eventjs.add(window, "drag", function(event, self) {
-            console.log(self.gesture, self.fingers, self.state, self.start, self.x, self.y, self.bbox);
-
-            if (self.fingers == 1 && self.state == "down") {
-                self.start.x = (self.start.x < 0) ? 0 : self.start.x;
-                self.start.y = (self.start.y < 0) ? 0 : self.start.y;
-
-                touchEvent = {clientX : self.start.x,
-                              clientY : self.start.y,
-                              button  : 1};
-                rightClick = false;
-
-                onMouseDown.apply(null, [touchEvent]);
-            }
-
-            else if (self.fingers == 1 && self.state == "move") {
-                // scrolling should be removed in index.html, but just in case:
-                eventjs.prevent(event);
-                mouseX = self.x;
-                mouseY = c_height - self.y;
-            }
-
-            else if (self.fingers == 1 && self.state == "up") {
-                mouseDown = false;
-                rightClick = false;
-            }
-        });
-        
-        // Rotate/zoom
-        eventjs.add(window, "gesture", function(event, self) {
-                    console.log(self.gesture, self.fingers, self.state, self.rotation, self.scale);
-
-                    if (self.fingers != 2) {
-                        return;
-                    }
-
-                    if (self.state == "down") {
-                        mouseDown = true;
-                    }
-
-                    else if (self.state == "rotate") {
-                        mouseDown = true;
-                        rightClick = true;
-                        cameraR0 = feedbackCamera.rotation.z;
-                        touchRotation = self.rotation;
-                    }
-
-                    else if (self.state == "scale") {
-                        // zoom should be removed in index.html, but just in case:
-                        eventjs.prevent(event);
-                        feedbackCamera.translateScale(self.rotation * inputSettings.zStep);
-                    }
-
-                    else if (self.state == "up") {
-                        mouseDown = false;
-                        rightClick = false;
-                    }
-                    });
-        
-        
-        // double-tap to open/close controls
-        eventjs.add(window, "dblclick", function(event, self) {
-                    window.guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
-                    if (self.x > (guiOffsets.left) && (c_height - self.y) < guiOffsets.bottom
-                        && self.x < guiOffsets.right) {
-                    return;
-                    }
-
-                    console.log(self.gesture, self.x, self.y);
-
-                    gui.closed = !gui.closed;
-
-                    });
-        
-        // eventually get rid of fps tracker on mobile
-    } */
-
-    // If on a mobile device, hide the GUI.
+    // If on a mobile device, hide the GUI & get rid of fps graph.
     if (touchOn == true) {
         gui.closed = true;
         document.getElementById("fps").style.display = "none";
-        document.getElementById("fps").style.visibility = "hidden";
     }
     
     n_f = 0;
