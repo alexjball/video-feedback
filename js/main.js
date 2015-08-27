@@ -449,6 +449,7 @@ function animate() {
                 cameraY0 = feedbackCamera.position.y;
 
                 // panning
+                transElementsI = feedbackCamera.matrixWorldInverse.elements
                 var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
                 / feedbackCamera.getScale();
                 var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height
