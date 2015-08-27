@@ -293,9 +293,9 @@ function init() {
         // Drag to pan
         document.addEventListener("touchstart", touchstart_handler, false);
         document.addEventListener("touchmove", touchmove_handler, false);
-        // document.addEventListener("touchend", touchend_handler, false);
+        document.addEventListener("touchend", touchend_handler, false);
         document.addEventListener("touchcancel", touchend_handler, false);
-        // document.addEventListener("touchleave", touchend_handler, false);
+        document.addEventListener("touchleave", touchend_handler, false);
 
         // Rotate & zoom
     }
@@ -303,12 +303,12 @@ function init() {
 
     function touchstart_handler(event) {
         console.log("touch start");
-        console.log(event.targetTouches);
 
         cameraR0 = feedbackCamera.rotation.z;
 
         if (event.targetTouches.length == 1) {
             mouseDown = true;
+            rightClick = false;
 
             mouseX0 = event.targetTouches[0].clientX;
             mouseX = mouseX0;
@@ -317,6 +317,9 @@ function init() {
 
             cameraX0 = feedbackCamera.position.x;
             cameraY0 = feedbackCamera.position.y;
+
+            console.log(mouseX);
+            console.log(mouseY);
         }
     }
 
@@ -325,17 +328,17 @@ function init() {
         event.preventDefault(); // prevents scrolling, drag-refresh, &c.
 
         if (event.targetTouches.length == 1) {
-            console.log(event.targetTouches[0]);
+            mouseX = event.targetTouches[0].clientX;
+            mouseY = c_height - event.targetTouches[0].clientY;
 
-            mouseX = event.clientX;
-            mouseY = c_height - event.clientY;
-
+            console.log(mouseX);
+            console.log(mouseY);
         }
     }
 
     function touchend_handler(event) {
-        console.log("touch end");
-        console.log(event.targetTouches);
+        console.log("touch end. length:");
+        console.log(event.targetTouches.length);
 
         if (event.targetTouches.length == 0) {
             // close shop
