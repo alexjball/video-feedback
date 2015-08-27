@@ -365,7 +365,6 @@ function init() {
 
             // rotation
             cameraR0 = feedbackCamera.rotation.z;
-            touchRotation = Math.atan((y2 - y1) / (x2 - x1));
         }
     }
 
@@ -390,14 +389,12 @@ function init() {
             // zoom
             newTouchDistance = Math.sqrt(Math.pow(x2 - x1, 2) +
                                              Math.pow(y2 - y1, 2));
-            var touchZoom = 1 - newTouchDistance / touchDistance;
-
-            console.log("touchZoom = ");
-            console.log(touchZoom);
-
+            touchZoom = 1 - newTouchDistance / touchDistance;
             feedbackCamera.translateScale(touchZoom);
-
             touchDistance = newTouchDistance;
+
+            // rotation
+            touchRotation = Math.atan((y2 - y1) / (x2 - x1));
         }
     }
 
