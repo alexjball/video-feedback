@@ -439,9 +439,7 @@ function animate() {
                 var transElementsI = feedbackCamera.matrixWorldInverse.elements;
 
                 // rotation
-                feedbackCamera.position.x = 0;
-                feedbackCamera.position.y = 0;
-                feedbackCamera.rotation.z = cameraR0 - touchRotation;
+                TV.rotation.z = touchRotation;
 
                 // panning
                 var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
