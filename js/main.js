@@ -118,16 +118,16 @@ function init() {
     // Renderer setup
     /////////////
 
-    // if ( Detector.webgl )
-    //  renderer = new THREE.WebGLRenderer( {antialias:true} , window.canvas);
-    // else
-    //  throw new Error("This piece of shit doesn't support WebGL");
-
     renderer = new THREE.WebGLRenderer( {
         antialias : false,
         stencil   : false,
         precision : "mediump",
         preserveDrawingBuffer:true} );
+
+    if (!renderer) {
+        document.getElementByType("body").innerHTML += "oh no webgl";
+    }
+
     renderer.setSize(c_width, c_height);
     renderer.sortObjects = false;
     renderer.autoClearColor = false;
@@ -268,6 +268,7 @@ function init() {
     window.touchDistance = 1;
     window.newTouchDistance = 0;
     window.touchZoom = 0;
+    window.touchRotationInit = 0;
     window.touchRotation = 0;
     window.guiOffsets = {};
     
@@ -365,6 +366,7 @@ function init() {
 
             // rotation
             cameraR0 = feedbackCamera.rotation.z;
+            touchRotationInit = Math.atan2((y2 - y1) / (x2 - x1));
         }
     }
 
@@ -395,7 +397,7 @@ function init() {
 
             // rotation
             rightClick = true;
-            touchRotation = Math.atan2((y2 - y1) / (x2 - x1));
+            touchRotation = Math.atan2((y2 - y1) / (x2 - x1)) - touchRotationInit;
         }
     }
 
