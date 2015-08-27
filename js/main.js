@@ -302,8 +302,18 @@ function init() {
         console.log("touch start");
         console.log(event.targetTouches);
 
+        cameraR0 = feedbackCamera.rotation.z;
+
         if (event.targetTouches.length == 1) {
-            console.log(event.targetTouches[0].clientX);
+            mouseDown = true;
+
+            mouseX0 = event.targetTouches[0].clientX;
+            mouseX = mouseX0;
+            mouseY0 = c_height - event.targetTouches[0].clientY;
+            mouseY = mouseY0;
+
+            cameraX0 = feedbackCamera.position.x;
+            cameraY0 = feedbackCamera.position.y;
         }
     }
 
@@ -313,9 +323,29 @@ function init() {
 
         if (event.targetTouches.length == 1) {
             console.log(event.targetTouches[0]);
+
+            mouseX = event.clientX;
+            mouseY = c_height - event.clientY;
+
         }
     }
 
+    function touchend_handler(event) {
+        console.log("touch end");
+        console.log(event.targetTouches);
+
+        if (event.targetTouches.length == 0) {
+            // close shop
+            mouseDown = false;
+        }
+        if (event.targetTouches.length == 1) {
+            // panning setup
+        }
+
+        if (event.targetTouches.length == 2) {
+            // zoom/rotate setup
+        }
+    }
 
 
 
