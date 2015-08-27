@@ -436,20 +436,18 @@ function animate() {
         // Right-click drag rotation
         if (rightClick == true) {
             if (touchOn == true) {
-                var transElementsI = feedbackCamera.matrixWorldInverse.elements;
-
                 // rotation
                 feedbackCamera.rotation.z = cameraR0 - touchRotation;
-                var transElementsI = feedbackCamera.matrixWorldInverse.elements;
+                /* var transElements = feedbackCamera.matrixWorld.elements;
                 feedbackCamera.position.x =
                     transElementsI[0] * cameraX0 + transElementsI[1] * cameraY0;
                 feedbackCamera.position.y =
                     transElementsI[4] * cameraX0 + transElementsI[5] * cameraY0;
                 cameraX0 = feedbackCamera.position.x;
-                cameraY0 = feedbackCamera.position.y;
+                cameraY0 = feedbackCamera.position.y; */
 
                 // panning
-                transElementsI = feedbackCamera.matrixWorldInverse.elements
+                var transElementsI = feedbackCamera.matrixWorldInverse.elements
                 var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
                 / feedbackCamera.getScale();
                 var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height
