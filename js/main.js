@@ -435,8 +435,8 @@ function animate() {
         // Right-click drag rotation
         if (rightClick == true) {
             if (touchOn == true) {
-                // rotation
-                feedbackCamera.rotate(touchRotation - touchRotationInit);
+                // rotation (touchRotation(Init) defined running CCW, hence the negative sign)
+                feedbackCamera.rotate(-1 * (touchRotation - touchRotationInit));
                 touchRotationInit = touchRotation;
 
                 // panning
