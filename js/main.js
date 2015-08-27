@@ -317,6 +317,7 @@ function init() {
             if (mouseX > (guiOffsets.left) && (c_height - mouseY) < guiOffsets.bottom
                 && mouseX < guiOffsets.right) {
                 mouseDown = false;
+                console.log("mousedown within gui");
                 return;
             }
 
