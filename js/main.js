@@ -377,12 +377,12 @@ function init() {
             // zoom
             var newTouchDistance = Math.sqrt(Math.pow(x2 - x1, 2) +
                                              Math.pow(y2 - y1, 2));
-            var touchZoom = newTouchDistance / touchDistance - 1;
+            var touchZoom = 1 - newTouchDistance / touchDistance;
 
             console.log("touchZoom = ");
             console.log(touchZoom);
 
-            feedbackCamera.translateScale(touchZoom / 1000);
+            feedbackCamera.translateScale(touchZoom / 40);
         }
     }
 
