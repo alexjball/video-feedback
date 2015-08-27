@@ -388,7 +388,7 @@ function init() {
 
             // rotation
             rightClick = true;
-            touchRotation = Math.atan2(y2 - y1, x2 - x1) - touchRotationInit;
+            touchRotation = Math.atan2(y2 - y1, x2 - x1);
         }
     }
 
@@ -437,7 +437,11 @@ function animate() {
         if (rightClick == true) {
             if (touchOn == true) {
                 // rotation
-                feedbackCamera.rotation.z = cameraR0 - touchRotation;
+                feedbackCamera.rotateOnAxis(new THREE.Vector3(0, 0, -1),
+                                            touchRotation - touchRotationInit);
+
+                touchRotationInit = touchRotation;
+                // feedbackCamera.rotation.z = cameraR0 - touchRotation;
 
                 // panning
                 var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
