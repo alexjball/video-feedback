@@ -293,8 +293,8 @@ function init() {
         // Drag to pan
         document.addEventListener("touchstart", touchstart_handler, false);
         document.addEventListener("touchmove", touchmove_handler, false);
-        document.addEventListener("touchend", touchend_handler, false);
-        // document.addEventListener("touchcancel", touchend_handler, false);
+        // document.addEventListener("touchend", touchend_handler, false);
+        document.addEventListener("touchcancel", touchend_handler, false);
         // document.addEventListener("touchleave", touchend_handler, false);
 
         // Rotate & zoom
