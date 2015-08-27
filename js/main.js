@@ -600,8 +600,15 @@ function keyboardHandler(evt) {
                 - inputSettings.scale * inputSettings.rotStep);
             break;
         case "D":
-            feedbackCamera.rotateOnAxis(new THREE.Vector3(0, 0, -1),
-                inputSettings.scale * inputSettings.rotStep);
+            // feedbackCamera.rotateOnAxis(new THREE.Vector3(0, 0, -1),
+                // inputSettings.scale * inputSettings.rotStep);
+            var x0 = feedbackCamera.position.x;
+            var y0 = feedbackCamera.position.y;
+            feedbackCamera.position.x = 0;
+            feedbackCamera.position.y = 0;
+            feedbackCamera.rotation.z -= inputSettings.rotStep;
+            feedbackCamera.position.x = Math.cos(inputSettings.rotStep) * x0 + Math.sin(inputSettings.rotStep) * y0;
+            feedbackCamera.position.y = -Math.sin(inputSettings.rotStep) * x0 + Math.cos(inputSettings.rotStep) * y0;
             break;
         case "W":
             feedbackCamera.translateScale(inputSettings.zStep);
