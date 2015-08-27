@@ -348,16 +348,6 @@ function init() {
             cameraX0 = feedbackCamera.position.x;
             cameraY0 = feedbackCamera.position.y;
 
-            // disable panning when started from within gui
-            /* guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
-
-            if (mouseX > (guiOffsets.left) && (c_height - mouseY) < guiOffsets.bottom
-                && mouseX < guiOffsets.right) {
-                mouseDown = false;
-                console.log("mousedown within gui");
-                return;
-            } */
-
             // allow pan updates
             mouseDown = true;
 
@@ -395,7 +385,7 @@ function init() {
             newTouchDistance = Math.sqrt(Math.pow(x2 - x1, 2) +
                                              Math.pow(y2 - y1, 2));
             touchZoom = 1 - newTouchDistance / touchDistance;
-            feedbackCamera.translateScale(touchZoom);
+            feedbackCamera.translateScale(-1 * touchZoom);
             touchDistance = newTouchDistance;
 
             // rotation
@@ -449,6 +439,8 @@ function init() {
 
 function animate() {
     if (mouseDown) {
+        // redo control flow here, it's terrible omg
+
         // Right-click drag rotation
         if (rightClick == true) {
             if (touchOn == true) {
@@ -479,6 +471,7 @@ function animate() {
         }
 
         else {
+            // only pan
             var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
                 / feedbackCamera.getScale();
             var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height
