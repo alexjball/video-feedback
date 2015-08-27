@@ -437,11 +437,8 @@ function animate() {
         if (rightClick == true) {
             if (touchOn == true) {
                 // rotation
-                feedbackCamera.rotateOnAxis(new THREE.Vector3(0, 0, -1),
-                                            touchRotation - touchRotationInit);
-
-                touchRotationInit = touchRotation;
                 feedbackCamera.rotation.z = cameraR0 - (touchRotation - touchRotationInit);
+                touchRotationInit = touchRotation;
 
                 // panning
                 var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
