@@ -331,7 +331,7 @@ function init() {
 
         // zoom/rotate
         if (event.targetTouches.length == 2) {
-            mouseDown = true;
+            mouseDown = false;
 
             var x1 = event.targetTouches[0].clientX;
             var x2 = event.targetTouches[1].clientX;
@@ -345,6 +345,8 @@ function init() {
             mouseY = mouseY0;
             cameraX0 = feedbackCamera.position.x;
             cameraY0 = feedbackCamera.position.y;
+
+            mouseDown = true;
 
             // zoom
             touchDistance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
