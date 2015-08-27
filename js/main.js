@@ -439,9 +439,9 @@ function animate() {
                 // rotation
                 feedbackCamera.rotation.z = cameraR0 - touchRotation;
                 feedbackCamera.position.x =
-                    Math.cos(touchRotation) * cameraX0 + Math.sin(touchRotation) * cameraY0;
+                    Math.cos(touchRotation) * cameraX0 - Math.sin(touchRotation) * cameraY0;
                 feedbackCamera.position.y =
-                    -Math.sin(touchRotation) * cameraX0 + Math.cos(touchRotation) * cameraY0;
+                    Math.sin(touchRotation) * cameraX0 + Math.cos(touchRotation) * cameraY0;
                 cameraX0 = feedbackCamera.position.x;
                 cameraY0 = feedbackCamera.position.y;
 
