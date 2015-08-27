@@ -312,7 +312,8 @@ function init() {
             mouseY0 = c_height - event.targetTouches[0].clientY;
             mouseY = mouseY0;
 
-            window.guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
+            guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
+
             if (mouseX > (guiOffsets.left) && (c_height - mouseY) < guiOffsets.bottom
                 && mouseX < guiOffsets.right) {
                 mouseDown = false;
