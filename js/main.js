@@ -498,6 +498,7 @@ function init() {
     // If on a mobile device, hide the GUI.
     if (touchOn == true) {
         gui.closed = true;
+        document.getElementById("fps").style.display = "none";
     }
     
     n_f = 0;
