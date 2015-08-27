@@ -382,7 +382,7 @@ function init() {
             console.log("touchZoom = ");
             console.log(touchZoom);
 
-            feedbackCamera.translateScale(touchZoom / -1);
+            feedbackCamera.translateScale(touchZoom / 5);
         }
     }
 
@@ -397,8 +397,8 @@ function init() {
         if (event.targetTouches.length == 1) {
             mouseDown = true;
 
-            mouseX = event.targetTouches[0].clientX;
-            mouseY = event.targetTouches[0].clientY;
+            mouseX0 = event.targetTouches[0].clientX;
+            mouseY0 = event.targetTouches[0].clientY;
         }
 
         if (event.targetTouches.length == 2) {
