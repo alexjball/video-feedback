@@ -297,7 +297,7 @@ function init() {
     }
 
 
-    touchstart_handler = function(event) {
+    function touchstart_handler(event) {
         event.preventDefault();
         console.log("touch start");
         console.log(event.targetTouches);
