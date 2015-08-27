@@ -404,7 +404,9 @@ function init() {
             mouseDown = true;
 
             mouseX0 = event.targetTouches[0].clientX;
-            mouseY0 = event.targetTouches[0].clientY;
+            mouseY0 = c_height - event.targetTouches[0].clientY;
+            cameraX0 = feedbackCamera.position.x;
+            cameraY0 = feedbackCamera.position.y;
         }
 
         if (event.targetTouches.length == 2) {
