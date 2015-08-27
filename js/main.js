@@ -356,15 +356,11 @@ function init() {
     }
 
     function touchmove_handler(event) {
-        console.log("touch move");
         event.preventDefault(); // prevents scrolling, drag-refresh, &c.
 
         if (event.targetTouches.length == 1) {
             mouseX = event.targetTouches[0].clientX;
             mouseY = c_height - event.targetTouches[0].clientY;
-
-            console.log(mouseX);
-            console.log(mouseY);
         }
 
         if (event.targetTouches.length == 2) {
@@ -403,7 +399,9 @@ function init() {
             mouseDown = true;
 
             mouseX0 = event.targetTouches[0].clientX;
+            mouseX = mouseX0;
             mouseY0 = c_height - event.targetTouches[0].clientY;
+            mouseY = mouseY0;
             cameraX0 = feedbackCamera.position.x;
             cameraY0 = feedbackCamera.position.y;
         }
