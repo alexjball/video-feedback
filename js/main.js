@@ -394,6 +394,7 @@ function init() {
             touchDistance = newTouchDistance;
 
             // rotation
+            rightClick = true;
             touchRotation = Math.atan((y2 - y1) / (x2 - x1));
         }
     }
