@@ -437,14 +437,11 @@ function animate() {
         if (rightClick == true) {
             if (touchOn == true) {
                 // rotation
-                feedbackCamera.position.x = 0;
-                feedbackCamera.position.y = 0;
                 feedbackCamera.rotation.z = cameraR0 - touchRotation;
-                var transElements = feedbackCamera.matrixWorld.elements;
                 feedbackCamera.position.x =
-                    transElementsI[0] * cameraX0 + transElementsI[1] * cameraY0;
+                    Math.cos(touchRotation) * cameraX0 - Math.sin(touchRotation) * cameraY0;
                 feedbackCamera.position.y =
-                    transElementsI[4] * cameraX0 + transElementsI[5] * cameraY0;
+                    Math.cos(touchRotation) * cameraX0 + Math.sin(touchRotation) * cameraY0;
                 cameraX0 = feedbackCamera.position.x;
                 cameraY0 = feedbackCamera.position.y;
 
