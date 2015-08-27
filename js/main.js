@@ -309,6 +309,7 @@ function init() {
 
     function touchmove_handler(event) {
         console.log("touch move");
+        event.preventDefault(); // prevents scrolling, drag-refresh, &c.
 
         if (event.targetTouches.length == 1) {
             console.log(event.targetTouches[0]);
