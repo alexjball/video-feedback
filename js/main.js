@@ -307,13 +307,19 @@ function init() {
         cameraR0 = feedbackCamera.rotation.z;
 
         if (event.targetTouches.length == 1) {
-            mouseDown = true;
-            rightClick = false;
-
             mouseX0 = event.targetTouches[0].clientX;
             mouseX = mouseX0;
             mouseY0 = c_height - event.targetTouches[0].clientY;
             mouseY = mouseY0;
+
+            window.guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
+            if (mouseX > (guiOffsets.left - 4) && (c_height - mouseY) < guiOffsets.bottom
+                && mouseX < guiOffsets.right) {
+                return;
+            }
+
+            mouseDown = true;
+            rightClick = false;
 
             cameraX0 = feedbackCamera.position.x;
             cameraY0 = feedbackCamera.position.y;
@@ -345,7 +351,10 @@ function init() {
             mouseDown = false;
         }
         if (event.targetTouches.length == 1) {
-            // panning setup
+            mouseDown = true;
+
+            mouseX = event.targetTouches[0].clientX;
+            mouseY = event.targetTouches[0].clientY;
         }
 
         if (event.targetTouches.length == 2) {
@@ -634,17 +643,18 @@ onMouseDown = function(event) {
     //   dat.gui, which seems more difficult than this. retrieving guiOffsets
     //   probably doesn't need to happen every mousedown, but it also doesn't 
     //   introduce any problems/lag
+
+    mouseDown = true;
+    mouseX = event.clientX;
+    mouseX0 = mouseX;
+    cameraX0 = feedbackCamera.position.x;
+
     window.guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
     if (mouseX > (guiOffsets.left - 4) && (c_height - mouseY) < guiOffsets.bottom
         && mouseX < guiOffsets.right) {
         return;
     }
-    
-    mouseDown = true;
-    mouseX = event.clientX;
-    mouseX0 = mouseX;
-    cameraX0 = feedbackCamera.position.x;
-    
+
     if (event.button == 2) { // probably not very compatible
         rightClick = true;
         cameraR0 = feedbackCamera.rotation.z;
