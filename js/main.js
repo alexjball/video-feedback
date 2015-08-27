@@ -334,6 +334,8 @@ function init() {
 
         // zoom/rotate
         if (event.targetTouches.length == 2) {
+            mouseDown = false;
+
             var x1 = event.targetTouches[0].clientX;
             var x2 = event.targetTouches[1].clientX;
             var y1 = event.targetTouches[0].clientY;
@@ -365,6 +367,8 @@ function init() {
         }
 
         if (event.targetTouches.length == 2) {
+            mouseDown = false;
+
             var x1 = event.targetTouches[0].clientX;
             var x2 = event.targetTouches[1].clientX;
             var y1 = event.targetTouches[0].clientY;
