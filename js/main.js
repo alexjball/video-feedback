@@ -366,12 +366,7 @@ function init() {
 
             // rotation
             cameraR0 = feedbackCamera.rotation.z;
-            if (x2 != x1) {
-                touchRotationInit = Math.atan2(y2 - y1, x2 - x1);
-            }
-            else {
-                touchRotationInit = Math.PI;
-            }
+            touchRotationInit = Math.atan2(y2 - y1, x2 - x1);
 
             console.log("touchRotationInit");
             console.log(touchRotationInit);
@@ -405,12 +400,7 @@ function init() {
 
             // rotation
             rightClick = true;
-            if (x2 != x1) {
-                touchRotation = Math.atan2(y2 - y1, x2 - x1) - touchRotationInit;
-            }
-            else {
-                touchRotation = Math.PI - touchRotationInit;
-            }
+            touchRotation = Math.atan2(y2 - y1, x2 - x1) - touchRotationInit;
 
             console.log("touchRotation");
             console.log(touchRotation);
