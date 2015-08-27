@@ -284,9 +284,28 @@ function init() {
     
     // Disable context menu
     document.addEventListener("contextmenu", function(e) { e.preventDefault() }, false);
-    
+
+
+
+
     // Touch input & handlers. Disable scrolling & zooming in here.
     if (touchOn === true) {
+        // Drag to pan
+        document.addEventListener("touchstart", touchstart_handler, false);
+        touchstart_handler = function(event) {
+            event.preventDefault();
+            console.log("touch start");
+            console.log(event.targetTouches);
+        }
+
+        // Rotate & zoom
+    }
+
+
+
+
+
+    /* if (touchOn === true) {
         // Drag to pan
         eventjs.add(window, "drag", function(event, self) {
             console.log(self.gesture, self.fingers, self.state, self.start, self.x, self.y, self.bbox);
@@ -363,6 +382,11 @@ function init() {
                     });
         
         // eventually get rid of fps tracker on mobile
+    } */
+
+    // If on a mobile device, hide the GUI.
+    if (touchOn == true) {
+        gui.closed = true;
     }
     
     n_f = 0;
