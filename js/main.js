@@ -385,7 +385,7 @@ function init() {
             console.log("touchZoom = ");
             console.log(touchZoom);
 
-            feedbackCamera.translateScale(touchZoom * feedbackCamera.getScale() / c_height * c_width);
+            feedbackCamera.translateScale(touchZoom / c_height / feedbackCamera.getScale());
 
             touchDistance = newTouchDistance;
         }
