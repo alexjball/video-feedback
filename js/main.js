@@ -88,7 +88,7 @@ function init() {
     // render cycle. Also, THREE.PlaneBufferGeometry is apparently a thing.
     var TVGeometry = new THREE.PlaneBufferGeometry(aspect, 1);
     TVMaterial     = new THREE.MeshBasicMaterial({map : feedbackTarget[0]});
-    var TV         = new THREE.Mesh(TVGeometry, TVMaterial);
+    TV         = new THREE.Mesh(TVGeometry, TVMaterial);
     TV.position.set(0, 0, 0);
 
     // The renderer is set to render objects in the order in which they were
