@@ -461,10 +461,9 @@ function animate() {
             else {
                 // feedbackCamera.rotation.z = cameraR0 + 2 * Math.PI *
                     // (mouseX - mouseX0) / c_width / feedbackCamera.getScale();
-
                 var x0 = feedbackCamera.position.x;
                 var y0 = feedbackCamera.position.y;
-                var angle = (mouseX - mouseX0) / c_width / feedbackCamera.getScale();
+                var angle = -(mouseX - mouseX0) / c_width / feedbackCamera.getScale();
                 feedbackCamera.position.x = 0;
                 feedbackCamera.position.y = 0;
                 feedbackCamera.rotation.z -= angle;
