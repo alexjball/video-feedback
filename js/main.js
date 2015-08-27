@@ -292,13 +292,15 @@ function init() {
     if (touchOn === true) {
         // Drag to pan
         document.addEventListener("touchstart", touchstart_handler, false);
-        touchstart_handler = function(event) {
-            event.preventDefault();
-            console.log("touch start");
-            console.log(event.targetTouches);
-        }
 
         // Rotate & zoom
+    }
+
+
+    touchstart_handler = function(event) {
+        event.preventDefault();
+        console.log("touch start");
+        console.log(event.targetTouches);
     }
 
 
