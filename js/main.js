@@ -437,7 +437,13 @@ function animate() {
         if (rightClick == true) {
             if (touchOn == true) {
                 // rotation
+                var x0 = feedbackCamera.position.x;
+                var y0 = feedbackCamera.position.y;
+                feedbackCamera.position.x = 0;
+                feedbackCamera.position.y = 0;
                 feedbackCamera.rotation.z = cameraR0 - touchRotation;
+                feedbackCamera.position.x = Math.cos(touchRotation) * x0 + Math.sin(touchRotation) * y0;
+                feedbackCamera.position.y = -Math.sin(touchRotation) * x0 + Math.cos(touchRotation) * y0;
 
                 // panning
                 var transElementsI = feedbackCamera.matrixWorldInverse.elements
