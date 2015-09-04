@@ -16,7 +16,7 @@ ColorShader = {
 		"tDiffuse"     : { type: "t", value: null },
 		"gain"    : { type: "f", value: 0.5 },
 		"invertColor" : { type: "i", value: 0 },
-        "colorStep" : { type: "f", value: 0.5 }
+        "colorCycle" : { type: "f", value: 0.5 }
 
 	},
 
@@ -38,7 +38,7 @@ ColorShader = {
 		"uniform sampler2D tDiffuse;",
 		"uniform float gain;",
 		"uniform int invertColor;",
-        "uniform float colorStep;",
+        "uniform float colorCycle;",
 		
 		"varying vec2 vUv;",
 
@@ -79,11 +79,11 @@ ColorShader = {
         "}",
         
         // LN: added color cycle algo
-        // right now colorStep is attenuated by a factor of 4 (using 1.57 ~ pi/2 instead of 2pi) but it should probably depend on the number of visible "layers" instead. currently it cycles through three rainbows on refresh
-        // colorStep range: [0, 1]
-            "if (colorStep > 0.0) {",
-                     "float Q1 = sin(colorStep * 1.57) / 1.73;",
-                     "float Q2 = (1.0 - cos(colorStep * 1.57)) / 3.0;",
+        // right now colorCycle is attenuated by a factor of 4 (using 1.57 ~ pi/2 instead of 2pi) but it should probably depend on the number of visible "layers" instead. currently it cycles through three rainbows on refresh
+        // colorCycle range: [0, 1]
+            "if (colorCycle > 0.0) {",
+                     "float Q1 = sin(colorCycle * 1.57) / 1.73;",
+                     "float Q2 = (1.0 - cos(colorCycle * 1.57)) / 3.0;",
                      "float r1 = Q2 * (color.y - color.x - color.x + color.z) - Q1 * (color.z - color.y) + color.x;",
                      "float z  = Q2 * (color.z - color.y - color.x + color.z) + Q1 * (color.y - color.x);",
                      "color.y += z + (color.x - r1);",
