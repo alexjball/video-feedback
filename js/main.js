@@ -46,7 +46,16 @@ function init() {
     toolbar.add("saveInputs", "Save Inputs", "button",
                 function(){ inputs.saveToList(); });
     toolbar.add("cycleInputs", "Cycle Inputs", "button",
-                function() { cycleInputs(); });
+                function() {
+                document.getElementById("mirrorX").checked = true;
+                inputs.mirrorX = true;
+                cycleInputs(); });
+    toolbar.add("stopCycle", "Stop Cycle", "button", function() {
+                clearInterval(cycleHandler);
+                inputList.shift();
+                inputIndex = 0;
+                });
+    toolbar.add("beatLength", "Beat length", "range", [500, 10, 2000]);
     toolbar.add("colorCycle", "Color Cycle", "range");
     toolbar.add("gain", "Gain", "range");
     toolbar.add("borderWidth", "Border Width", "range", [0, 0.001, 0.1]);
@@ -64,6 +73,14 @@ function init() {
     toolbar.add("saveButton", "Open Image", "button",
                 function() {
                 window.open(document.getElementsByTagName("canvas")[0].toDataURL("image/png"));
+                });
+
+    toolbar.add("nightSetting", "Night", "button", function() {
+                    inputs.backgroundColor = "#000000";
+                    inputs.borderColor = "#DDDDDF";
+                    inputs.borderWidth = 0.03;
+                    inputs.colorCycle = 0;
+                    inputs.gain = 0.05;
                 });
 
     ////////////
@@ -228,17 +245,18 @@ function init() {
     //////////////
 
     window.inputIndex = 0;
+    window.cycleHandler = 0;
 
     window.nextInputEvent = new CustomEvent("slideFinished");
     document.addEventListener("slideFinished", function(event) {
 
                               if (inputIndex < inputList.length - 1) {
-                              cycleInputs();
+                                cycleHandler = cycleInputs();
                               }
 
                               else {
-                              inputIndex = 0;
-                              console.log("done cycling inputs.");
+                                inputIndex = 0;
+                                cycleInputs();
                               }
 
                               }, false);
@@ -269,7 +287,6 @@ function init() {
     window.touchZoom = 0;
     window.touchRotationInit = 0;
     window.touchRotation = 0;
-    window.guiOffsets = {};
     
     document.addEventListener("mousedown", onMouseDown, false);
     document.addEventListener("mousemove", function(event) {
@@ -430,28 +447,25 @@ function shuffle(array) {
 
 
 // cycle through inputList
-function cycleInputs(steps, timeout) {
+function cycleInputs() {
     // add break on mouse events
     // ...
 
-    if (inputIndex == 0 && inputList[0] != inputList[inputList.length - 1]) {
-        // return to starting point
-        // inputList.push(inputList[0]);
-
+    if (inputIndex == 0) {
         // shuffle inputList
-        shuffle(inputList);
+        inputList = shuffle(inputList);
+
+        // start from screen
+        var tempInput = new Input(inputs);
+        inputList.unshift(tempInput);
     }
 
     var currentInput = inputList[inputIndex];
     var nextInput = inputList[inputIndex + 1];
     inputIndex++;
 
-    if (!steps) {
-        var steps = 400;
-    }
-    if (!timeout) {
-        var timeout = 20;
-    }
+    var steps = Math.round(inputs.beatLength / 10);
+    var timeout = 10;
 
     var repeat, loopID;
     var i = 1;
@@ -478,6 +492,13 @@ function cycleInputs(steps, timeout) {
     };
 
     var loopID = setInterval(repeat, timeout, currentInput, nextInput);
+
+    if (inputIndex == inputList.length - 1) {
+        inputList.shift();
+        inputIndex--;
+    }
+
+    return loopID;
 }
 
 

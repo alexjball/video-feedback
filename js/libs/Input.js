@@ -10,10 +10,11 @@ window.Input = function(inputObj) {
         this.invertColor = false;
         this.farOut = false;
 
+        this.beatLength = 1000;
         this.colorCycle = 0.5;
         this.gain = 0.5;
         this.borderWidth = 0.05;
-        this.delay = 2;
+        this.delay = 5;
 
         this.backgroundColor = "#70b2c5";
         this.borderColor = "#000000";

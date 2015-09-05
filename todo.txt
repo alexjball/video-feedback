@@ -2,7 +2,7 @@ TODO:
 
 - refactor/clean up
     - toolbar
-    - input handler, setter/getter
+    - input handler, setter/getter/comparison/copyload
     - cycler
 - kaleidoscope/pie slice/snowflake mirroring
 - push updates to toolbar
