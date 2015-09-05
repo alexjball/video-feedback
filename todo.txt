@@ -1,13 +1,25 @@
 TODO:
 
+- refactor/clean up
+    - toolbar
+    - input handler, setter/getter/comparison/copyload
+    - cycler
+- kaleidoscope/pie slice/snowflake mirroring
+- push updates to toolbar
+- kill cycling
+- smooth transition when adding mouse/touch/keyboard input while cycling
+- function that calculates which input set is closest
+
+
+
 - add random jitter (spatial + background color)
 - drift mode between (preset) cool-looking states
 - overlay for orientation
 - auto-cycle seed colors
-- add touch manipulation
 - time reverse
 - screenshots/videos -> online image hosting
 - "poke me"/safe mode
+- change delay for updating
 - local transforms -- in mobile, a user fruit-ninja slices across the screen 
     defining a line segment. The pixels in the vicinity of the line segment are 
     inverted or mirrored or whatever, and that effect fades out after some 
@@ -28,49 +40,4 @@ TODO:
 		http://www.vasulka.org/archive/Artists1/Crutchfield,Jim/Space-TimeDynamic.pdf
 		http://www.gla.ac.uk/schools/physics/staff/johannescourtial/
 		http://eprints.gla.ac.uk/27/1/414864.pdf
-
----
-
-Touch event handling:
-https://github.com/hanifbbz/eventjs
-- ntbcw Events.js
-
----
-
-state cycling, roughly:
-function saveState()
-	feedbackCamera: xpos (i/f), ypos (i/f), zoom (i/f), rotation (i/f)
-	bool transforms: x invert, y invert, x mirror, y mirror, color invert
-	other transforms: 
-		color cycle [0..1] (i/f)
-		gain [0..1] (i/f)
-		border width [0..0.5] (i/f)
-	--> 'stateObj'
-
-set period = N -- a.u. now, should make actual milliseconds when framerate can be stabilized
-
-set stage counter 1..N
-
-assert bool transforms are set to correct state
-
-unbind key/mouse/touch events, but keep save function
-
-toggle gui input (need something to hold this)
-
-function update()
-	move/zoom/rotate camera dP
-	rAF()
-
----
-
 - bool transforms shouldn't change over "state cycling"
-- ignore input from gui. maybe just use an altogether different update() function, but we'd have to add gui interaction later for poke mode
-
-
-
-
-
-
-
-
-

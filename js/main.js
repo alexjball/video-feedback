@@ -10,10 +10,78 @@ function init() {
     // Canvas initalization
     ////////////
 
-    // window.canvas   = document.getElementById("canvas");
-    window.c_width  = window.innerWidth;
+    window.interestList = JSON.parse('[{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":1.125,"y":0,"rot":0,"scale":0.8500000000000001},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":1.0750000000000002,"y":0,"rot":0.03490658503988659,"scale":0.775},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.22969924812030057,"y":0.2178757118098539,"rot":0.5235987755982988,"scale":0.8750000000000001},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.2567492951127818,"y":0.11791284971527607,"rot":0.5235987755982988,"scale":0.9000000000000001},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.2850753185045946,"y":0.337439135099447,"rot":0.9773843811168251,"scale":0.9000000000000001},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.3543191852853677,"y":0.17695104841615378,"rot":1.2915436464758048,"scale":0.9000000000000001},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.6741116966631931,"y":0.049109365366777985,"rot":1.6406094968746712,"scale":0.7},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.5295287954446296,"y":0.1261266461132166,"rot":2.0943951023931975,"scale":0.725},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.8432387167997415,"y":0.19935519648274588,"rot":2.3736477827122906,"scale":0.75},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.43534397995763624,"y":0.4419895119073559,"rot":2.3736477827122906,"scale":0.75},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.4990160912704009,"y":0.10230147031290185,"rot":2.722713633111157,"scale":0.75},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":1.125,"y":0,"rot":0,"scale":0.8500000000000001}]');
+    inputList = interestList;
+
+
+    // Create screen instance
+    window.inputs = new Input(); // default parameter values
+    window.toolbar = new Toolbar();
+    window.userInputOn = true;
+    window.updateCameraOn = true;
+
+    window.c_width = window.innerWidth - toolbar.girth;
     window.c_height = window.innerHeight;
     window.aspect = c_width / c_height;
+
+    toolbar.element.style.height = "100%";
+    toolbar.element.style.width = toolbar.girth.toString() + "px";
+    toolbar.element.style.overflow = "auto";
+    toolbar.rect = toolbar.element.getBoundingClientRect();
+
+
+    toolbar.add("instructionToggle", "Instructions", "button",
+                function() {
+                document.getElementById("instructionOverlay").style.display = "block";
+                document.getElementById("instructionPopup").style.display = "block";
+                userInputOn = false;
+                });
+
+    // toolbar.addInstruction("text");
+    toolbar.addInstruction("Pan: IJKL/drag");
+    toolbar.addInstruction("Rotate: AD/right-drag");
+    toolbar.addInstruction("Zoom: WS/scroll");
+
+    // toolbar.add("id", "name", "type");
+    toolbar.add("saveInputs", "Save Inputs", "button",
+                function(){ inputs.saveToList(); });
+    toolbar.add("cycleInputs", "Cycle Inputs", "button",
+                function() {
+                document.getElementById("mirrorX").checked = true;
+                inputs.mirrorX = true;
+                cycleInputs(); });
+    toolbar.add("stopCycle", "Stop Cycle", "button", function() {
+                clearInterval(cycleHandler);
+                inputList.shift();
+                inputIndex = 0;
+                });
+    toolbar.add("beatLength", "Beat length", "range", [500, 10, 2000]);
+    toolbar.add("colorCycle", "Color Cycle", "range");
+    toolbar.add("gain", "Gain", "range");
+    toolbar.add("borderWidth", "Border Width", "range", [0, 0.001, 0.1]);
+    toolbar.add("delay", "Delay", "range", [1, 1, 10]);
+    toolbar.add("invertX", "Invert X", "checkbox");
+    toolbar.add("invertY", "Invert Y", "checkbox");
+    toolbar.add("mirrorX", "Mirror X", "checkbox");
+    toolbar.add("mirrorY", "Mirror Y", "checkbox");
+    toolbar.add("diagNE", "Mirror NE", "checkbox");
+    toolbar.add("diagNW", "Mirror NW", "checkbox");
+    toolbar.add("invertColor", "Invert Color", "checkbox");
+    toolbar.add("farOut", "Far Out", "checkbox");
+    toolbar.add("borderColor", "Border Color", "color");
+    toolbar.add("backgroundColor", "BG Color", "color");
+    toolbar.add("saveButton", "Open Image", "button",
+                function() {
+                window.open(document.getElementsByTagName("canvas")[0].toDataURL("image/png"));
+                });
+
+    toolbar.add("nightSetting", "Night", "button", function() {
+                    inputs.backgroundColor = "#000000";
+                    inputs.borderColor = "#DDDDDF";
+                    inputs.borderWidth = 0.03;
+                    inputs.colorCycle = 0;
+                    inputs.gain = 0.05;
+                });
 
     ////////////
     // Constants
@@ -25,9 +93,7 @@ function init() {
 
     // Number of parallel feedback loops. This allows us to increase the time
     // between renders but retain smooth movement.
-    window.n_loops = 1;
-
-    window.view_angle = 45;
+    window.n_loops = Math.ceil(inputs.delay);
 
     window.near = .1;
     window.far = 100; // TODO: set this by calculating max distance given scale factor range.
@@ -35,10 +101,10 @@ function init() {
     // All render targets should be the same.
     var createRenderTarget = function () {
         return new THREE.WebGLRenderTarget(c_width, c_width, 
-            {   minFilter       : THREE.LinearFilter, 
-                magFilter       : THREE.LinearFilter, 
+            {   minFilter       : THREE.LinearFilter,
+                magFilter       : THREE.LinearFilter,
                 format          : THREE.RGBFormat,
-                generateMipmaps : true, /**/
+                generateMipmaps : false,
                 depthBuffer     : true,
                 stencilBuffer   : false
              });
@@ -59,7 +125,8 @@ function init() {
     var feedbackScene = new THREE.Scene();
 
     // Initialize all render targets.
-    feedbackTarget = new Array(n_loops);
+    feedbackTarget = new Array(12); // #hardcode
+
     for (var i = 0; i < feedbackTarget.length; i++) {
         feedbackTarget[i] = createRenderTarget();
     }
@@ -79,16 +146,18 @@ function init() {
     var borderGeometry = new THREE.PlaneBufferGeometry(aspect,// * (1.0 + 2 * borderProp),
         1.0);// * (1.0 + 2.0 * borderProp));
     borderMaterial = new THREE.MeshBasicMaterial({color : 0x000000});
-    var border = new THREE.Mesh(borderGeometry, borderMaterial);
-    border.scale.set(1.05, 1 + 0.05 * aspect, 1);
-
+    window.border = new THREE.Mesh(borderGeometry, borderMaterial);
+    border.setScale = function(borderWidth) {
+        border.scale.set(1 + borderWidth, 1 + inputs.borderWidth * aspect, 1);
+    }
+    border.setScale(inputs.borderWidth);
     border.position.set(0, 0, -.5);
 
     // Create the TV. The textured mapped by the material is changed each
     // render cycle. Also, THREE.PlaneBufferGeometry is apparently a thing.
     var TVGeometry = new THREE.PlaneBufferGeometry(aspect, 1);
     TVMaterial     = new THREE.MeshBasicMaterial({map : feedbackTarget[0]});
-    var TV         = new THREE.Mesh(TVGeometry, TVMaterial);
+    TV         = new THREE.Mesh(TVGeometry, TVMaterial);
     TV.position.set(0, 0, 0);
 
     // The renderer is set to render objects in the order in which they were
@@ -99,7 +168,7 @@ function init() {
 
     feedbackCamera = createScalableOrthoCam(aspect, minimumScaleFactor, maximumScaleFactor);
     feedbackCamera.setScale(.8); // initial relative size of TV
-    feedbackCamera.position.z = 5; //.5 / Math.tan((view_angle / 2.0) * Math.PI / 180.0);
+    feedbackCamera.position.z = 5;
     feedbackScene.add(feedbackCamera);
     feedbackCamera.lookAt(new THREE.Vector3(0, 0, 0));
 
@@ -118,16 +187,18 @@ function init() {
     // Renderer setup
     /////////////
 
-    // if ( Detector.webgl )
-    //  renderer = new THREE.WebGLRenderer( {antialias:true} , window.canvas);
-    // else
-    //  throw new Error("This piece of shit doesn't support WebGL");
-
     renderer = new THREE.WebGLRenderer( {
-        antialias : false,
+        antialias : true,
         stencil   : false,
         precision : "mediump",
-        preserveDrawingBuffer:true} );
+        preserveDrawingBuffer : true,
+        autoClear : false
+    } );
+
+    if (!renderer) {
+        document.getElementByType("body").innerHTML += "oh no webgl";
+    }
+
     renderer.setSize(c_width, c_height);
     renderer.sortObjects = false;
     renderer.autoClearColor = false;
@@ -168,85 +239,28 @@ function init() {
 
     i_loop = 0;
 
-    //////////////
-    // variable control setup
-    //////////////
 
-    var getColorSetter = function(color) {
-        return function(value) {
-                  color.setHex(value.replace( '#','0x' ));
-        }
-    }
-
-    var getUnifSetter = function(obj) {
-        return function(value) {
-            if (value)
-                obj['value'] = 1;
-            else
-                obj['value'] = 0;
-        }
-    };
-
-    window.gui = new dat.GUI();
-
-    gui.add({a : false}, 'a').name('Invert X').onChange(getUnifSetter(symPass.uniforms.invertX));
-    gui.add({a : false}, 'a').name('Invert Y').onChange(getUnifSetter(symPass.uniforms.invertY));
-    gui.add({a : false}, 'a').name('Mirror X').onChange(getUnifSetter(symPass.uniforms.mirrorX));
-    gui.add({a : false}, 'a').name('Mirror Y').onChange(getUnifSetter(symPass.uniforms.mirrorY));
-    gui.add({a : false}, 'a').name('NE-Diag').onChange(getUnifSetter(symPass.uniforms.diagNE));
-    gui.add({a : false}, 'a').name('NW-Diag').onChange(getUnifSetter(symPass.uniforms.diagNW));
-    gui.add({a : false}, 'a').name('Invert Color').onChange(getUnifSetter(colorPass.uniforms.invertColor));
-    gui.add(colorPass.uniforms.colorStep, 'value', 0.0, 1.0).name('Color Cycle');
-    gui.add(colorPass.uniforms.gain, 'value', 0.0, 1.0).name('Gain');
-    // not sure why p needs to be divided by 2 here but doesn't above... #augh
-    gui.add({'Border Width' : 0.1}, 'Border Width', 0.0, 0.5).onChange(
-        function(p) { border.scale.set(1 + p / 2, 1 + p * aspect / 2, 1); });
-    gui.addColor({'Border Color' : '#' + borderMaterial.color.getHexString()}, 
-        'Border Color').onChange(getColorSetter(borderMaterial.color));
-    gui.addColor({'Background Color' : '#' + bgMaterial.color.getHexString()}, 
-        'Background Color').onChange(getColorSetter(bgMaterial.color));//renderPass.clearColor));
-    gui.add({'Far Out, Duude' : false}, 'Far Out, Duude').onChange(
-        function(shouldPass) {
-            var passes = feedbackProcessor.passes;
-            if (shouldPass && passes[passes.length - 1] !== RGBShiftPass) {
-                passes.push(RGBShiftPass);
-            } else if (!shouldPass && passes[passes.length - 1] === RGBShiftPass) {
-                passes.pop();
-            }
-        });
-    // Save as .png image using js/libs/FileSaver.js
-    var saveObj = {a : function() {
-        var canvas = document.getElementsByTagName("canvas")[0];
-        
-        if (canvas.toBlob != undefined) {
-            canvas.toBlob(function(blob) { saveAs(blob, "image.png"); });
-            return;
-        }
-        
-        alert("Save image with FileSaver.js failed. Opening image in new window.");
-        
-        // see http://stackoverflow.com/questions/12796513/html5-canvas-to-png-file for the following
-        
-        var dt = canvas.toDataURL('image/png');
-        
-        // Force download:
-        /* Change MIME type to trick the browser to downlaod the file instead of displaying it */
-        //dt = dt.replace(/^data:image\/[^;]*/, 'data:application/octet-stream');
-        /* In addition to <a>'s "download" attribute, you can define HTTP-style headers */
-        //dt = dt.replace(/^data:application\/octet-stream/, 'data:application/octet-stream;headers=Content-Disposition%3A%20attachment%3B%20filename=Canvas.png');
-        
-        // shouldn't need to call window.close(); Chrome at least closes the tab automatically
-        window.open(dt);
-        
-        // TODO: make it download as "canvas.png" or something instead of a file w/o extension
-        
-    }};
-    gui.add(saveObj, 'a').name('Save Image');
-    
     //////////////
     // Input setup
     //////////////
-    
+
+    window.inputIndex = 0;
+    window.cycleHandler = 0;
+
+    window.nextInputEvent = new CustomEvent("slideFinished");
+    document.addEventListener("slideFinished", function(event) {
+
+                              if (inputIndex < inputList.length - 1) {
+                                cycleHandler = cycleInputs();
+                              }
+
+                              else {
+                                inputIndex = 0;
+                                cycleInputs();
+                              }
+
+                              }, false);
+
     inputSettings = {
         scale : -1,
         rotStep : 2 * Math.PI / 180.0,
@@ -255,9 +269,12 @@ function init() {
     };
     
     document.addEventListener('keydown', keyboardHandler, false);
+
+    document.addEventListener('DOMContentLoaded', function() {
+                              FastClick.attach(document.body);
+                              }, false); // #attn
     
-    // Mouse input & handlers. Updated in animate(). // DO NOT TAKE ANYTHING BELOW SERIOUSLY -------------
-    // https://github.com/mudcube/Event.js
+    // Mouse input & handlers. Updated in animate().
 
     window.mouseDown = false;
     window.rightClick = false;
@@ -265,8 +282,11 @@ function init() {
     window.mouseX0 = 0, window.mouseY0 = 0;
     window.cameraX0 = 0, window.cameraY0 = 0;
     window.cameraR0 = 0;
+    window.touchDistance = 1;
+    window.newTouchDistance = 0;
+    window.touchZoom = 0;
+    window.touchRotationInit = 0;
     window.touchRotation = 0;
-    window.guiOffsets = {};
     
     document.addEventListener("mousedown", onMouseDown, false);
     document.addEventListener("mousemove", function(event) {
@@ -285,108 +305,127 @@ function init() {
     // Disable context menu
     document.addEventListener("contextmenu", function(e) { e.preventDefault() }, false);
 
-
-
-
     // Touch input & handlers. Disable scrolling & zooming in here.
     if (touchOn === true) {
         // Drag to pan
         document.addEventListener("touchstart", touchstart_handler, false);
-        touchstart_handler = function(event) {
-            event.preventDefault();
-            console.log("touch start");
-            console.log(event.targetTouches);
-        }
-
-        // Rotate & zoom
+        document.addEventListener("touchmove", touchmove_handler, false);
+        document.addEventListener("touchend", touchend_handler, false);
+        document.addEventListener("touchcancel", touchend_handler, false);
+        document.addEventListener("touchleave", touchend_handler, false);
     }
 
 
+    function touchstart_handler(event) {
+        // panning
+        if (event.targetTouches.length == 1) {
+            mouseX0 = event.targetTouches[0].clientX;
+            mouseX = mouseX0;
+            mouseY0 = c_height - event.targetTouches[0].clientY;
+            mouseY = mouseY0;
+            cameraX0 = inputs.x;
+            cameraY0 = inputs.y;
 
-
-
-    /* if (touchOn === true) {
-        // Drag to pan
-        eventjs.add(window, "drag", function(event, self) {
-            console.log(self.gesture, self.fingers, self.state, self.start, self.x, self.y, self.bbox);
-
-            if (self.fingers == 1 && self.state == "down") {
-                self.start.x = (self.start.x < 0) ? 0 : self.start.x;
-                self.start.y = (self.start.y < 0) ? 0 : self.start.y;
-
-                touchEvent = {clientX : self.start.x,
-                              clientY : self.start.y,
-                              button  : 1};
-                rightClick = false;
-
-                onMouseDown.apply(null, [touchEvent]);
+            // disable handler when mouse is within the gui box
+            if (mouseX > toolbar.rect.left && (c_height - mouseY) < toolbar.rect.bottom) {
+                return;
             }
 
-            else if (self.fingers == 1 && self.state == "move") {
-                // scrolling should be removed in index.html, but just in case:
-                eventjs.prevent(event);
-                mouseX = self.x;
-                mouseY = c_height - self.y;
+            if (!userInputOn) {
+                return;
             }
 
-            else if (self.fingers == 1 && self.state == "up") {
-                mouseDown = false;
-                rightClick = false;
-            }
-        });
-        
-        // Rotate/zoom
-        eventjs.add(window, "gesture", function(event, self) {
-                    console.log(self.gesture, self.fingers, self.state, self.rotation, self.scale);
+            mouseDown = true;
+            rightClick = false;
+        }
 
-                    if (self.fingers != 2) {
-                        return;
-                    }
+        // zoom/rotate
+        if (event.targetTouches.length >= 2) {
+            mouseDown = false; // until pan references are set below
 
-                    if (self.state == "down") {
-                        mouseDown = true;
-                    }
+            var x1 = event.targetTouches[0].clientX;
+            var x2 = event.targetTouches[1].clientX;
+            var y1 = c_height - event.targetTouches[0].clientY;
+            var y2 = c_height - event.targetTouches[1].clientY;
 
-                    else if (self.state == "rotate") {
-                        mouseDown = true;
-                        rightClick = true;
-                        cameraR0 = feedbackCamera.rotation.z;
-                        touchRotation = self.rotation;
-                    }
+            // reset pan reference
+            mouseX0 = (x1 + x2) / 2;
+            mouseX = mouseX0;
+            mouseY0 = (y1 + y2) / 2;
+            mouseY = mouseY0;
+            cameraX0 = inputs.x; /***/
+            cameraY0 = inputs.y; /***/
 
-                    else if (self.state == "scale") {
-                        // zoom should be removed in index.html, but just in case:
-                        eventjs.prevent(event);
-                        feedbackCamera.translateScale(self.rotation * inputSettings.zStep);
-                    }
+            // allow pan updates
+            mouseDown = true;
 
-                    else if (self.state == "up") {
-                        mouseDown = false;
-                        rightClick = false;
-                    }
-                    });
-        
-        
-        // double-tap to open/close controls
-        eventjs.add(window, "dblclick", function(event, self) {
-                    window.guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
-                    if (self.x > (guiOffsets.left) && (c_height - self.y) < guiOffsets.bottom
-                        && self.x < guiOffsets.right) {
-                    return;
-                    }
+            // zoom
+            touchDistance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
 
-                    console.log(self.gesture, self.x, self.y);
+            // rotation
+            touchRotationInit = Math.atan2(y2 - y1, x2 - x1);
+        }
+    }
 
-                    gui.closed = !gui.closed;
+    function touchmove_handler(event) {
+        event.preventDefault(); // prevents scrolling, drag-refresh, &c.
 
-                    });
-        
-        // eventually get rid of fps tracker on mobile
-    } */
+        if (event.targetTouches.length == 1) {
+            mouseX = event.targetTouches[0].clientX;
+            mouseY = c_height - event.targetTouches[0].clientY;
+        }
 
-    // If on a mobile device, hide the GUI.
+        if (event.targetTouches.length >= 2) {
+            var x1 = event.targetTouches[0].clientX;
+            var x2 = event.targetTouches[1].clientX;
+            var y1 = c_height - event.targetTouches[0].clientY;
+            var y2 = c_height - event.targetTouches[1].clientY;
+
+            // avg. pan
+            mouseX = (x1 + x2) / 2;
+            mouseY = (y1 + y2) / 2;
+
+            // zoom
+            newTouchDistance = Math.sqrt(Math.pow(x2 - x1, 2) +
+                                             Math.pow(y2 - y1, 2));
+            touchZoom = -1 + newTouchDistance / touchDistance;
+            inputs.scale += touchZoom / 2;
+            touchDistance = newTouchDistance;
+
+            // rotation
+            rightClick = true;
+            touchRotation = Math.atan2(y2 - y1, x2 - x1);
+        }
+    }
+
+    function touchend_handler(event) {
+        if (event.targetTouches.length == 0) {
+            // close shop
+            mouseDown = false;
+            rightClick = false;
+        }
+        if (event.targetTouches.length == 1) {
+            // reset pan reference
+            mouseX0 = event.targetTouches[0].clientX;
+            mouseX = mouseX0;
+            mouseY0 = c_height - event.targetTouches[0].clientY;
+            mouseY = mouseY0;
+            cameraX0 = inputs.x;
+            cameraY0 = inputs.y;
+
+            mouseDown = true;
+            rightClick = false;
+        }
+
+        if (event.targetTouches.length >= 2) {
+            // zoom/rotate setup
+        }
+    }
+
+    // If on a mobile device, hide the GUI & get rid of fps graph.
     if (touchOn == true) {
         gui.closed = true;
+        document.getElementById("fps").style.display = "none";
     }
     
     n_f = 0;
@@ -395,33 +434,256 @@ function init() {
     t_start = performance.now();
 }
 
+// shuffle array: http://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+function shuffle(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+    return array;
+}
+
+
+// cycle through inputList
+function cycleInputs() {
+    // add break on mouse events
+    // ...
+
+    if (inputIndex == 0) {
+        // shuffle inputList
+        inputList = shuffle(inputList);
+
+        // start from screen
+        var tempInput = new Input(inputs);
+        inputList.unshift(tempInput);
+    }
+
+    var currentInput = inputList[inputIndex];
+    var nextInput = inputList[inputIndex + 1];
+    inputIndex++;
+
+    var steps = Math.round(inputs.beatLength / 10);
+    var timeout = 10;
+
+    var repeat, loopID;
+    var i = 1;
+
+    var repeat = function(input1, input2) {
+        // update parameters by i
+        for (var param in input2) {
+            var t = typeof inputs[param];
+            if (t == "number" && param != "delay" && param != "colorCycle" && param != "borderWidth") {
+                inputs[param] =
+                ((steps - i) * input1[param] + i * input2[param]) / steps;
+            }
+        }
+
+        i++;
+
+        if (i > steps) {
+            i = 0;
+
+            // When done, throw nextInputEvent. cycleInputs() will be called again
+            document.dispatchEvent(nextInputEvent);
+            clearInterval(loopID);
+        }
+    };
+
+    var loopID = setInterval(repeat, timeout, currentInput, nextInput);
+
+    if (inputIndex == inputList.length - 1) {
+        inputList.shift();
+        inputIndex--;
+    }
+
+    return loopID;
+}
+
+
+function sweepInputs(steps) {
+    if (steps <= 1) {
+        console.log("steps must be >= 2.");
+        return;
+    }
+
+    var i, j, k, l;
+    var xBounds = [0, aspect / (2 * (steps - 1))];
+    var yBounds = [0.3, -0.6 / (steps - 1)];
+    var rotBounds = [0, 2 * Math.PI / (steps - 1)];
+    var scaleBounds = [0.7, 0.0 / (steps - 1)];
+
+    inputs.x = xBounds[0];
+    inputs.y = yBounds[0];
+    inputs.rot = rotBounds[0];
+    inputs.scale = scaleBounds[0];
+
+    for (i = 0; i <= steps; i++) { // x
+        inputs.x += xBounds[1];
+
+        for (j = 0; j <= steps; j++) { // y
+            inputs.y += yBounds[1];
+
+            for (k = 0; k <= steps; k++) { // rot
+                inputs.rot += rotBounds[1];
+                inputs.saveToList();
+/*
+                for (l = 0; l <= steps / 2; l++) { // scale
+                    inputs.scale += scaleBounds[1];
+                } */
+            }
+        }
+    }
+
+    console.log("done sweeping inputs. all added to inputList.");
+}
+
+
+function clearInputList() {
+    while (inputList.length > 0) {
+        inputList.pop();
+    }
+}
+
+
+// Input update/save/get functions
+function updateToolbar() {
+    // update values of toolbar from inputs{}
+    // ...
+}
+
+
+function updateCamera() {
+    for (var param in inputs) {
+        // update boolean options
+        if (typeof inputs[param] == "boolean") {
+            if (!symPass.uniforms[param]) {
+                if (!colorPass.uniforms[param]) {
+                    switch(param) {
+                        case "farOut":
+                            farOut(inputs[param]);
+                            break;
+                    }
+                }
+                else {
+                    colorPass.uniforms[param].value = inputs[param] ? 1 : 0;
+                }
+            }
+            else {
+                symPass.uniforms[param].value = inputs[param] ? 1 : 0;
+            }
+        }
+
+        // update range options
+        else if (typeof inputs[param] == "number") {
+            if (!colorPass.uniforms[param]) {
+                // handle on case basis
+                switch(param) {
+                    case "borderWidth":
+                        border.setScale(inputs.borderWidth);
+                        break;
+                }
+            }
+
+            else {
+                colorPass.uniforms[param].value = inputs[param];
+            }
+        }
+
+        // update color options
+        else if (typeof inputs[param] == "string") {
+            switch(param) {
+                case "backgroundColor":
+                    var colorValue = inputs[param].replace("#", "0x");
+                    bgMaterial.color.setHex(colorValue);
+                    break;
+                case "borderColor":
+                    var colorValue = inputs[param].replace("#", "0x");
+                    borderMaterial.color.setHex(colorValue);
+                    break;
+            }
+        }
+    }
+
+    // update camera from inputs: x, y, rot, scale
+    feedbackCamera.position.x = inputs.x;
+    feedbackCamera.position.y = inputs.y;
+    feedbackCamera.rotateAbs(inputs.rot);
+    feedbackCamera.setScale(inputs.scale);
+}
+
+
+function saveInputs() {
+    var data = inputs;
+
+    // add timestamp
+    data.time = Date.now();
+    data.timeString = (new Date()).toString();
+
+    // add image dataURL #hack
+    data.url = document.getElementsByTagName("canvas")[0].toDataURL("image/png");
+
+    // #hack
+    saveText.value += JSON.stringify(data);
+
+    console.log("saved: " + data.timeString);
+}
+
+
+function getInputs() {
+    return JSON.stringify(inputs);
+}
+
+
+function getAllInputs() {
+    window.open("about:blank").document.body.innerText += saveText.value;
+}
+
 
 function animate() {
     if (mouseDown) {
+        // redo control flow here, it's terrible omg
+
+        // Right-click drag rotation
         if (rightClick == true) {
             if (touchOn == true) {
-                feedbackCamera.rotation.z = cameraR0 + touchRotation /
-                    feedbackCamera.getScale();
+                // rotation (touchRotation(Init) defined running CCW, hence the negative sign)
+                inputs.rot += -1 * (touchRotation - touchRotationInit);
+                touchRotationInit = touchRotation;
+
+                // panning
+                var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
+                / inputs.scale;
+                var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height
+                / inputs.scale;
+
+                inputs.x = cameraX0 - dx;
+                inputs.y = cameraY0 - dy;
             }
             else {
-                feedbackCamera.rotation.z = cameraR0 + 2 * Math.PI *
-                    (mouseX - mouseX0) / c_width / feedbackCamera.getScale();
+                var angle = (mouseX - mouseX0) / c_width / inputs.scale;
+                inputs.rot += angle;
+                mouseX0 = mouseX;
             }
         }
+
         else {
-            var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width 
-                / feedbackCamera.getScale();
-            var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height 
-                / feedbackCamera.getScale();
-            
-            var transElements = feedbackCamera.matrixWorldInverse.elements;
-            
-            var new_dx = transElements[0] * dx + transElements[1] * dy;
-            var new_dy = transElements[4] * dx + transElements[5] * dy;
-            
-            feedbackCamera.position.x = cameraX0 - new_dx;
-            feedbackCamera.position.y = cameraY0 - new_dy;
+            // only pan
+            var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
+                / inputs.scale;
+            var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height
+                / inputs.scale;
+
+            inputs.x = cameraX0 - dx;
+            inputs.y = cameraY0 - dy;
         }
+    }
+
+    updateToolbar();
+
+    if (updateCameraOn) {
+        updateCamera();
     }
 
     //updateInput();
@@ -441,11 +703,6 @@ function animate() {
     requestAnimationFrame(animate);
 
     stats.update();
-}
-
-
-function updateInput() {
-
 }
 
 
@@ -490,7 +747,7 @@ function render() {
     // Render the viewScene to the screen.
     renderer.render(viewScene, viewCamera);
 
-    i_loop = (i_loop + 1) % feedbackTarget.length;
+    i_loop = (i_loop + 1) % Math.round(inputs.delay); // % feedbackTarget.length;
 }
 
 
@@ -525,6 +782,27 @@ function createScalableOrthoCam(aspect, minScale, maxScale) {
         return internalScale;
     };
 
+    // rotate clockwise such that TV seems to rotate (CCW) about its own axis
+    camera.rotate = function(angle) {
+        var x0 = this.position.x;
+        var y0 = this.position.y;
+        this.position.x = 0;
+        this.position.y = 0;
+        this.rotation.z += angle;
+        this.position.x = Math.cos(angle) * x0 - Math.sin(angle) * y0;
+        this.position.y = Math.sin(angle) * x0 + Math.cos(angle) * y0;
+    };
+
+    camera.rotateAbs = function(angle) {
+        var x0 = this.position.x;
+        var y0 = this.position.y;
+        this.position.x = 0;
+        this.position.y = 0;
+        this.rotation.z = angle;
+        this.position.x = Math.cos(angle) * x0 - Math.sin(angle) * y0;
+        this.position.y = Math.sin(angle) * x0 + Math.cos(angle) * y0;
+    };
+
     camera.translateScale = function(ds) {
         this.setScale(internalScale + ds);
     };
@@ -533,42 +811,46 @@ function createScalableOrthoCam(aspect, minScale, maxScale) {
 }
 
 function keyboardHandler(evt) {
+    if (!userInputOn) {
+        return;
+    }
+
     //evt = evt || window.event;
     var charCode = evt.keyCode || evt.which;
     var charStr = String.fromCharCode(charCode);
 
     switch(charStr) {
         case "A":
-            feedbackCamera.rotateOnAxis(new THREE.Vector3(0, 0, -1),
-                - inputSettings.scale * inputSettings.rotStep);
+            inputs.rot -= inputSettings.rotStep;
+            // feedbackCamera.rotate(-inputSettings.rotStep);
             break;
         case "D":
-            feedbackCamera.rotateOnAxis(new THREE.Vector3(0, 0, -1),
-                inputSettings.scale * inputSettings.rotStep);
+            inputs.rot += inputSettings.rotStep;
+            // feedbackCamera.rotate(inputSettings.rotStep);
             break;
         case "W":
-            feedbackCamera.translateScale(inputSettings.zStep);
-            // feedbackCamera.translateZ(-inputSettings.zStep);
+            inputs.scale += inputSettings.zStep;
+            // feedbackCamera.translateScale(inputSettings.zStep);
             break;
         case "S":
-            feedbackCamera.translateScale(-inputSettings.zStep);
-            // feedbackCamera.translateZ(inputSettings.zStep);
+            inputs.scale -= inputSettings.zStep;
+            // feedbackCamera.translateScale(-inputSettings.zStep);
             break;
         case "J":
-            feedbackCamera.translateX(- inputSettings.scale * 
-                inputSettings.xyStep);
+            inputs.x += inputSettings.xyStep;
+            // feedbackCamera.translateX(- inputSettings.scale *               inputSettings.xyStep);
             break;
         case "L":
-            feedbackCamera.translateX(inputSettings.scale * 
-                inputSettings.xyStep);
+            inputs.x -= inputSettings.xyStep;
+            // feedbackCamera.translateX(inputSettings.scale *                inputSettings.xyStep);
             break;
         case "I":
-            feedbackCamera.translateY(inputSettings.scale * 
-                inputSettings.xyStep);
+            inputs.y -= inputSettings.xyStep;
+            // feedbackCamera.translateY(inputSettings.scale *                inputSettings.xyStep);
             break;
         case "K":
-            feedbackCamera.translateY(- inputSettings.scale * 
-                inputSettings.xyStep);
+            inputs.y += inputSettings.xyStep;
+            // feedbackCamera.translateY(- inputSettings.scale *                inputSettings.xyStep);
             break;
         case " ":
             console.log("space");
@@ -577,46 +859,53 @@ function keyboardHandler(evt) {
 }
 
 onMouseDown = function(event) {
-    // prevents canvas mouse events when clicking on gui, assuming gui is 
-    //   bound to north #hack
-    // killing event bubbling means changing the mousedown handlers in 
-    //   dat.gui, which seems more difficult than this. retrieving guiOffsets
-    //   probably doesn't need to happen every mousedown, but it also doesn't 
-    //   introduce any problems/lag
-    window.guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
-    if (mouseX > (guiOffsets.left - 4) && (c_height - mouseY) < guiOffsets.bottom
-        && mouseX < guiOffsets.right) {
+    mouseX0 = event.clientX;
+    mouseX = mouseX0;
+    mouseY0 = c_height - event.clientY;
+    mouseY = mouseY0;
+    cameraX0 = inputs.x; /***/
+    cameraY0 = inputs.y; /***/
+
+    if (!userInputOn) {
         return;
     }
-    
+
+    // disable handler when mouse is within the gui box
+    if (mouseX > toolbar.rect.left) {
+        return;
+    }
+
     mouseDown = true;
-    mouseX = event.clientX;
-    mouseX0 = mouseX;
-    cameraX0 = feedbackCamera.position.x;
-    
+
     if (event.button == 2) { // probably not very compatible
         rightClick = true;
-        cameraR0 = feedbackCamera.rotation.z;
-    }
-    else {
-        mouseY = c_height - event.clientY; // window y-coordinate flipped
-        mouseY0 = mouseY;
-        cameraY0 = feedbackCamera.position.y;
+        cameraR0 = inputs.rot; // feedbackCamera.rotation.z;
     }
 }
 
 function scrollHandler(evt) {
-    // disable window scroll handler when mouse is within the gui box
-    window.guiOffsets = document.getElementsByClassName("dg main a")[0].getBoundingClientRect();
-    if (mouseX > (guiOffsets.left - 4) && (c_height - mouseY) < guiOffsets.bottom
-        && mouseX < guiOffsets.right) {
+    // disable handler when mouse is within the gui box
+    if (mouseX > toolbar.rect.left) {
         return;
     }
     
     var d = ((typeof evt.wheelDelta != "undefined") ? (-evt.wheelDelta) : 
         evt.detail);
-    d = ((d > 0) ? 1 : -1);
-    
-    // Factor of 5 smooths out zoom
-    feedbackCamera.translateScale(d * inputSettings.zStep / 5);
+    d = ((d > 0) ? -1 : 1);
+
+    inputs.scale += d * inputSettings.zStep / 5; // #hardcode
+}
+
+
+function farOut(shouldPass) {
+    /*
+    var passes = feedbackProcessor.passes;
+    if (shouldPass && passes[passes.length - 1] !== RGBShiftPass) {
+        passes.push(RGBShiftPass);
+    } else if (!shouldPass && passes[passes.length - 1] === RGBShiftPass) {
+        passes.pop();
+    } */
+    if (shouldPass) {
+        console.log("fix me");
+    }
 }
