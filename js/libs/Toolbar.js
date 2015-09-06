@@ -1,8 +1,13 @@
 window.Toolbar = function() {
     this.girth = 150;
     this.itemHeight = 35;
+
     this.element = document.getElementById("toolbar");
-    this.rect = document.getElementById("toolbar").getBoundingClientRect();
+    this.element.style.height = "100%";
+    this.element.style.width = this.girth.toString() + "px";
+    this.element.style.overflow = "auto";
+
+    this.rect = this.element.getBoundingClientRect();
 }
 
 
@@ -60,7 +65,7 @@ Toolbar.prototype.add = function(id, name, type, options) {
 
         // callback
         newInput.onchange = function() {
-            inputs[id] = newInput.checked;
+            inputs[id] = newInput.checked; /**/
         }
     }
     else if (type == "button") {
@@ -74,7 +79,7 @@ Toolbar.prototype.add = function(id, name, type, options) {
 
         // callback
         newInput.oninput = function() {
-            inputs[id] = Number(newInput.value);
+            inputs[id] = Number(newInput.value); /**/
         }
     }
     else if (type == "color") {
@@ -82,7 +87,7 @@ Toolbar.prototype.add = function(id, name, type, options) {
 
         // callback
         newInput.oninput = function() {
-            inputs[id] = newInput.value;
+            inputs[id] = newInput.value; /**/
         }
     }
 
@@ -109,4 +114,21 @@ Toolbar.prototype.add = function(id, name, type, options) {
     this.element.appendChild(newDiv);
 
     return newInput;
+}
+
+
+// External function: update values of toolbar from inputs object
+function updateToolbar(inputObj) {
+    for (var param in inputObj) {
+        inputElem = document.getElementById(param);
+
+        if (inputElem !== null) {
+            if (inputElem.type == "checkbox") {
+                inputElem.checked = inputObj[param];
+            }
+            else {
+                inputElem.value = inputObj[param];
+            }
+        }
+    }
 }
