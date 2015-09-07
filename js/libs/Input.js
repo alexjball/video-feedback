@@ -115,6 +115,129 @@ function shuffle(list) {
 }
 
 
+// Sweep phase space, saving images along the way.
+function sweepInputs(steps, rotSteps) {
+    console.log("starting sweep.");
+
+    updateCameraOn = false;
+    inputs.mirrorX = true;
+
+    inputs.x = 0; // -1 * window.aspect / 2;
+    inputs.y = -1 / 2;
+    inputs.rot = 0;
+    inputs.scale = 0.8;
+    inputs.delay = 1;
+
+    var dataString = "";
+    var saveList = [];
+
+    saveList.push(new Input(inputs));
+
+    for (var i = 0; i < steps; i++) {
+        inputs.x = (aspect / 2) * i / (steps - 1) - 0;
+
+        for (var j = 0; j < steps; j++) {
+            inputs.y = 1 * j / (steps - 1) - (1 / 2);
+
+            for (var k = 0; k < rotSteps; k++) {
+                inputs.rot = (2 * Math.PI) * k / (rotSteps - 1) - 0;
+
+                if (inputs.rot == 0 || inputs.rot == Math.PI) {
+                    continue;
+                }
+
+                saveList.push(new Input(inputs));
+
+                /* for (var l = 0; l < steps; l++) {
+                    inputs.scale = 0.3 * l / (steps - 1);
+                } */
+            }
+        }
+    }
+
+    var timeout = 500;
+    var minutes = saveList.length * timeout / 1000 / 60;
+    console.log("generating " + saveList.length + " images. estimated time: " + minutes + "minutes.");
+
+    updateCameraOn = true;
+
+    var i = 1;
+    inputs = saveList[0];
+
+    var dataText = document.createElement("textarea");
+    dataText.style.display = "none";
+
+    var repeat = function() {
+        // add image data to 'dataString'
+        var dataURL = document.getElementsByTagName("canvas")[0].toDataURL("image/png").toString();
+        var altText = [inputs.x, inputs.y, inputs.rot, inputs.scale].toString();
+        dataText.value += '<img src="' + dataURL + '" style="width:200px;" alt="(' + altText + ')">';
+
+        inputs = saveList[i];
+
+        i++;
+
+        if (i == saveList.length) {
+            // when finished looping, set innerHTML to dataString & exit loop.
+            // window.document.body.innerHTML = dataString;
+            // window.document.body.style.overflow = "auto";
+
+            console.log("finished sweep.");
+            clearInterval(loopID);
+
+            var newWindow = window.open("about:blank");
+            newWindow.document.body.innerHTML = dataText.value;
+        }
+    }
+
+    var loopID = setInterval(repeat, timeout);
+
+    return loopID;
+}
+
+
+// busy sleep
+function sleep(duration) {
+    var now = performance.now();
+
+    while (performance.now() < now + duration) {
+        console.log("augh");
+    }
+}
+
+
+// Compare two input objects on phase properties (x, y, rot, scale).
+// Returns true if they match & false otherwise.
+function compareInputs(a, b) {
+    var match = true;
+
+    for (var param in a) {
+        if (param == "x" || param == "y" || param == "rot" || param == "scale") {
+            match = match && (a[param] === b[param]);
+        }
+    }
+
+    return match;
+}
+
+
+// Compare two input objects on all properties.
+// Returns true if they match & false otherwise.
+function compareInputsStrict(a, b) {
+    var match = true;
+
+    for (var param in a) {
+        var t = typeof a[param];
+
+        if (t == "boolean" || t == "number" || t == "string") {
+            match = match && (a[param] === b[param]);
+        }
+    }
+
+    return match;
+}
+
+
 // update camera from inputObj
 function updateCamera(inputObj) {
     for (var param in inputObj) {

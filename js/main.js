@@ -212,6 +212,11 @@ function init() {
     stats.domElement.style.top = '0px';
     container.appendChild(stats.domElement);
 
+    // If on a mobile device, hide the GUI & get rid of fps graph.
+    if (touchOn == true) {
+        document.getElementById("fps").style.display = "none";
+    }
+
 
     /////////////
     // EffectComposer stack
@@ -246,11 +251,6 @@ function init() {
         zStep : .025,
         xyStep : .025
     };
-
-    // If on a mobile device, hide the GUI & get rid of fps graph.
-    if (touchOn == true) {
-        document.getElementById("fps").style.display = "none";
-    }
     
     n_f = 0;
     n_f_show = 120;

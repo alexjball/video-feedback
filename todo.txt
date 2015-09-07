@@ -1,25 +1,14 @@
 TODO:
 
-- refactor/clean up
-    - toolbar
-    - input handler, setter/getter/comparison/copyload
-    - cycler
 - kaleidoscope/pie slice/snowflake mirroring
-- push updates to toolbar
-- kill cycling
-- smooth transition when adding mouse/touch/keyboard input while cycling
 - function that calculates which input set is closest
 
-
-
 - add random jitter (spatial + background color)
-- drift mode between (preset) cool-looking states
 - overlay for orientation
 - auto-cycle seed colors
 - time reverse
 - screenshots/videos -> online image hosting
 - "poke me"/safe mode
-- change delay for updating
 - local transforms -- in mobile, a user fruit-ninja slices across the screen 
     defining a line segment. The pixels in the vicinity of the line segment are 
     inverted or mirrored or whatever, and that effect fades out after some 
@@ -29,7 +18,6 @@ TODO:
 	think it would add some entertainment for people too lazy to figure the 
 	feedback loops out. I'm imagining like touching the screen to seed a nice 
 	shimmery dot of light that blends/changes with the surrounding edges.
-- fading between scenes
 - static image checking --> stop rendering
 - anti-strobe: difference checker or exponential averaging
 - disable scrolling; disable zooming on mobile

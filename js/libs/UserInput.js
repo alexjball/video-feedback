@@ -105,11 +105,11 @@ function onMouseUp(event) {
     rightClick = false;
 
     // Update cycling after drag.
-    if (event.clientX < toolbar.rect.left && cycleInputsOn) {
+    /* if (event.clientX < toolbar.rect.left && cycleInputsOn && userInputOn) {
         step = 0;
         inputList.splice(inputIndex + 1, 0, new Input(inputs));
         inputIndex++;
-    }
+    } */
 }
 
 
@@ -144,6 +144,10 @@ if (window.touchOn === true) {
 
 
 function touchstart_handler(event) {
+    if (!userInputOn) {
+        return;
+    }
+
     // 1 finger: panning
     if (event.targetTouches.length == 1) {
         mouseX0 = event.targetTouches[0].clientX;
