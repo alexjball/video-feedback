@@ -20,7 +20,7 @@ Toolbar.prototype.addInstruction = function(text) {
     // Make content
     var newContent = text;
 
-    // prepend to toolbar
+    // append to instruction popup
     newDiv.appendChild(document.createTextNode(newContent));
     document.getElementById("instructions").appendChild(newDiv);
 }

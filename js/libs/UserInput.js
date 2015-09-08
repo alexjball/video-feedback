@@ -69,6 +69,8 @@ document.addEventListener("mousedown", onMouseDown, false);
 document.addEventListener("mousemove", onMouseMove, false);
 document.addEventListener("mouseup", onMouseUp, false);
 
+// Later, have all of the below set a global/private object properties, or pass
+//     the object to updateFromUserInputs(inputObj).
 function onMouseDown(event) {
     mouseX0 = event.clientX;
     mouseX = mouseX0;
@@ -76,6 +78,7 @@ function onMouseDown(event) {
     mouseY = mouseY0;
     cameraX0 = inputs.x;
     cameraY0 = inputs.y;
+    cameraR0 = inputs.rot;
 
     if (!userInputOn) {
         return;
@@ -101,15 +104,16 @@ function onMouseMove(event) {
 }
 
 function onMouseUp(event) {
-    mouseDown = false;
-    rightClick = false;
-
     // Update cycling after drag.
-    /* if (event.clientX < toolbar.rect.left && cycleInputsOn && userInputOn) {
-        step = 0;
+    if (event.clientX < toolbar.rect.left && cycleInputsOn && userInputOn &&
+            mouseDown) {
+        window.step = 0;
         inputList.splice(inputIndex + 1, 0, new Input(inputs));
         inputIndex++;
-    } */
+     }
+
+    mouseDown = false;
+    rightClick = false;
 }
 
 
@@ -118,10 +122,13 @@ document.addEventListener("mousewheel", scrollHandler, false);
 document.addEventListener("DOMMouseScroll", scrollHandler, false); // firefox
 
 function scrollHandler(event) {
-    // disable handler when mouse is within the gui box
-    if (mouseX > toolbar.rect.left) {
+    // Disable handler when mouse is within the gui box
+    if (event.clientX > toolbar.rect.left) {
         return;
     }
+
+    // Disable default action.
+    event.preventDefault();
 
     var d = ((typeof event.wheelDelta != "undefined") ? (-event.wheelDelta) :
              evt.detail);
@@ -257,18 +264,20 @@ function touchend_handler(event) {
 
 // updates 'inputObj' from given user input.
 function updateFromUserInputs(inputObj) {
-    // Right-click drag rotation
-    if (window.rightClick == true) {
-        if (window.touchOn == true) {
-            // rotation (touchRotation(Init) defined running CCW,
-            // hence the negative sign)
-            inputObj.rot += -1 * (touchRotation - touchRotationInit);
-            touchRotationInit = touchRotation;
+    var dragSpeed = 40; // #hardcode
 
-            // panning #hardcode
-            var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
+    // Right-click & two-finger actions
+    if (window.rightClick) {
+        if (window.touchOn) {
+            // Rotation (touchRotation(Init) defined running CCW,
+            // hence the negative sign)
+            inputObj.rot = cameraR0 - (touchRotation - touchRotationInit);
+            // touchRotationInit = touchRotation;
+
+            // Panning
+            var dx = inputSettings.xyStep * (mouseX - mouseX0) * dragSpeed / c_width
             / inputObj.scale;
-            var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height
+            var dy = inputSettings.xyStep * (mouseY - mouseY0) * dragSpeed / c_height
             / inputObj.scale;
 
             inputObj.x = cameraX0 - dx;
@@ -276,17 +285,17 @@ function updateFromUserInputs(inputObj) {
         }
 
         else {
+            // Right-click drag
             var angle = (mouseX - mouseX0) / c_width / inputObj.scale;
-            inputObj.rot += angle;
-            mouseX0 = mouseX;
+            inputObj.rot = cameraR0 + angle;
         }
     }
 
     else {
         // only pan #hardcode
-        var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
+        var dx = inputSettings.xyStep * (mouseX - mouseX0) * dragSpeed / c_width
         / inputObj.scale;
-        var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height
+        var dy = inputSettings.xyStep * (mouseY - mouseY0) * dragSpeed / c_height
         / inputObj.scale;
 
         inputObj.x = cameraX0 - dx;

@@ -68,6 +68,10 @@ Input.prototype.load = function(inputObj) {
 // External functions
 // cycle through inputList
 function cycleInputs(dt) {
+    if (inputIndex == 0) {
+        generateRandomOrientations();
+    }
+
     var tempInput = new Input();
 
     step += dt / inputs.beatLength;
@@ -93,9 +97,26 @@ function cycleInputs(dt) {
 }
 
 
-function clearInputList() {
-    while (inputList.length > 0) {
-        inputList.pop();
+
+function generateRandomOrientations() {
+    clearList(inputList);
+
+    for (var i = 0; i < 20; i++) {
+        var tempInput = new Input();
+        tempInput.x = Math.random() * 0.2 + 0.6;
+        tempInput.y = Math.random() * 0.7 - 0.35;
+        tempInput.rot = Math.random() * 2 * Math.PI + 0;
+        tempInput.scale = Math.random() * 0.2 + 0.75;
+
+        inputList.push(tempInput);
+    }
+}
+
+
+
+function clearList(list) {
+    while (list.length > 0) {
+        list.pop();
     }
 }
 
@@ -144,6 +165,10 @@ function sweepInputs(steps, rotSteps) {
 
                 if (inputs.rot == 0 || inputs.rot == Math.PI) {
                     continue;
+                }
+
+                if (saveList.length == 1024) {
+                    saveList = [];
                 }
 
                 saveList.push(new Input(inputs));

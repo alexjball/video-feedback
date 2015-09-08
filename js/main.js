@@ -1,5 +1,6 @@
 var i_loop, feedbackTarget, TVMaterial, feedbackCamera, feedbackProcessor, 
-    viewScene, viewCamera, symPass, colorPass, renderer, inputSettings;
+    viewScene, viewCamera, symPass, colorPass, renderer, inputSettings,
+    holdTarget;
 
 function init() {
     // detect mobile interface
@@ -19,6 +20,7 @@ function init() {
     window.userInputOn = true;
     window.updateCameraOn = true;
     window.cycleInputsOn = false;
+    window.cycleRandomInputsOn = false;
 
 
     // Set up window
@@ -26,7 +28,7 @@ function init() {
     window.c_height = window.innerHeight;
     window.aspect = c_width / c_height;
 
-
+    // Add instruction button
     toolbar.add("instructionToggle", "Instructions", "button",
         function() {
             document.getElementById("instructionOverlay").style.display = "block";
@@ -34,15 +36,18 @@ function init() {
             userInputOn = false;
         });
 
-    // toolbar.addInstruction("text");
+    // Add instructions
     toolbar.addInstruction("Pan: IJKL/drag");
     toolbar.addInstruction("Rotate: AD/right-drag");
     toolbar.addInstruction("Zoom: WS/scroll");
 
-    // toolbar.add("id", "name/label", "type", options);
-    // options:
-    // - button: callback function
-    // - range: [minimum, step, maximum]. defaults to [0, 0.001, 1]
+    /* 
+     * Add options
+     * toolbar.add("id", "name/label", "type", options);
+     * 'options':
+     * - button: callback function
+     * - range: [minimum, step, maximum]. defaults to [0, 0.001, 1]
+     */
     toolbar.add("saveInputs", "Save Inputs", "button",
                 function(){
                     inputs.saveToList(inputList);
@@ -50,6 +55,15 @@ function init() {
     toolbar.add("cycleInputs", "Cycle Inputs", "button",
                 function() {
                     window.cycleInputsOn = !window.cycleInputsOn;
+                });
+    toolbar.add("cycleRandomInputs", "Cycle Random", "button",
+                function() {
+                    generateRandomOrientations();
+                    inputs.backgroundColor = "#000000";
+                    inputs.borderColor = "#DDDDDF";
+                    inputs.borderWidth = 0.03;
+                    inputs.colorCycle = 0;
+                    inputs.gain = 0.05;
                 });
     toolbar.add("beatLength", "Beat length", "range", [500, 10, 4000]);
     toolbar.add("colorCycle", "Color Cycle", "range");
@@ -78,6 +92,23 @@ function init() {
                     inputs.colorCycle = 0;
                     inputs.gain = 0.05;
                 });
+    window.dotOn = false;
+    toolbar.add("dotSetting", "Dot", "button",
+                function() {
+                    if (dotOn) {
+                        feedbackScene.remove(window.dot);
+                    }
+                    else {
+                        inputs.backgroundColor = "#000000";
+                        inputs.borderColor = "#080808";
+                        inputs.borderWidth = 0.09;
+                        inputs.colorCycle = 0;
+                        inputs.gain = 0;
+                        feedbackScene.add(window.dot);
+                    }
+                    
+                    dotOn = !dotOn;
+                });
 
     ////////////
     // Constants
@@ -103,7 +134,7 @@ function init() {
                 generateMipmaps : false,
                 depthBuffer     : true,
                 stencilBuffer   : false
-             });
+                                           });
     }
 
     ////////////
@@ -118,7 +149,7 @@ function init() {
      */
 
     // The scene used in the feedback loop
-    var feedbackScene = new THREE.Scene();
+    feedbackScene = new THREE.Scene();
 
     // Initialize all render targets.
     feedbackTarget = new Array(12); // #hardcode
@@ -130,8 +161,7 @@ function init() {
     // Create the border, which consists of a solid colored border of some
     // thickness surrounded by a solid color background.
     // Set the background big enough so we never see the edges of it.
-    var bgGeometry = new THREE.PlaneBufferGeometry(aspect / minimumScaleFactor * 5,
-        1.0 / minimumScaleFactor * 5);
+    var bgGeometry = new THREE.PlaneBufferGeometry(aspect / minimumScaleFactor * 5, 1.0 / minimumScaleFactor * 5);
     bgMaterial = new THREE.MeshBasicMaterial({color : 0x70b2c5});
     var background = new THREE.Mesh(bgGeometry, bgMaterial);
     background.position.set(0, 0, -1);
@@ -139,25 +169,33 @@ function init() {
     // Create the border, which consists of a solid colored border of some
     // thickness surrounded by a solid color background.
     // window.borderProp = .1
-    var borderGeometry = new THREE.PlaneBufferGeometry(aspect,// * (1.0 + 2 * borderProp),
-        1.0);// * (1.0 + 2.0 * borderProp));
+    var borderGeometry = new THREE.PlaneBufferGeometry(aspect, 1); // new THREE.CircleGeometry(0.46, 80);
+
     borderMaterial = new THREE.MeshBasicMaterial({color : 0x000000});
     window.border = new THREE.Mesh(borderGeometry, borderMaterial);
+
     border.setScale = function(borderWidth) {
-        border.scale.set(1 + borderWidth, 1 + inputs.borderWidth * aspect, 1);
+        border.scale.set(1 + borderWidth, 1 + borderWidth * aspect, 1);
     }
     border.setScale(inputs.borderWidth);
-    border.position.set(0, 0, -.5);
+    border.position.set(0, 0, -0.5);
+
+    // Create a dot
+    var dotGeometry = new THREE.CircleGeometry(0.02, 20);
+    var dotMaterial = new THREE.MeshBasicMaterial({color : 0xDD0000});
+    window.dot = new THREE.Mesh(dotGeometry, dotMaterial);
+    dot.position.set(0 * aspect, 0, 0)
 
     // Create the TV. The textured mapped by the material is changed each
-    // render cycle. Also, THREE.PlaneBufferGeometry is apparently a thing.
-    var TVGeometry = new THREE.PlaneBufferGeometry(aspect, 1);
+    // render cycle.
+    var TVGeometry = new THREE.PlaneBufferGeometry(aspect, 1); // new THREE.CircleGeometry(0.45, 80);
     TVMaterial     = new THREE.MeshBasicMaterial({map : feedbackTarget[0]});
     TV         = new THREE.Mesh(TVGeometry, TVMaterial);
     TV.position.set(0, 0, 0);
 
     // The renderer is set to render objects in the order in which they were
     // added to the scene, so the order we push matters.
+    // feedbackScene.add(dot);
     feedbackScene.add(TV);
     feedbackScene.add(border);
     feedbackScene.add(background);
@@ -279,6 +317,14 @@ function animate(time) {
         inputs.scale = newState[3];
     }
 
+    if (window.cycleRandomInputsOn) {
+        var newState = cycleInputs(dt);
+        inputs.x = newState[0];
+        inputs.y = newState[1];
+        inputs.rot = newState[2];
+        inputs.scale = newState[3];
+    }
+
     // Update toolbar from current inputObj.
     updateToolbar(window.inputs);
 
@@ -312,7 +358,6 @@ function animate(time) {
 
 
 function render() {
-
     /*
      * Notes:
      * When the feedback camera is rotated, you can see inner frames rotate 
@@ -332,13 +377,13 @@ function render() {
      * applied, feedbackProcessor.readBuffer contains the updated feedback
      * texture.
      */
-    feedbackProcessor.render()
+    feedbackProcessor.render();
 
     // Swap the updated feedback texture with the old one.
     var temp;
     if (feedbackProcessor.readBuffer === feedbackProcessor.renderTarget1) {
         temp = feedbackProcessor.renderTarget1;
-        feedbackProcessor.renderTarget1 = feedbackTarget[i_loop]; 
+        feedbackProcessor.renderTarget1 = feedbackTarget[i_loop];
     } else {
         temp = feedbackProcessor.renderTarget2;
         feedbackProcessor.renderTarget2 = feedbackTarget[i_loop];
