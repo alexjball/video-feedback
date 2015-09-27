@@ -1,14 +1,8 @@
 /**
  * Symmetry Shader
  *
- * mirrorDir: direction(s) in which to reflect texture. Bitwise or of
- * defines.MIR_X and defines.MIR_Y.
- * inversionDir: direction(s) in which to invert texture. Bitwise or of
- * defines.INV_X and defines.INV_Y.
- *
- * Note that inversion is redundant if mirroring is done in the same direction
  */
-
+ 
 SymmetryShader = {
 
 	uniforms: {
