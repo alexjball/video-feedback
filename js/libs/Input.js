@@ -16,6 +16,9 @@ window.Input = function(inputObj) {
         this.borderWidth = 0.05;
         this.delay = 5;
 
+        this.isPaused = false;
+        this.stepFrame   = false;
+
         this.backgroundColor = "#70b2c5";
         this.borderColor = "#000000";
 

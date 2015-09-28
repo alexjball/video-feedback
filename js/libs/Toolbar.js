@@ -61,6 +61,7 @@ Toolbar.prototype.add = function(id, name, type, options) {
         // callback
         newInput.onchange = function() {
             inputs[id] = newInput.checked;
+            if (options) options();
         }
     }
     else if (type == "button") {
