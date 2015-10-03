@@ -1,5 +1,7 @@
 TODO:
 
+- add fft button to calculate & output transform
+- add "dot drawing"
 - kaleidoscope/pie slice/snowflake mirroring
 - function that calculates which input set is closest
 

@@ -1,6 +1,7 @@
 window.inputIndex = 0;
 window.currentCycleHandle = 0;
 
+
 window.nextInputEvent = new CustomEvent("doneCycling");
 document.addEventListener("doneCycling",
     function(event) {
@@ -29,7 +30,7 @@ window.Input = function(inputObj) {
         this.colorCycle = 0.5;
         this.gain = 0.5;
         this.borderWidth = 0.05;
-        this.delay = 5;
+        this.delay = 1;
 
         this.backgroundColor = "#70b2c5";
         this.borderColor = "#000000";
@@ -65,10 +66,40 @@ Input.prototype.load = function(inputObj) {
 }
 
 
+// Method: set color scheme from preset
+Input.prototype.setColors = function(scheme) {
+    if (scheme == "default") {
+        this.backgroundColor = "#70b2c5";
+        this.borderColor = "#000000";
+        this.borderWidth = 0.05;
+        this.gain = 0.5;
+        this.colorCycle = 0.5;
+        this.beatLength = 3000;
+        this.delay = 5;
+    }
+
+    else if (scheme == "night") {
+        this.backgroundColor = "#000000";
+        this.borderColor = "#DDDDDF";
+        this.borderWidth = 0.03;
+        this.colorCycle = 0;
+        this.gain = 0.05;
+    }
+
+    else if (scheme == "dot") {
+        this.backgroundColor = "#000000";
+        this.borderColor = "#080808";
+        this.borderWidth = 0.09;
+        this.colorCycle = 0;
+        this.gain = 0;
+    }
+}
+
+
 // External functions
 // cycle through inputList
 function cycleInputs(dt) {
-    if (inputIndex == 0) {
+    if (inputList.length == 0) {
         generateRandomOrientations();
     }
 
@@ -87,7 +118,6 @@ function cycleInputs(dt) {
     for (var param in tempInput) {
         var t = typeof tempInput[param];
         if (param == "x" || param == "y" || param == "rot" || param == "scale") {
-            // t == "number" && param != "delay" && param != "colorCycle" && param != "borderWidth" && param != "beatLength") {
             tempInput[param] = (1 - step) * currentInput[param] +
             step * nextInput[param];
         }
@@ -97,11 +127,18 @@ function cycleInputs(dt) {
 }
 
 
+function updateInputsFromCycle(inputObj, newState) {
+    inputObj.x = newState[0];
+    inputObj.y = newState[1];
+    inputObj.rot = newState[2];
+    inputObj.scale = newState[3];
+}
+
 
 function generateRandomOrientations() {
     clearList(inputList);
 
-    for (var i = 0; i < 20; i++) {
+    for (var i = 0; i < 10; i++) {
         var tempInput = new Input();
         tempInput.x = Math.random() * 0.2 + 0.6;
         tempInput.y = Math.random() * 0.7 - 0.35;
@@ -111,7 +148,6 @@ function generateRandomOrientations() {
         inputList.push(tempInput);
     }
 }
-
 
 
 function clearList(list) {
@@ -143,8 +179,8 @@ function sweepInputs(steps, rotSteps) {
     updateCameraOn = false;
     inputs.mirrorX = true;
 
-    inputs.x = 0; // -1 * window.aspect / 2;
-    inputs.y = -1 / 2;
+    inputs.x = 0;
+    inputs.y = -0.5;
     inputs.rot = 0;
     inputs.scale = 0.8;
     inputs.delay = 1;
@@ -172,10 +208,6 @@ function sweepInputs(steps, rotSteps) {
                 }
 
                 saveList.push(new Input(inputs));
-
-                /* for (var l = 0; l < steps; l++) {
-                    inputs.scale = 0.3 * l / (steps - 1);
-                } */
             }
         }
     }
@@ -218,16 +250,6 @@ function sweepInputs(steps, rotSteps) {
     var loopID = setInterval(repeat, timeout);
 
     return loopID;
-}
-
-
-// busy sleep
-function sleep(duration) {
-    var now = performance.now();
-
-    while (performance.now() < now + duration) {
-        console.log("augh");
-    }
 }
 
 
