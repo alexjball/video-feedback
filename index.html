@@ -10,14 +10,13 @@
 
 		<script type="text/javascript" src="js/libs/three.min.js"></script>
 		<script type="text/javascript" src="js/libs/stats.min.js"></script>
-		<script type="text/javascript" src="js/libs/dat.gui.min.js"></script>
-        <script type="text/javascript" src="js/libs/FileSaver.min.js"></script>
-        <script type="text/javascript" src="js/libs/Event.min.js"></script>
-        <script type="text/javascript" src="js/libs/fastclick.js"></script>
 
         <script type="text/javascript" src="js/libs/Input.js"></script>
         <script type="text/javascript" src="js/libs/Toolbar.js"></script>
-		<script type="text/javascript" src="js/main.js"></script>
+        <script type="text/javascript" src="js/libs/UserInput.js"></script>
+        <script type="text/javascript" src="js/libs/Cycle.js"></script>
+        
+        <script type="text/javascript" src="js/main.js"></script>
         
 		<script src="js/postprocessing/EffectComposer.js"></script>
 		<script src="js/postprocessing/RenderPass.js"></script>
@@ -31,17 +30,18 @@
 
 
         <style media="screen" type="text/css">
-            .toolbar {
-                position: fixed;
-                right: 0px;
-                height: 100%;
-                background-color: #000000;
-                color: #DDDDDD;
-                font-size: 12px;
-                overflow: auto;
+            .body {
+                height: 100%; 
+                overflow: hidden;
                 margin: 0px;
+                padding: 0px;
                 border: 0px;
-                text-align: center;
+            }
+            
+            .container {
+                position: absolute;
+                top: 0px;
+                left: 0px;
             }
 
             .toolbarInstruction {
@@ -62,6 +62,7 @@
             .toolbarCheckbox {
                 padding-top: 10px;
                 padding-bottom: 10px;
+                color: #DDDDDD;
             }
 
             .toolbarColor {
@@ -71,6 +72,47 @@
                 text-align: center;
             }
 
+            .toolbar {
+                padding: 0px;
+                border: 0px;
+                display: block;
+                position: absolute;
+                opacity: 0.9;
+                
+                top: 5%;
+                height: 95%;
+                width: 20%;
+                right: 0px;
+                
+                text-align: center;
+                background-color: #000000;
+                color: #DDDDDD;
+                font-size: 12px;
+                z-index: 1002;
+                overflow: auto;
+            }
+            
+            .toggleToolbar {
+                padding: 0px;
+                border: 0px;
+                display: block;
+                position: absolute;
+                opacity: 0.9;
+                
+                top: 0px;
+                right: 0px;
+                height: 5%;
+                width: 5%;
+                
+                text-align: center;
+                vertical-align: middle;
+                background-color: #000000;
+                color: #DDDDDD;
+                font-size: 20px;
+                z-index: 1002;
+            }
+            
+            <!-- 
             .instructionOverlay {
                 display: none;
                 position: absolute;
@@ -84,41 +126,19 @@
                 opacity: 0.8;
                 filter: alpha(opacity = 80);
             }
-
-            .instructionPopup {
-                display: none;
-                position: absolute;
-                top: 30%;
-                left: 40%;
-                width: 20%;
-                height: 40%;
-                text-align: center;
-                background-color: #000000;
-                color: #DDDDDD;
-                font-size: "12px";
-                z-index: 1002;
-                overflow: auto;
-            }
+            -->
         </style>
 
 	</head>
 
-	<body style="height:100%; overflow:hidden; margin:0px; padding:0px; border:0px"> <!-- disables scrolling -->
-
-		<div id="container" style="position:absolute;top:0px;left:0px"></div>
-
-        <div id="toolbar", class="toolbar"></div>
-
-        <div id="instructionPopup" class="instructionPopup">
-            <div id="instructions"><!-- instructions added dynamically here --></div>
-            <div style="position:absolute; bottom:0px; text-align:center;">
-                <a href="javascript:void(0)" onclick="document.getElementById('instructionPopup').style.display='none';document.getElementById('instructionOverlay').style.display='none'; userInputOn = true;">
-                    (close)
-                </a>
-            </div>
+    <!-- disable scrolling -->
+	<body class="body">
+		<div id="container" class="container"></div>
+    
+        <div id="toggleToolbar" class="toggleToolbar" onclick="toggleToolbar()">&#9881;</div>
+        <div id="toolbar" class="toolbar">
+            <!-- instructions & options added dynamically here -->
         </div>
-
-        <div id="instructionOverlay" class="instructionOverlay"></div>
 
 		<script type="text/javascript">
 			init();
