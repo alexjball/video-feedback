@@ -13,7 +13,6 @@ function init() {
     window.interestList = JSON.parse('[{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":1.125,"y":0,"rot":0,"scale":0.8500000000000001},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":1.0750000000000002,"y":0,"rot":0.03490658503988659,"scale":0.775},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.22969924812030057,"y":0.2178757118098539,"rot":0.5235987755982988,"scale":0.8750000000000001},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.2567492951127818,"y":0.11791284971527607,"rot":0.5235987755982988,"scale":0.9000000000000001},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.2850753185045946,"y":0.337439135099447,"rot":0.9773843811168251,"scale":0.9000000000000001},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.3543191852853677,"y":0.17695104841615378,"rot":1.2915436464758048,"scale":0.9000000000000001},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.6741116966631931,"y":0.049109365366777985,"rot":1.6406094968746712,"scale":0.7},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.5295287954446296,"y":0.1261266461132166,"rot":2.0943951023931975,"scale":0.725},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.8432387167997415,"y":0.19935519648274588,"rot":2.3736477827122906,"scale":0.75},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.43534397995763624,"y":0.4419895119073559,"rot":2.3736477827122906,"scale":0.75},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":0.4990160912704009,"y":0.10230147031290185,"rot":2.722713633111157,"scale":0.75},{"invertX":false,"invertY":false,"mirrorX":true,"mirrorY":false,"diagNE":false,"diagNW":false,"invertColor":false,"farOut":false,"colorCycle":0.5,"gain":0.5,"borderWidth":0.05,"delay":2,"backgroundColor":"#70b2c5","borderColor":"#000000","x":1.125,"y":0,"rot":0,"scale":0.8500000000000001}]');
     inputList = interestList;
 
-
     // Create screen instance
     window.inputs = new Input(); // default parameter values
     window.toolbar = new Toolbar();
@@ -115,9 +114,33 @@ function init() {
                 format          : THREE.RGBFormat,
                 generateMipmaps : false,
                 depthBuffer     : true,
-                stencilBuffer   : false
+                stencilBuffer   : true
              });
     }
+
+    /////////////
+    // Renderer setup
+    /////////////
+
+    renderer = new THREE.WebGLRenderer( {
+        antialias : false,
+        stencil   : false,
+        precision : "mediump",
+        preserveDrawingBuffer : true,
+        autoClear : false,
+    } );
+
+    if (!renderer) {
+        document.getElementByType("body").innerHTML += "oh no webgl";
+    }
+
+    renderer.setSize(c_width, c_height);
+    renderer.sortObjects = false;
+    renderer.autoClearColor = false;
+
+    var container = document.getElementById('container');
+
+    container.appendChild(renderer.domElement);
 
     ////////////
     // Feedback scene setup
@@ -193,33 +216,9 @@ function init() {
     viewCamera = createScalableOrthoCam(aspect, minimumScaleFactor, maximumScaleFactor);
 
     viewCamera.position.z = 5;
-    viewCamera.setScale(.7);
+    // viewCamera.setScale(.7);
     viewScene.add(viewCamera);
     viewCamera.lookAt(new THREE.Vector3(0, 0, 0));
-
-    /////////////
-    // Renderer setup
-    /////////////
-
-    renderer = new THREE.WebGLRenderer( {
-        antialias : true,
-        stencil   : false,
-        precision : "mediump",
-        preserveDrawingBuffer : true,
-        autoClear : false
-    } );
-
-    if (!renderer) {
-        document.getElementByType("body").innerHTML += "oh no webgl";
-    }
-
-    renderer.setSize(c_width, c_height);
-    renderer.sortObjects = false;
-    renderer.autoClearColor = false;
-
-    var container = document.getElementById('container');
-
-    container.appendChild(renderer.domElement)
 
     /////////////
     // Stats setup
@@ -942,7 +941,7 @@ addPoint = (function() {
 })();
 
 removePoint = function() {
-    if (feedbackPoints.lenth == 0) return;
+    if (feedbackPoints.length == 0) return;
 
     var pos = viewCamera.convertPixelsToCoordinate(mouseX, mouseY);
 

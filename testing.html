@@ -1,0 +1,130 @@
+<html>
+	<head>
+		
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <!-- disables zooming on mobile devices -->
+
+		<meta charset="utf-8">
+
+		<title>video feedback</title>
+
+		<script type="text/javascript" src="js/libs/three.min.js"></script>
+		<script type="text/javascript" src="js/libs/stats.min.js"></script>
+		<script type="text/javascript" src="js/libs/dat.gui.min.js"></script>
+        <script type="text/javascript" src="js/libs/FileSaver.min.js"></script>
+        <script type="text/javascript" src="js/libs/Event.min.js"></script>
+        <script type="text/javascript" src="js/libs/fastclick.js"></script>
+
+        <script type="text/javascript" src="js/libs/Input.js"></script>
+        <script type="text/javascript" src="js/libs/Toolbar.js"></script>
+		<script type="text/javascript" src="js/main.js"></script>
+        <script type="text/javascript" src="js/VF_Util.js"></script>
+
+		<script src="js/postprocessing/EffectComposer.js"></script>
+		<script src="js/postprocessing/RenderPass.js"></script>
+		<script src="js/postprocessing/ShaderPass.js"></script>
+		<script src="js/postprocessing/MaskPass.js"></script> 
+
+		<script src="js/shaders/CopyShader.js"></script>
+		<script src="js/shaders/ColorShader.js"></script>
+		<script src="js/shaders/SymmetryShader.js"></script>
+		<script src="js/shaders/RGBShiftShader.js"></script>
+
+
+        <style media="screen" type="text/css">
+            .toolbar {
+                position: fixed;
+                right: 0px;
+                height: 100%;
+                background-color: #000000;
+                color: #DDDDDD;
+                font-size: 12px;
+                overflow: auto;
+                margin: 0px;
+                border: 0px;
+                text-align: center;
+            }
+
+            .toolbarInstruction {
+                padding-top: 5px;
+                padding-bottom: 5px;
+            }
+
+            .toolbarRange {
+                padding-top: 5px;
+                padding-bottom: 5px;
+            }
+
+            .toolbarButton {
+                padding-top: 5px;
+                padding-bottom: 5px;
+            }
+
+            .toolbarCheckbox {
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+
+            .toolbarColor {
+                padding-top: 10px;
+                padding-bottom: 5px;
+                color: #DDDDDD;
+                text-align: center;
+            }
+
+            .instructionOverlay {
+                display: none;
+                position: absolute;
+                top: 0%;
+                left: 0%;
+                width: 100%;
+                height: 100%;
+                background-color: black;
+                z-index: 1001;
+                -moz-opacity: 0.8;
+                opacity: 0.8;
+                filter: alpha(opacity = 80);
+            }
+
+            .instructionPopup {
+                display: none;
+                position: absolute;
+                top: 30%;
+                left: 40%;
+                width: 20%;
+                height: 40%;
+                text-align: center;
+                background-color: #000000;
+                color: #DDDDDD;
+                font-size: "12px";
+                z-index: 1002;
+                overflow: auto;
+            }
+        </style>
+
+	</head>
+
+	<body style="height:100%; overflow:hidden; margin:0px; padding:0px; border:0px"> <!-- disables scrolling -->
+
+		<div id="container" style="position:absolute;top:0px;left:0px"></div>
+
+        <div id="toolbar", class="toolbar"></div>
+
+        <div id="instructionPopup" class="instructionPopup">
+            <div id="instructions"><!-- instructions added dynamically here --></div>
+            <div style="position:absolute; bottom:0px; text-align:center;">
+                <a href="javascript:void(0)" onclick="document.getElementById('instructionPopup').style.display='none';document.getElementById('instructionOverlay').style.display='none'; userInputOn = true;">
+                    (close)
+                </a>
+            </div>
+        </div>
+
+        <div id="instructionOverlay" class="instructionOverlay"></div>
+
+        <canvas id="canvas2" width='400' height='400'></canvas>
+
+
+        <script type="text/javascript" src="js/test_VF_Util.js"></script>
+
+	</body>
+</html>
