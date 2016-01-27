@@ -83,6 +83,15 @@ function init() {
                     inputs.gain = 0.05;
                 });
 
+    toolbar.add("isPaused", "Pause", "checkbox", function() {
+        // This is called after inputs is updated, so not being paused means we
+        // just started animating again.
+        if (!inputs.isPaused) requestAnimationFrame(animate);
+    });
+    toolbar.add("stepFrame", "Step Frame", "button", function() {
+        if (inputs.isPaused) requestAnimationFrame(animate);
+    })
+
     ////////////
     // Constants
     ////////////
@@ -122,7 +131,7 @@ function init() {
      */
 
     // The scene used in the feedback loop
-    var feedbackScene = new THREE.Scene();
+    feedbackScene = new THREE.Scene();
 
     // Initialize all render targets.
     feedbackTarget = new Array(12); // #hardcode
@@ -160,13 +169,15 @@ function init() {
     TV         = new THREE.Mesh(TVGeometry, TVMaterial);
     TV.position.set(0, 0, 0);
 
+    feedbackPoints = [];
+
     // The renderer is set to render objects in the order in which they were
     // added to the scene, so the order we push matters.
     feedbackScene.add(TV);
     feedbackScene.add(border);
     feedbackScene.add(background);
 
-    feedbackCamera = createScalableOrthoCam(aspect, minimumScaleFactor, maximumScaleFactor);
+    feedbackCamera = createScalableOrthoCam(aspect, minimumScaleFactor, maximumScaleFactor, true);
     feedbackCamera.setScale(.8); // initial relative size of TV
     feedbackCamera.position.z = 5;
     feedbackScene.add(feedbackCamera);
@@ -176,10 +187,13 @@ function init() {
     // View scene (to be rendered to screen) setup
     ////////////
 
-    viewScene = feedbackScene;
+    viewScene = new THREE.Scene();
+    viewScene.add(feedbackScene);
+    viewScene.add(feedbackCamera.outline);
     viewCamera = createScalableOrthoCam(aspect, minimumScaleFactor, maximumScaleFactor);
 
     viewCamera.position.z = 5;
+    viewCamera.setScale(.7);
     viewScene.add(viewCamera);
     viewCamera.lookAt(new THREE.Vector3(0, 0, 0));
 
@@ -653,10 +667,8 @@ function animate() {
                 touchRotationInit = touchRotation;
 
                 // panning
-                var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
-                / inputs.scale;
-                var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height
-                / inputs.scale;
+                var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width / inputs.scale;
+                var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height / inputs.scale;
 
                 inputs.x = cameraX0 - dx;
                 inputs.y = cameraY0 - dy;
@@ -670,10 +682,8 @@ function animate() {
 
         else {
             // only pan
-            var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width
-                / inputs.scale;
-            var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height
-                / inputs.scale;
+            var dx = inputSettings.xyStep * (mouseX - mouseX0) * 40 / c_width / inputs.scale;
+            var dy = inputSettings.xyStep * (mouseY - mouseY0) * 40 / c_height / inputs.scale;
 
             inputs.x = cameraX0 - dx;
             inputs.y = cameraY0 - dy;
@@ -700,7 +710,7 @@ function animate() {
         t_start = performance.now();
     }
 
-    requestAnimationFrame(animate);
+    if (!inputs.isPaused) requestAnimationFrame(animate);
 
     stats.update();
 }
@@ -751,13 +761,34 @@ function render() {
 }
 
 
-function createScalableOrthoCam(aspect, minScale, maxScale) {
+function createScalableOrthoCam(aspect, minScale, maxScale, drawOutline) {
     // The camera sees things as scale times larger than they actually are.
 
     camera = new THREE.OrthographicCamera(-aspect / 2, aspect / 2, 0.5, -0.5, 0.1, 100);
 
     camera.minScale   = minScale;
     camera.maxScale   = maxScale;
+
+    if (drawOutline) {
+        (function() {
+            var material = new THREE.LineBasicMaterial({
+                color: 0xff0000,
+                linewidth: 5
+            });
+
+            var geometry = new THREE.Geometry();
+
+            geometry.vertices.push(new THREE.Vector3(- aspect / 2, -.5, 0));
+            geometry.vertices.push(new THREE.Vector3(  aspect / 2, -.5, 0));
+            geometry.vertices.push(new THREE.Vector3(  aspect / 2,  .5, 0));
+            geometry.vertices.push(new THREE.Vector3(- aspect / 2,  .5, 0));
+            geometry.vertices.push(new THREE.Vector3(- aspect / 2, -.5, 0));
+
+            camera.outline = new THREE.Line(geometry, material);
+
+            camera.outline.position.z = 1;
+        })();
+    }
 
     var internalScale = 1;
 
@@ -769,6 +800,8 @@ function createScalableOrthoCam(aspect, minScale, maxScale) {
         this.right = aspect / 2 / s;
         this.top = 0.5 / s;
         this.bottom = -0.5 / s;
+
+        if (this.outline) this.syncOutline();
 
         internalScale = s;
 
@@ -791,6 +824,8 @@ function createScalableOrthoCam(aspect, minScale, maxScale) {
         this.rotation.z += angle;
         this.position.x = Math.cos(angle) * x0 - Math.sin(angle) * y0;
         this.position.y = Math.sin(angle) * x0 + Math.cos(angle) * y0;
+
+        if (this.outline) this.syncOutline();
     };
 
     camera.rotateAbs = function(angle) {
@@ -801,10 +836,30 @@ function createScalableOrthoCam(aspect, minScale, maxScale) {
         this.rotation.z = angle;
         this.position.x = Math.cos(angle) * x0 - Math.sin(angle) * y0;
         this.position.y = Math.sin(angle) * x0 + Math.cos(angle) * y0;
+
+        if (this.outline) this.syncOutline();
     };
 
     camera.translateScale = function(ds) {
         this.setScale(internalScale + ds);
+    };
+
+    camera.syncOutline = function() {
+        this.outline.position.x = this.position.x;
+        this.outline.position.y = this.position.y;
+        this.outline.rotation.z = this.rotation.z;
+        this.outline.scale.x = 1.0 / internalScale;
+        this.outline.scale.y = this.outline.scale.x;
+        this.outline.scale.z = this.outline.scale.z;
+    };
+
+    camera.convertPixelsToCoordinate = function(x, y) {
+        // pixels is a 2 element array relative to the LL corner of the canvas.
+
+        return new THREE.Vector3(
+            this.left + x / c_width * (this.right - this.left),
+            this.bottom + y / c_height * (this.top - this.bottom),
+            0);
     };
 
     return camera;
@@ -852,11 +907,63 @@ function keyboardHandler(evt) {
             inputs.y += inputSettings.xyStep;
             // feedbackCamera.translateY(- inputSettings.scale *                inputSettings.xyStep);
             break;
+        case "R":
+            addPoint();
+            break;
+        case "T":
+            removePoint();
+            break;
         case " ":
             console.log("space");
             break;
     }
 }
+
+addPoint = (function() {
+    var n_col = 20;
+    var col_index = 0;
+
+    return function() {
+        var col = new THREE.Color();
+        col.setHSL(col_index / n_col, 1, .5);
+
+        col_index = (col_index + 1) % n_col;
+
+        var plane = new THREE.Mesh(new THREE.PlaneBufferGeometry(.02, .02),
+            new THREE.MeshBasicMaterial({color: col.getHex()}));
+
+        plane.position.copy(viewCamera.convertPixelsToCoordinate(mouseX, mouseY));
+        plane.position.z = .1;
+
+        feedbackPoints.push(plane);
+        feedbackScene.add(plane);
+    }
+
+})();
+
+removePoint = function() {
+    if (feedbackPoints.lenth == 0) return;
+
+    var pos = viewCamera.convertPixelsToCoordinate(mouseX, mouseY);
+
+    var i, min_i, dist, min_dist = Infinity;
+    for (i = 0; i < feedbackPoints.length; i++) {
+        dist = feedbackPoints[i].position.distanceTo(pos);
+        if (dist < min_dist) {
+            min_dist = dist;
+            min_i = i;
+        }
+    }
+
+    feedbackScene.remove(feedbackPoints[min_i]);
+    feedbackPoints.splice(min_i, 1);
+
+    // feedbackPoints.geometry.vertices.splice(min_i, 1);
+    // // feedbackPoints.geometry.colors.splice(min_i, 1);
+
+    // feedbackPoints.geometry.verticesNeedUpdate = true;
+    // // feedbackPoints.geometry.colorsNeedUpdate = true;
+};
 
 onMouseDown = function(event) {
     mouseX0 = event.clientX;
