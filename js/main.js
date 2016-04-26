@@ -35,14 +35,20 @@ function init() {
 
     // All render targets should be the same.
     var createRenderTarget = function () {
-        return new THREE.WebGLRenderTarget(c_width, c_width, 
+        var target =  new THREE.WebGLRenderTarget(c_width, c_height, 
             {   minFilter       : THREE.LinearFilter,
                 magFilter       : THREE.LinearFilter,
                 format          : THREE.RGBFormat,
-                generateMipmaps : false,
                 depthBuffer     : true,
                 stencilBuffer   : false
              });
+             
+        // Even though the documentation states that generateMipMaps is an 
+        // option for WebGLRenderTarget, it never gets passed to the texture,
+        // so it must be set directly.
+        target.texture.generateMipmaps = false;
+        
+        return target;
     }
 
     ////////////
@@ -91,7 +97,7 @@ function init() {
     // Create the TV. The textured mapped by the material is changed each
     // render cycle. Also, THREE.PlaneBufferGeometry is apparently a thing.
     var TVGeometry = new THREE.PlaneBufferGeometry(aspect, 1);
-    TVMaterial     = new THREE.MeshBasicMaterial({map : feedbackTarget[0]});
+    TVMaterial     = new THREE.MeshBasicMaterial({map : null});
     TV         = new THREE.Mesh(TVGeometry, TVMaterial);
     TV.position.set(0, 0, 0);
 
@@ -123,10 +129,10 @@ function init() {
     /////////////
 
     renderer = new THREE.WebGLRenderer( {
-        antialias : true,
+        antialias : false,
         stencil   : false,
-        precision : "mediump",
-        preserveDrawingBuffer : true,
+        precision : "highp",
+        preserveDrawingBuffer : false,
         autoClear : false
     } );
 
@@ -147,8 +153,9 @@ function init() {
     /////////////
 
     stats = new Stats();
-    stats.domElement.style.position = 'absolute';
-    stats.domElement.style.top = '0px';
+    stats.showPanel(0);
+    stats.dom.style.position = 'absolute';
+    stats.dom.style.top = '0px';
     container.appendChild(stats.domElement);
 
 
@@ -189,8 +196,8 @@ function init() {
     window.cycling = false;
     initializeCycler();
     
-    // Get rid of FPS graph (for now)
-    document.getElementById("fps").style.display = "none";
+    // // Get rid of FPS graph (for now)
+    // document.getElementById("fps").style.display = "none";
     
     n_f = 0;
     n_f_show = 120;
@@ -277,10 +284,12 @@ function animate() {
         render_time = 0;
         t_start = performance.now();
     }
-
+    
+    stats.begin();
+    
     requestAnimationFrame(animate);
 
-    stats.update();
+    stats.end();
 }
 
 
@@ -295,7 +304,7 @@ function render() {
      */
 
     // We want to update the current feedback target.
-    TVMaterial.map = feedbackTarget[i_loop];
+    TVMaterial.map = feedbackTarget[i_loop].texture;
 
     /*
      * This applies the rendering stack to produce the feedback texture.
@@ -320,7 +329,7 @@ function render() {
     feedbackTarget[i_loop] = temp;
 
     // We want to update the current feedback target.
-    TVMaterial.map = feedbackTarget[i_loop];
+    TVMaterial.map = feedbackTarget[i_loop].texture;
 
     // Render the viewScene to the screen.
     renderer.render(viewScene, viewCamera);
