@@ -132,7 +132,7 @@ function init() {
         antialias : false,
         stencil   : false,
         precision : "highp",
-        preserveDrawingBuffer : false,
+        preserveDrawingBuffer : true,
         autoClear : false
     } );
 
