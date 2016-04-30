@@ -317,7 +317,7 @@ function initializeToolbar(toolbarInstance) {
     
     toolbarInstance.addInstruction("");
     
-    toolbarInstance.addRange("Delay", "delay", [1, 1, 10]);
+    toolbarInstance.addRange("Delay", "delay", [1, 1, 30]);
     toolbarInstance.addRange("Color Cycle", "colorCycle");
     toolbarInstance.addRange("Gain", "gain");
     toolbarInstance.addRange("Border Width", "borderWidth", [0, 0.001, 0.1]);

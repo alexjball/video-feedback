@@ -66,7 +66,7 @@ function init() {
     var feedbackScene = new THREE.Scene();
 
     // Initialize all render targets.
-    feedbackTarget = new Array(12); // #hardcode
+    feedbackTarget = new Array(30); // #hardcode
 
     for (var i = 0; i < feedbackTarget.length; i++) {
         feedbackTarget[i] = createRenderTarget();
@@ -195,9 +195,6 @@ function init() {
     initializeEventListeners();
     window.cycling = false;
     initializeCycler();
-    
-    // // Get rid of FPS graph (for now)
-    // document.getElementById("fps").style.display = "none";
     
     n_f = 0;
     n_f_show = 120;
