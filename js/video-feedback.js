@@ -8,14 +8,11 @@ VF.Portal = function(geometry, spacemap, storageManager, renderer) {
     
     this.renderer = renderer;
     
-    // end should be a descendent of start and both should be 
-    // VF.Spacemap objects.
-    var initialSpacemap = new VF.Spacemap();
-    this._spacemap = {start : null, end : null};
-    
-    // Set valid initial values.
-    this.setSpacemap(initialSpacemap);
-    this.setSpacemap(spacemap);
+    // Array of VF.Spacemap objects. 
+    // They define a series of transforms from the portal to the camera.
+    // spacemap[0] is a child of this, and spacemap[spacemap.length - 1]
+    // is the parent of this._boundingBoxCamera.
+    this.spacemap = spacemap instanceof VF.Spacemap ? [spacemap] : spacemap;
     
     // An object that handles creating render targets and caching existing 
     // targets.
@@ -76,28 +73,6 @@ VF.Portal._static = (function() {
 
 VF.Portal.prototype = Object.create( THREE.Object3D.prototype );
 VF.Portal.prototype.constructor = VF.Portal;
-
-VF.Portal.prototype.setSpacemap = function(spacemap) {
-    
-    if (spacemap instanceof VF.Spacemap) {
-        
-        this._spacemap.start = spacemap;
-        
-        this._spacemap.end = spacemap;
-        
-    }
-    
-    if (spacemap.start !== undefined) {
-        this._spacemap.start = spacemap.start;
-    }
-    
-    if (spacemap.end !== undefined) {
-        this._spacemap.end = spacemap.end;
-    }
-    
-}
-
-VF.Portal.prototype.getSpacemap = function() { return this._spacemap; };
 
 VF.Portal.prototype.setStorage = function(newStorage) {
         
@@ -207,9 +182,12 @@ VF.Portal.prototype._setRenderingState = function(scene, initialWriteBuffer, ini
     s.ec.renderTarget1 = initialWriteBuffer;
     s.ec.renderTarget2 = initialReadBuffer;
     
-    // Set up the camera to render the correct portion of space.    
-    this.add(this._spacemap.start);
-    this._spacemap.end.add(this._boundingBoxCamera);
+    // Set up the spacemap chain from the portal to the camera.
+    this.add(this.spacemap[0]);
+    for (var i = 1; i < this.spacemap.length; i++) {
+        this.spacemap[i - 1].add(this.spacemap[i]);
+    }
+    this.spacemap[this.spacemap.length - 1].add(this._boundingBoxCamera);
         
     s.renderPass.camera = this._boundingBoxCamera;
     s.renderPass.scene  = scene;
@@ -224,9 +202,12 @@ VF.Portal.prototype._unsetRenderingState = function() {
     
     var s = VF.Portal._static;
     
-    // Uncouple the spacemap from this and boundingBoxCamera.
-    this._spacemap.end.remove(this._boundingBoxCamera);
-    this.remove(this._spacemap.start);
+    // Uncouple the spacemap chain.
+    this.remove(this.spacemap[0]);
+    for (var i = 1; i < this.spacemap.length; i++) {
+        this.spacemap[i - 1].remove(this.spacemap[i]);
+    }
+    this.spacemap[this.spacemap.length - 1].remove(this._boundingBoxCamera);
     
     // Reset the render pass.
     
@@ -261,7 +242,7 @@ VF.Portal.prototype._unsetRenderingState = function() {
 
 VF.Portal.prototype.clone = function () {
 
-	return new this.constructor( this._geometry, this._spacemap, this.storageManager ).copy( this );
+	return new this.constructor( this._geometry, this.spacemap, this.storageManager ).copy( this );
 
 };
 

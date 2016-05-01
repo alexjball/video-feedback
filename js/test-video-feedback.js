@@ -96,6 +96,16 @@ function init() {
     viewCamera.position.z = 5;
     viewCamera.lookAt(new THREE.Vector3(0, 0, 0));
 
+    /////////////
+    // Stats setup
+    /////////////
+
+    stats = new Stats();
+    stats.showPanel(0);
+    stats.dom.style.position = 'absolute';
+    stats.dom.style.top = '0px';
+    document.body.appendChild(stats.domElement);
+
 }
 
 function render() {
@@ -104,6 +114,10 @@ function render() {
             
     renderer.render(viewScene, viewCamera);
     
+    stats.begin();
+    
     requestAnimationFrame(render);
+
+    stats.end();
 
 }
