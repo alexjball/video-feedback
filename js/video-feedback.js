@@ -11,7 +11,7 @@ VF.Portal = function(geometry, spacemap, storageManager, renderer) {
     // end should be a descendent of start and both should be 
     // VF.Spacemap objects.
     var initialSpacemap = new VF.Spacemap();
-    this._spacemap = null;
+    this._spacemap = {start : null, end : null};
     
     // Set valid initial values.
     this.setSpacemap(initialSpacemap);
@@ -36,38 +36,48 @@ VF.Portal = function(geometry, spacemap, storageManager, renderer) {
     this._boundingBoxCamera = new THREE.OrthographicCamera();
         
     // The map will be set to a texture when one is bound.
-    this._material = new THREE.MeshBasicMaterial({map : this._storage});
+    this._material = new THREE.MeshBasicMaterial({map : null});
     
     // Since the owner of this object sets the texture and material
     // elsewhere, this shouldn't be public.
     this._mesh = new THREE.Mesh(this._geometry, this._material); 
-                
+    this.add(this._mesh);
+        
     // Create a scene that just draws the portal onto a target.
     // _maskCamera is a parentless copy of _boundingBoxCamera.
     this._maskScene = new THREE.Scene();
     this._maskCamera = new THREE.OrthographicCamera();
-    this._maskScene.add(this._mesh, this._maskCamera);    
+    this._maskMesh   = new THREE.Mesh(this._geometry);
+    this._maskScene.add(this._maskMesh, this._maskCamera);    
  
     this.setGeometry(this._geometry);
                                 
 }
 
-VF.Portal._static = {
+// Objects that can be shared between all portal objects.
+VF.Portal._static = (function() {
     
-    ec : new THREE.EffectComposer(null, new THREE.Object3D()),
+    var s = {
+        ec : new THREE.EffectComposer(null, new THREE.Object3D()),
+        
+        renderPass : new THREE.RenderPass(),
+        
+        maskPass : new THREE.MaskPass(),
+        
+        clearMaskPass : new THREE.ClearMaskPass()
+    };
     
-    renderPass : new THREE.RenderPass(),
+    // Don't clear the buffer between renders.
+    s.renderPass.clear = false;
     
-    maskPass : new THREE.MaskPass(),
+    return s;
     
-    clearMaskPass : new THREE.ClearMaskPass()
-    
-};
+})();
 
 VF.Portal.prototype = Object.create( THREE.Object3D.prototype );
 VF.Portal.prototype.constructor = VF.Portal;
 
-VF.Portal.setSpacemap = function(spacemap) {
+VF.Portal.prototype.setSpacemap = function(spacemap) {
     
     if (spacemap instanceof VF.Spacemap) {
         
@@ -87,15 +97,25 @@ VF.Portal.setSpacemap = function(spacemap) {
     
 }
 
-VF.Portal.getSpacemap = function() { return this._spacemap; };
+VF.Portal.prototype.getSpacemap = function() { return this._spacemap; };
 
 VF.Portal.prototype.setStorage = function(newStorage) {
-
+        
+        if (newStorage === undefined) {
+            console.error("newStorage must be null or a render target.");
+        }
+        
         this.storageManager.recycle(this._storage);
+
+        // If the storage goes from null to nonnull or nonnull to null,
+        // flag the material for update.
+        if ((this._storage === null) !== (newStorage !== null)) {
+            this._material.needsUpdate = true;
+        }        
         
         this._storage = newStorage;
-    
-        this._material.map = this._storage.texture;
+            
+        this._material.map = this._storage;
 
 }
 
@@ -106,7 +126,9 @@ VF.Portal.prototype.setGeometry = function(geometry) {
     
     this._geometry = geometry;
     
-    this._mesh.geomery = this._geometry;
+    this._mesh.geometry = this._geometry;
+    
+    this._maskMesh.geometry = this._geometry;
     
     this._geometry.computeBoundingBox();
         
@@ -124,7 +146,7 @@ VF.Portal.prototype.setGeometry = function(geometry) {
     // is primarily used for depth testing.
     c.near = -100;
     c.far = 100;
-    
+        
     c.updateProjectionMatrix();
     
     // Update the mask camera to match the bounding box camera.
@@ -139,16 +161,27 @@ VF.Portal.prototype.computeIteration = function(sourceScene, replaceStorage) {
     // replaceStorage (bool) specifies whether the portal's current storage
     // should be replaced by the next iteration. The storage is recycled if
     // possible.
-    
+
     var b1 = this.storageManager.getRenderTarget(),
         b2 = this.storageManager.getRenderTarget();
     
     this._setRenderingState(sourceScene, b1, b2);
     
     VF.Portal._static.ec.render();
-    
+        
     var nextIteration = this._unsetRenderingState();
     
+    // // Render just nextIteration.
+    // var scene = new THREE.Scene();
+    // var camera = new THREE.OrthographicCamera(-1, 1, 1, -1);
+    // camera.position.z = 5;
+    // camera.lookAt(new THREE.Vector3(0, 0, 0));
+    // var disp = new THREE.Mesh(
+    //     new THREE.PlaneBufferGeometry(2, 2), 
+    //     new THREE.MeshBasicMaterial({map : nextIteration}));
+    // scene.add(disp);
+    // renderer.render(scene, camera);
+        
     if (replaceStorage || replaceStorage === undefined) {
         
         this.setStorage(nextIteration);
@@ -167,7 +200,8 @@ VF.Portal.prototype._setRenderingState = function(scene, initialWriteBuffer, ini
     s.ec.renderer = this.renderer;
     
     // Set the passes the effect composer will apply.
-    s.ec.passes = [s.maskPass].concat(s.renderPass, this.passes, s.clearMaskPass);
+    // s.ec.passes = [s.maskPass].concat(s.renderPass, this.passes, s.clearMaskPass);
+    s.ec.passes = [s.renderPass];
     
     // Set render targets
     s.ec.renderTarget1 = initialWriteBuffer;
@@ -176,9 +210,9 @@ VF.Portal.prototype._setRenderingState = function(scene, initialWriteBuffer, ini
     // Set up the camera to render the correct portion of space.    
     this.add(this._spacemap.start);
     this._spacemap.end.add(this._boundingBoxCamera);
-    
+        
     s.renderPass.camera = this._boundingBoxCamera;
-    s.renderPass.scene = scene;
+    s.renderPass.scene  = scene;
 
     // Set up mask passes    
     s.maskPass.scene  = this._maskScene;
@@ -232,13 +266,13 @@ VF.Portal.prototype.clone = function () {
 };
 
 VF.FeedbackStorageManager = function(width, height, options) {
-    
+        
     this.width = width;
     this.height = height;
     this.options = options !== undefined ? options : 
         VF.FeedbackStorageManager.defaultOptions;
     
-    // Create _cached and _state;
+    // Create _cache and _allocated;
     this._updateState();
         
 }
@@ -251,12 +285,17 @@ VF.FeedbackStorageManager.prototype = {
                 
         var target;
         
-        if (this._cached.length > 0) {
-            target = this._cached.pop();
+        if (this._cache.length > 0) {
+            target = this._cache.pop();
         } else {
             target = this._createRenderTarget();
         }
-                
+             
+        // Record the uuid of the render target.
+        this._allocated[target.uuid] = true;
+            
+        return target;
+        
     },
     
     recycle : function(target) {
@@ -265,11 +304,15 @@ VF.FeedbackStorageManager.prototype = {
         // Bail if the target isn't a render target.
         if (target instanceof THREE.WebGLRenderTarget === false) return;
         
-        // Bail if the cache is full
+        // Bail if the cache is full.
         if (this._cache.length > 2) return; 
         
-        if (this._state == target._storageManagerState) {
-            this._cache.push(target);        
+        // If the target was given out by the current state of this storage
+        // manager, add it to the cache and unset the reference in the list
+        // of allocated render targets.
+        if (this._allocated[target.uuid]) {
+            this._cache.push(target);
+            this._allocated[target.uuid] = undefined;
         }
         
     },
@@ -294,7 +337,7 @@ VF.FeedbackStorageManager.prototype = {
     },
     
     _createRenderTarget : function() {
-        
+                
         var target =  new THREE.WebGLRenderTarget(
             this.width, this.height, this.options
         );
@@ -302,20 +345,17 @@ VF.FeedbackStorageManager.prototype = {
         // Even though the documentation states that generateMipMaps is an 
         // option for WebGLRenderTarget, it never gets passed to the texture,
         // so it must be set directly.
-        if (this.options.generateMipMaps !== undefined) {
-            target.texture.generateMipMaps = this.options.generateMipMaps;
+        if (this.options.generateMipmaps !== undefined) {
+            target.texture.generateMipmaps = this.options.generateMipmaps;
         }
-        
-        // Store the current state of the manager with the target.
-        target._storageManagerState = this._state;
-        
+                
         return target;
         
     },
     
     _updateState : function() {
         
-        this._state = THREE.Math.generateUUID();
+        this._allocated = [];
         
         this._cache = [];
         
@@ -327,6 +367,7 @@ VF.FeedbackStorageManager.defaultOptions = {
     
     minFilter     : THREE.LinearFilter,
     magFilter     : THREE.LinearFilter,
+    format        : THREE.RGBFormat,
     depthBuffer   : true,
     stencilBuffer : true,
     
