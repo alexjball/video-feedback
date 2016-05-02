@@ -114,12 +114,14 @@ function init() {
     colorPass = new THREE.ShaderPass(ColorShader);
     
     portal.passes = [colorPass];
-
+    
 }
 
 function render() {
     
     stats.begin();
+            
+    spacemap.position.x =.5 * Math.sin(performance.now() * 2 * Math.PI / 2000);
         
     updated = portal.computeIteration(feedbackScene, true);
             

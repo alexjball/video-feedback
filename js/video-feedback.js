@@ -64,7 +64,7 @@ VF.Portal = function(geometry, spacemap, storageManager, renderer) {
                                 
 }
 
-// Objects that can be shared between all portal objects.
+// Objects that can be shared between all portal intances.
 VF.Portal._static = (function() {
     
     var s = {
@@ -74,11 +74,16 @@ VF.Portal._static = (function() {
                 
         maskPass : new THREE.MaskPass(),
         
+        // Clears the depth and stencil buffers each frame.
+        clearPass : new THREE.ClearPass(false, true, true),
+        
         clearMaskPass : new THREE.ClearMaskPass()
     };
     
-    // Don't clear the buffer between renders.
+    // There is no need to clear the color buffer, and clearPass
+    // will clear the stencil and depth buffer for us.
     s.renderPass.clear = false;
+    s.maskPass.clear = false;
     
     return s;
     
@@ -193,7 +198,7 @@ VF.Portal.prototype._setRenderingState = function(scene, initialWriteBuffer, ini
     s.ec.renderer = this.renderer;
     
     // Set the passes the effect composer will apply.
-    s.ec.passes = [s.maskPass].concat(s.renderPass, this.passes, s.clearMaskPass);
+    s.ec.passes = [s.clearPass, s.maskPass].concat(s.renderPass, this.passes, s.clearMaskPass);
     
     // Set render targets
     s.ec.renderTarget1 = initialWriteBuffer;
