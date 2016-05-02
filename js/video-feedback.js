@@ -40,12 +40,25 @@ VF.Portal = function(geometry, spacemap, storageManager, renderer) {
     this._mesh = new THREE.Mesh(this._geometry, this._material); 
     this.add(this._mesh);
         
-    // Create a scene that just draws the portal onto a target.
-    // _maskCamera is a parentless copy of _boundingBoxCamera.
-    this._maskScene = new THREE.Scene();
-    this._maskCamera = new THREE.OrthographicCamera();
-    this._maskMesh   = new THREE.Mesh(this._geometry);
-    this._maskScene.add(this._maskMesh, this._maskCamera);    
+    // The render target used to render the portal view is an aligned 
+    // bounding rectangle of the portal geometry. Therefore if the portal 
+    // geometry is not an aligned rectangle there will be regions of the
+    // render target that need not be rendered to. We use a stencil buffer
+    // to control these regions. We need to set this up carefully:
+    // We need to set up a scene to render the portal geometry onto the
+    // render target as it is mapped when displayed. This scene is used to
+    // set up the stencil buffer. The mask pass should clear the stencil buffer
+    // and only write to it. By setting colorWrite and depthWrite to false, 
+    // we only write (and can clear) the stencil buffer. This is necessary
+    // despite the fact that MaskPass sets the mask flags when it renders, 
+    // since WebGLRenderer overwrites these masks using the material flags. 
+    this._maskScene               = new THREE.Scene();
+    this._maskCamera              = new THREE.OrthographicCamera();
+    this._maskMaterial            = new THREE.MeshBasicMaterial();
+    this._maskMaterial.colorWrite = false;
+    this._maskMaterial.depthWrite = false;
+    this._maskMesh                = new THREE.Mesh(this._geometry, this._maskMaterial);
+    this._maskScene.add(this._maskMesh);    
  
     this.setGeometry(this._geometry);
                                 
@@ -58,7 +71,7 @@ VF.Portal._static = (function() {
         ec : new THREE.EffectComposer(null, new THREE.Object3D()),
         
         renderPass : new THREE.RenderPass(),
-        
+                
         maskPass : new THREE.MaskPass(),
         
         clearMaskPass : new THREE.ClearMaskPass()
@@ -78,6 +91,7 @@ VF.Portal.prototype.setStorage = function(newStorage) {
         
         if (newStorage === undefined) {
             console.error("newStorage must be null or a render target.");
+            return;
         }
         
         this.storageManager.recycle(this._storage);
@@ -171,12 +185,15 @@ VF.Portal.prototype._setRenderingState = function(scene, initialWriteBuffer, ini
     
     var s = VF.Portal._static;
     
+    // Set temporary render settings
+    this._oldAutoClear = this.renderer.autoClear;
+    this.renderer.autoClear = false;
+    
     // Set renderer
     s.ec.renderer = this.renderer;
     
     // Set the passes the effect composer will apply.
-    // s.ec.passes = [s.maskPass].concat(s.renderPass, this.passes, s.clearMaskPass);
-    s.ec.passes = [s.renderPass];
+    s.ec.passes = [s.maskPass].concat(s.renderPass, this.passes, s.clearMaskPass);
     
     // Set render targets
     s.ec.renderTarget1 = initialWriteBuffer;
@@ -195,7 +212,7 @@ VF.Portal.prototype._setRenderingState = function(scene, initialWriteBuffer, ini
     // Set up mask passes    
     s.maskPass.scene  = this._maskScene;
     s.maskPass.camera = this._maskCamera;
-        
+                
 }
 
 VF.Portal.prototype._unsetRenderingState = function() {
@@ -235,6 +252,8 @@ VF.Portal.prototype._unsetRenderingState = function() {
     s.ec.renderTarget2 = null;
     s.ec.renderer      = null;
     s.ec.passes        = null;
+    
+    this.renderer.autoClear = this._oldAutoClear;
     
     return outputTarget;
     

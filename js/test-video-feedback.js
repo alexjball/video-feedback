@@ -25,7 +25,6 @@ function init() {
 
     renderer.setSize(c_width, c_height);
     renderer.sortObjects = false;
-    renderer.autoClearColor = false;
 
     document.body.appendChild( renderer.domElement );
 
@@ -56,25 +55,27 @@ function init() {
     var background = new THREE.Mesh(bgGeometry, bgMaterial);
     background.position.set(0, 0, -1);
 
-    // Create the border, which consists of a solid colored border of some
-    // thickness surrounded by a solid color background.
-    // window.borderProp = .1
-    var borderGeometry = new THREE.PlaneBufferGeometry(aspect,// * (1.0 + 2 * borderProp),
-        1.0);// * (1.0 + 2.0 * borderProp));
-    borderMaterial = new THREE.MeshBasicMaterial({color : 0x0000ff});
-    window.border = new THREE.Mesh(borderGeometry, borderMaterial);
-    border.setScale = function(borderWidth) {
-        border.scale.set(1 + borderWidth, 1 + borderWidth * aspect, 1);
-    }
-    border.setScale(.1);
-    border.position.set(0, 0, -.5);
-
     // Create the portal and spacemap.
-    var portalGeometry = new THREE.PlaneBufferGeometry(aspect, 1);
+    // var portalGeometry = new THREE.PlaneBufferGeometry(aspect, 1);
+    var portalGeometry = new THREE.CircleGeometry(Math.min(aspect, 1) / 2, 8);
     var storageManager = new VF.FeedbackStorageManager(c_width, c_height);
     spacemap = new VF.Spacemap();
     portal = new VF.Portal(portalGeometry, spacemap, storageManager, renderer);   
     portal.position.set(0, 0, .5);
+        
+    // Create the border, which consists of a solid colored border of some
+    // thickness surrounded by a solid color background.
+    // window.borderProp = .1
+    // var borderGeometry = new THREE.PlaneBufferGeometry(aspect,// * (1.0 + 2 * borderProp),
+    //     1.0);// * (1.0 + 2.0 * borderProp));
+    var borderGeometry = portalGeometry.clone();
+    borderMaterial = new THREE.MeshBasicMaterial({color : 0x0000ff});
+    window.border = new THREE.Mesh(borderGeometry, borderMaterial);
+    border.setScale = function(borderWidth) {
+        border.scale.set(1 + borderWidth, 1 + borderWidth, 1);// * aspect, 1);
+    }
+    border.setScale(.1);
+    border.position.set(0, 0, -.5);
         
     // The renderer is set to render objects in the order in which they were
     // added to the scene, so the order we push matters.
@@ -83,8 +84,8 @@ function init() {
     feedbackScene.add(border);
     feedbackScene.add(background);
     
-    spacemap.scale.x = 1.2;
-    spacemap.scale.y = 1.2;
+    spacemap.scale.x = 2;
+    spacemap.scale.y = 2;
     
     ////////////
     // View scene (to be rendered to screen) setup
@@ -106,16 +107,24 @@ function init() {
     stats.dom.style.top = '0px';
     document.body.appendChild(stats.domElement);
 
+    ///////
+    // Rendering Effects
+    ///////
+    
+    // colorPass = new THREE.ShaderPass(ColorShader);
+    
+    // portal.passes = [colorPass];
+
 }
 
 function render() {
+    
+    stats.begin();
         
     updated = portal.computeIteration(feedbackScene, true);
             
     renderer.render(viewScene, viewCamera);
-    
-    stats.begin();
-    
+        
     requestAnimationFrame(render);
 
     stats.end();
