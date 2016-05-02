@@ -156,7 +156,7 @@ VF.Portal.prototype.computeIteration = function(sourceScene, replaceStorage) {
     
     this._setRenderingState(sourceScene, b1, b2);
     
-    VF.Portal._static.ec.render();
+    VF.Portal._static.ec.render(undefined, false);
         
     var nextIteration = this._unsetRenderingState();
     

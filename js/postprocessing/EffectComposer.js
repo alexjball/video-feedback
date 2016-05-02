@@ -56,13 +56,15 @@ THREE.EffectComposer.prototype = {
 
 	},
 
-	render: function ( delta ) {
+	render: function ( delta , trackNonStencil) {
 
 		this.writeBuffer = this.renderTarget1;
 		this.readBuffer = this.renderTarget2;
 
 		var maskActive = false;
-
+		
+		if (trackNonStencil === undefined) trackNonStencil = true;
+		
 		var pass, i, il = this.passes.length;
 
 		for ( i = 0; i < il; i ++ ) {
@@ -75,7 +77,7 @@ THREE.EffectComposer.prototype = {
 
 			if ( pass.needsSwap ) {
 
-				if ( maskActive ) {
+				if ( maskActive && trackNonStencil) {
 
 					var context = this.renderer.context;
 

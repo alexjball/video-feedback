@@ -111,9 +111,9 @@ function init() {
     // Rendering Effects
     ///////
     
-    // colorPass = new THREE.ShaderPass(ColorShader);
+    colorPass = new THREE.ShaderPass(ColorShader);
     
-    // portal.passes = [colorPass];
+    portal.passes = [colorPass];
 
 }
 
