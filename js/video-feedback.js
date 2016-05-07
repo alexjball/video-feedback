@@ -92,6 +92,16 @@ VF.Portal._static = (function() {
 VF.Portal.prototype = Object.create( THREE.Object3D.prototype );
 VF.Portal.prototype.constructor = VF.Portal;
 
+VF.Portal.prototype.replaceStorage = function(newStorage) {
+    
+    var oldStorage = this.getStorage();
+    
+    this.setStorage(newStorage);
+    
+    this.storageManager.recycle(oldStorage);    
+    
+}
+
 VF.Portal.prototype.setStorage = function(newStorage) {
         
         if (newStorage === undefined) {
@@ -99,11 +109,9 @@ VF.Portal.prototype.setStorage = function(newStorage) {
             return;
         }
         
-        this.storageManager.recycle(this._storage);
-
         // If the storage goes from null to nonnull or nonnull to null,
         // flag the material for update.
-        if ((this._storage === null) !== (newStorage !== null)) {
+        if ((this._storage === null) !== (newStorage === null)) {
             this._material.needsUpdate = true;
         }        
         
@@ -178,7 +186,7 @@ VF.Portal.prototype.computeIteration = function(sourceScene, replaceStorage) {
         
     if (replaceStorage || replaceStorage === undefined) {
         
-        this.setStorage(nextIteration);
+        this.replaceStorage(nextIteration);
         
     }
     
@@ -270,12 +278,13 @@ VF.Portal.prototype.clone = function () {
 
 };
 
-VF.FeedbackStorageManager = function(width, height, options) {
+VF.FeedbackStorageManager = function(width, height, options, renderer) {
         
     this.width = width;
     this.height = height;
     this.options = options !== undefined ? options : 
         VF.FeedbackStorageManager.defaultOptions;
+    this.renderer = renderer;
     
     // Create _cache and _allocated;
     this._updateState();
@@ -286,12 +295,15 @@ VF.FeedbackStorageManager.prototype = {
     
     constructor : VF.FeedbackStorageManager,
     
-    getRenderTarget : function () {
+    getRenderTarget : function (clear) {
                 
         var target;
         
         if (this._cache.length > 0) {
             target = this._cache.pop();
+            
+            if (clear) this.renderer.clearTarget(target, true, true, true);
+            
         } else {
             target = this._createRenderTarget();
         }
@@ -360,7 +372,7 @@ VF.FeedbackStorageManager.prototype = {
     
     _updateState : function() {
         
-        this._allocated = [];
+        this._allocated = {};
         
         this._cache = [];
         
@@ -389,3 +401,10 @@ VF.Spacemap = function() {
 }
 
 VF.Spacemap.prototype = Object.create(THREE.Object3D.prototype);
+VF.Spacemap.prototype.constructor = VF.Spacemap;
+
+VF.Spacemap.clone = function() {
+    
+    return new this.constructor().copy(this);
+    
+}

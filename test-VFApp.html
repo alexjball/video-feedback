@@ -1,0 +1,34 @@
+<html>
+	<head>
+		<title>My first Three.js app</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body>
+		<script src="js/libs/three.js"></script>
+		<script type="text/javascript" src="js/libs/stats.min.js"></script>
+		
+		<script src="js/postprocessing/EffectComposer.js"></script>
+		<script src="js/postprocessing/RenderPass.js"></script>
+		<script src="js/postprocessing/ShaderPass.js"></script>
+		<script src="js/postprocessing/ClearPass.js"></script>
+		<script src="js/postprocessing/MaskPass.js"></script> 
+
+		<script src="js/shaders/CopyShader.js"></script>
+		<script src="js/shaders/ColorShader.js"></script>
+		<script src="js/shaders/SymmetryShader.js"></script>
+		<script src="js/shaders/RGBShiftShader.js"></script>
+
+		<script src="js/video-feedback.js"></script>
+		<script src="js/StateNugget.js"></script>
+		<script src="js/VFApp.js"></script>
+		<script src="test-VFApp.js"></script>
+
+		<script>
+			init();
+			render();
+		</script>
+	</body>
+</html>

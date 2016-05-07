@@ -24,7 +24,7 @@ function init() {
     }
 
     renderer.setSize(c_width, c_height);
-    renderer.sortObjects = false;
+    renderer.sortObjects = true;
 
     document.body.appendChild( renderer.domElement );
 
@@ -49,7 +49,7 @@ function init() {
     // Create the border, which consists of a solid colored border of some
     // thickness surrounded by a solid color background.
     // Set the background big enough so we never see the edges of it.
-    var bgGeometry = new THREE.PlaneBufferGeometry(aspect / minimumScaleFactor * 5,
+    bgGeometry = new THREE.PlaneBufferGeometry(aspect / minimumScaleFactor * 5,
         1.0 / minimumScaleFactor * 5);
     bgMaterial = new THREE.MeshBasicMaterial({color : 0x70b2c5});
     var background = new THREE.Mesh(bgGeometry, bgMaterial);
@@ -57,7 +57,7 @@ function init() {
 
     // Create the portal and spacemap.
     // var portalGeometry = new THREE.PlaneBufferGeometry(aspect, 1);
-    var portalGeometry = new THREE.CircleGeometry(Math.min(aspect, 1) / 2, 8);
+    portalGeometry = new THREE.CircleGeometry(Math.min(aspect, 1) / 2, 8);
     var storageManager = new VF.FeedbackStorageManager(c_width, c_height);
     spacemap = new VF.Spacemap();
     portal = new VF.Portal(portalGeometry, spacemap, storageManager, renderer);   
@@ -84,8 +84,8 @@ function init() {
     feedbackScene.add(border);
     feedbackScene.add(background);
     
-    spacemap.scale.x = 2;
-    spacemap.scale.y = 2;
+    spacemap.scale.x = 1.3;
+    spacemap.scale.y = 1.3;
     
     ////////////
     // View scene (to be rendered to screen) setup
@@ -112,8 +112,11 @@ function init() {
     ///////
     
     colorPass = new THREE.ShaderPass(ColorShader);
+    symPass   = new THREE.ShaderPass(SymmetryShader);
     
-    portal.passes = [colorPass];
+    // symPass.uniforms.diagNE.value = 1;
+    
+    portal.passes = [symPass, colorPass];
     
 }
 
@@ -121,7 +124,7 @@ function render() {
     
     stats.begin();
             
-    spacemap.position.x =.5 * Math.sin(performance.now() * 2 * Math.PI / 2000);
+    spacemap.position.x =.13 * Math.sin(performance.now() * 2 * Math.PI / 6000);
         
     updated = portal.computeIteration(feedbackScene, true);
             
