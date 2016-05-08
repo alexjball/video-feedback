@@ -69,6 +69,9 @@ function touchstartHandler(event) {
         return;
     }
     
+    var c_width = document.getElementsByTagName("canvas")[0].width;
+    var c_height = document.getElementsByTagName("canvas")[0].height;
+    
     // Single touch event: panning
     if (event.targetTouches.length == 1) {
         var x = event.targetTouches[0].clientX;
@@ -128,6 +131,9 @@ function touchmoveHandler(event) {
     if (!userInputOn) {
         return;
     }
+    
+    var c_width = document.getElementsByTagName("canvas")[0].width;
+    var c_height = document.getElementsByTagName("canvas")[0].height;
     
     var x = event.targetTouches[0].clientX;
     var y = c_height - event.targetTouches[0].clientY;
@@ -248,6 +254,9 @@ function mousedownHandler(event) {
         return;
     }
     
+    var c_width = document.getElementsByTagName("canvas")[0].width;
+    var c_height = document.getElementsByTagName("canvas")[0].height;
+    
     // Get mouse coordinates relative to the SW corner.
     var x = event.clientX;
     var y = c_height - event.clientY;
@@ -283,6 +292,9 @@ function mousemoveHandler(event) {
         return;
     }
     
+    var c_width = document.getElementsByTagName("canvas")[0].width;
+    var c_height = document.getElementsByTagName("canvas")[0].height;
+    
     // Get mouse coordinates relative to the SW corner.
     var x = event.clientX;
     var y = c_height - event.clientY;
@@ -305,6 +317,9 @@ function scrollHandler(event) {
     if (!userInputOn) {
         return;
     }
+    
+    var c_width = document.getElementsByTagName("canvas")[0].width;
+    var c_height = document.getElementsByTagName("canvas")[0].height;
     
     // Get mouse coordinates relative to the SW corner.
     var x = event.clientX;
@@ -332,6 +347,10 @@ function scrollHandler(event) {
 
 
 function updateUI() {
+    
+    var c_width = document.getElementsByTagName("canvas")[0].width;
+    var c_height = document.getElementsByTagName("canvas")[0].height;
+    
     // Touch inputs
     if (userInput.touchDown) {
         // Rotation
@@ -403,3 +422,5 @@ function initializeEventListeners() {
     // Disable context menu
     document.addEventListener("contextmenu", function(e) { e.preventDefault() }, false);
 }
+
+initializeEventListeners();
