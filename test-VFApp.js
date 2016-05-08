@@ -5,21 +5,27 @@ function init() {
     app = new VFApp(document.body, window.innerWidth, window.innerHeight);
     
     storage = [app.createStorage()];
+
+    stats = new Stats();
+    stats.showPanel(0);
+    stats.dom.style.position = 'absolute';
+    stats.dom.style.top = '0px';
+    document.body.appendChild(stats.domElement);
     
 }
 
 function render() {
+
+    stats.begin();
         
-    // app.setPortalStorage(storage[0]);
-    // var nextIt = app.iteratePortal();
-    // app.deleteStorage(storage[0]);
-    // storage[0] = nextIt;
+    updateUI();
     
     var curr = storage.pop();
-    app.setPortalStorage(curr);
+    app.setPortalStorage(curr);                
     var nextIt = app.iteratePortal();
     app.deleteStorage(curr);
     storage.unshift(nextIt);
+    app.setPortalStorage(nextIt);
 
     app.renderView();
     
@@ -28,7 +34,8 @@ function render() {
     } else {
         console.log('Stopping render loop...');
     }
-    
+
+    stats.end();
 }
 
 function keyboardHandler(event) {

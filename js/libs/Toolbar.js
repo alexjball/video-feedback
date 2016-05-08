@@ -12,7 +12,7 @@ function toggleToolbar() {
 
 
 // Toolbar class
-window.Toolbar = function() {
+Toolbar = function() {
     this.element = document.getElementById("toolbar");
     this.rect = document.getElementById("toolbar").getBoundingClientRect();
 }
@@ -129,7 +129,7 @@ function refreshDropdownById(id, options) {
 // Method: add checkbox
 // - inputParam must match the name of the (Boolean) parameter in the 
 //   inputObj that needs to be changed
-Toolbar.prototype.addCheckbox = function(text, inputParam) {
+Toolbar.prototype.addCheckbox = function(text, setMe) {
     // Make div
     var newDiv = document.createElement("div");
     
@@ -140,7 +140,6 @@ Toolbar.prototype.addCheckbox = function(text, inputParam) {
     // Make input
     var newInput = document.createElement("input");
     newInput.type = "checkbox";
-    newInput.id = inputParam;
     var newInputDiv = document.createElement("div");
     newInputDiv.appendChild(newInput);
     
@@ -156,7 +155,12 @@ Toolbar.prototype.addCheckbox = function(text, inputParam) {
 
     // callback
     newInput.onchange = function() {
-        inputs[inputParam] = newInput.checked;
+        if (newInput.checked) {
+            setMe.set(1);
+        }
+        else {
+            setMe.set(0);
+        }
     }
     
     // Add to toolbar div
@@ -168,7 +172,7 @@ Toolbar.prototype.addCheckbox = function(text, inputParam) {
 // Method: add range
 // - the "options" argument is optional, but otherwise it must be a 
 // - 3-element array: [min, step, max] for the slider
-Toolbar.prototype.addRange = function(text, inputParam, options) {
+Toolbar.prototype.addRange = function(text, setMe, options) {
     // Make div
     var newDiv = document.createElement("div");
 
@@ -178,23 +182,32 @@ Toolbar.prototype.addRange = function(text, inputParam, options) {
     // Make input
     var newInput = document.createElement("input");
     newInput.type = "range";
-    newInput.id = inputParam;
     var newInputDiv = document.createElement("div");
     newInputDiv.appendChild(newInput);
     
     newDiv.className = "toolbarRange";
-
-    // callback
-    newInput.oninput = function() {
-        inputs[inputParam] = Number(newInput.value);
-    }
 
     // Set default range if none is provided
     newInput.min = options ? options[0] : 0;
     newInput.step = options ? options[1] : 0.001;
     newInput.max = options ? options[2] : 1;
 
-    newInput.value = inputs[inputParam];
+    // callback
+    if (text == "Border Width") {
+        newInput.value = setMe.get().x;
+        
+        newInput.oninput = function() {
+            setMe.set([newInput.value, newInput.value, 1]);
+        }
+    }
+    else {
+        newInput.value = setMe.get();
+        
+        newInput.oninput = function() {
+            setMe.set(Number(newInput.value));
+        }
+    }
+
     newInput.style.width = 140;
     
     // Add to toolbar div
@@ -205,7 +218,7 @@ Toolbar.prototype.addRange = function(text, inputParam, options) {
 
 
 // Method: add color-picker
-Toolbar.prototype.addColor = function(text, inputParam) {
+Toolbar.prototype.addColor = function(text, setMe) {
     // Make div
     var newDiv = document.createElement("div");
     
@@ -216,7 +229,6 @@ Toolbar.prototype.addColor = function(text, inputParam) {
     // Make input
     var newInput = document.createElement("input");
     newInput.type = "color";
-    newInput.id = inputParam;
     var newInputDiv = document.createElement("div");
     newInputDiv.appendChild(newInput);
     
@@ -224,10 +236,10 @@ Toolbar.prototype.addColor = function(text, inputParam) {
 
     // callback
     newInput.oninput = function() {
-        inputs[inputParam] = newInput.value;
+        setMe.set(newInput.value);
     }
     
-    newInput.value = inputs[inputParam];
+    newInput.value = "#" + setMe.get().getHexString();
     
     // Add to toolbar div
     newDiv.appendChild(newTextDiv);
@@ -256,7 +268,7 @@ function initializeToolbar(toolbarInstance) {
                             ["rot", Math.random() * 2 * Math.PI],
                             ["scale", Math.random() * 0.2 + 0.75]
                         );
-        }],
+        }]/*,
         ["start", inputSetterFromObj(inputList[0])], 
         ["cubers", inputSetterFromObj(inputList[1])],
         ["eyes", inputSetterFromObj(inputList[2])],
@@ -267,6 +279,7 @@ function initializeToolbar(toolbarInstance) {
         ["turtles", inputSetterFromObj(inputList[7])],
         ["pyramidal", inputSetterFromObj(inputList[8])],
         ["what's a fractal", inputSetterFromObj(inputList[9])],
+    */
     ];
     
     toolbarInstance.addDropdown("Select State", "stateSelect", window.savedStates);
@@ -306,25 +319,35 @@ function initializeToolbar(toolbarInstance) {
                          }
                     });
     
-    toolbarInstance.addCheckbox("Invert X", "invertX");
-    toolbarInstance.addCheckbox("Invert Y", "invertY");
-    toolbarInstance.addCheckbox("Mirror X", "mirrorX");
-    toolbarInstance.addCheckbox("Mirror Y", "mirrorY");
-    toolbarInstance.addCheckbox("Mirror NE", "diagNE");
-    toolbarInstance.addCheckbox("Mirror NW", "diagNW");
-    toolbarInstance.addCheckbox("Invert Color", "invertColor");
-    toolbarInstance.addCheckbox("Far Out", "farOut");
+    toolbarInstance.addCheckbox("Invert X",
+        app.effects.symmetry.invertX);
+    toolbarInstance.addCheckbox("Invert Y", 
+        app.effects.symmetry.invertY);
+    toolbarInstance.addCheckbox("Mirror X", 
+        app.effects.symmetry.mirrorX);
+    toolbarInstance.addCheckbox("Mirror Y", 
+        app.effects.symmetry.mirrorY);
+    toolbarInstance.addCheckbox("Mirror NE",
+        app.effects.symmetry.diagNE);
+    toolbarInstance.addCheckbox("Mirror NW",
+        app.effects.symmetry.diagNW);
+    toolbarInstance.addCheckbox("Invert Color", 
+        app.effects.color.invert);
+    toolbarInstance.addCheckbox("Far Out",
+        app.effects.RGBShift.enable);
     
     toolbarInstance.addInstruction("");
     
-    toolbarInstance.addRange("Delay", "delay", [1, 1, 30]);
-    toolbarInstance.addRange("Color Cycle", "colorCycle");
-    toolbarInstance.addRange("Gain", "gain");
-    toolbarInstance.addRange("Border Width", "borderWidth", [0, 0.001, 0.1]);
-    toolbarInstance.addRange("Beat Length", "beatLength", [500, 10, 2000]);
+    // toolbarInstance.addRange("Delay", "delay", [1, 1, 30]);
+    toolbarInstance.addRange("Color Cycle", 
+        app.effects.color.cycle);
+    toolbarInstance.addRange("Gain", 
+        app.effects.color.gain);
+    toolbarInstance.addRange("Border Width", app.border.scale, [1, 0.001, 1.5]);
+    // toolbarInstance.addRange("Beat Length", "beatLength", [500, 10, 2000]);
     
-    toolbarInstance.addColor("Border", "borderColor");
-    toolbarInstance.addColor("Background", "backgroundColor");
+    toolbarInstance.addColor("Border", app.border.color);
+    toolbarInstance.addColor("Background", app.background.color);
     
     toolbarInstance.addButton("Open Image", 
                       function() {
@@ -332,4 +355,5 @@ function initializeToolbar(toolbarInstance) {
                       });
 }
 
-
+window.toolbar = new Toolbar();
+initializeToolbar(window.toolbar);
