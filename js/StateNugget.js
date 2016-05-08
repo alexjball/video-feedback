@@ -333,18 +333,7 @@ VF.StateNugget.prototype = (function() {
         constructor : VF.StateNugget,
             
         stripNugs : function(filter) {
-        
-            // Strip the state nuggets out of this object.
-            // filter is a function that controls how each field is serialized.
-            // filter is called with the current object being stripped, the base
-            // object in which the stripping process started, and an array of 
-            // fields that specify the path from the base to the current object.
-            // fields is empty if base === node.
-            // filter should be either one of VF.StateNugget.(keep/drop)State(Continue/Stop) or
-            // a function to replace the currently used filter. 
-            // filter can also be one of the indicators, in which case that value
-            // is used for the entire stripping process.
-            
+                    
             filter = parseFilter(filter);
                         
             return startRecurse(filter, strip.merge, strip.pred, this, {}); 

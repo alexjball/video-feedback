@@ -126,6 +126,8 @@ VF.Portal.prototype.getStorage = function() { return this._storage; }
 VF.Portal.prototype.setGeometry = function(geometry) {
     // This must be called whenever the geometry changes, not just reassigned.
     
+    var oldGeometry = this._geometry;
+    
     this._geometry = geometry;
     
     this._mesh.geometry = this._geometry;
@@ -154,6 +156,8 @@ VF.Portal.prototype.setGeometry = function(geometry) {
     // Update the mask camera to match the bounding box camera.
     this._maskCamera.copy(c);
         
+    return oldGeometry;
+    
 }
 
 VF.Portal.prototype.getGeometry = function() { return this._geometry; }
@@ -286,8 +290,8 @@ VF.FeedbackStorageManager = function(width, height, options, renderer) {
         VF.FeedbackStorageManager.defaultOptions;
     this.renderer = renderer;
     
-    // Create _cache and _allocated;
-    this._updateState();
+    this._allocated = {};
+    this._cache = [];
         
 }
 
@@ -300,12 +304,15 @@ VF.FeedbackStorageManager.prototype = {
         var target;
         
         if (this._cache.length > 0) {
+            
             target = this._cache.pop();
             
             if (clear) this.renderer.clearTarget(target, true, true, true);
             
         } else {
+            
             target = this._createRenderTarget();
+            
         }
              
         // Record the uuid of the render target.
@@ -322,14 +329,24 @@ VF.FeedbackStorageManager.prototype = {
         if (target instanceof THREE.WebGLRenderTarget === false) return;
         
         // Bail if the cache is full.
-        if (this._cache.length > 2) return; 
+        if (this._cache.length > 2) {
+            
+            // Release the memory.
+            target.dispose();
+            
+            return; 
+            
+        }
         
         // If the target was given out by the current state of this storage
         // manager, add it to the cache and unset the reference in the list
         // of allocated render targets.
         if (this._allocated[target.uuid]) {
+            
             this._cache.push(target);
+            
             this._allocated[target.uuid] = undefined;
+            
         }
         
     },
@@ -365,6 +382,11 @@ VF.FeedbackStorageManager.prototype = {
         if (this.options.generateMipmaps !== undefined) {
             target.texture.generateMipmaps = this.options.generateMipmaps;
         }
+         
+        // Initialize the memory for the target.
+        // We don't actually have to set it as the active target but 
+        // it's the only way we can get setupRenderTarget to run.
+        this.renderer.setRenderTarget(target);
                 
         return target;
         
@@ -373,6 +395,12 @@ VF.FeedbackStorageManager.prototype = {
     _updateState : function() {
         
         this._allocated = {};
+        
+        for (var i = 0; i < this._cache.length; i++) {
+            
+            this._cache[i].dispose();
+            
+        }
         
         this._cache = [];
         
@@ -383,7 +411,7 @@ VF.FeedbackStorageManager.prototype = {
 VF.FeedbackStorageManager.defaultOptions = {
     
     minFilter     : THREE.LinearFilter,
-    magFilter     : THREE.LinearFilter,
+    magFilter     : THREE.NearestFilter,
     format        : THREE.RGBFormat,
     depthBuffer   : true,
     stencilBuffer : true,

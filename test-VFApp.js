@@ -1,4 +1,4 @@
-stopRender = true;
+stopRender = false;
 
 function init() {
     
@@ -9,45 +9,25 @@ function init() {
 }
 
 function render() {
-    
-    /*
-    
-    a = getRenderTarget();
-    setStorage(a);
-    b = iterate();
-    delete a;
-    a = b;
-    
-    
-    
-    */
-    
-    // I believe the bottom two blocks should be equivalent but the
-    // second causes warnings about unbound textures.
-    
-    var nextIt = app.iteratePortal();
-    app.deleteStorage(storage[0]);
-    storage[0] = nextIt;
-    app.setPortalStorage(storage[0]);
-    
-    // var curr = storage.pop();
+        
+    // app.setPortalStorage(storage[0]);
     // var nextIt = app.iteratePortal();
-    // app.deleteStorage(curr);
-    // storage.unshift(nextIt);
-    // app.setPortalStorage(curr);    
-
+    // app.deleteStorage(storage[0]);
+    // storage[0] = nextIt;
+    
+    var curr = storage.pop();
+    app.setPortalStorage(curr);
+    var nextIt = app.iteratePortal();
+    app.deleteStorage(curr);
+    storage.unshift(nextIt);
 
     app.renderView();
     
-    // if (!stopRender) {
-    //     requestAnimationFrame(render);
-    // } else {
-    //     console.log('Stopping render loop...');
-    // }
-
-    stopRender = true;    
-    console.log('Stopping render loop...');
-
+    if (!stopRender) {
+        requestAnimationFrame(render);
+    } else {
+        console.log('Stopping render loop...');
+    }
     
 }
 
@@ -65,6 +45,13 @@ function keyboardHandler(event) {
                 console.log('Starting render loop...');
                 render();
             }
+            break;
+            
+        case "N":
+            console.log('Single render...');
+            stopRender = true;
+            render();
+            
             break;
             
         case "A":

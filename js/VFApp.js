@@ -108,7 +108,10 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
             set : function(g) { portal.setGeometry(g); border.geometry = g; },
             get : function() { return portal.getGeometry(); },
             toJSON : function(g) { return g.toJSON(); },
-            fromJSON : function(json) { return loader.parse(json); }
+            fromJSON : function(json) {
+                var loaded = loader.parseGeometries([json]); 
+                return loaded[json.uuid];    
+            }
         }),
         
         // Specifies the resolution to which the portal is rendered. 
@@ -134,7 +137,7 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
             
             get : function() { return portal.spacemap; },
             
-            toJSON : function(s) { return s.map(function(x) { x.toJSON() }); },
+            toJSON : function(s) { return s.map(function(x) { return x.toJSON() }); },
             
             fromJSON : function(json) { 
                 
