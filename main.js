@@ -3,7 +3,7 @@
 
 function init() {
     
-    app          = new VFApp(document.body, window.innerWidth, window.innerHeight);
+    app          = new VFApp(document.body, 1800, 1200);//window.innerWidth, window.innerHeight);
     stateManager = new VFStateManager(app, DefaultAppStates);
     sim          = new VFSim(app, 10, 30);
     
