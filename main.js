@@ -14,12 +14,12 @@ function init() {
     cycleEndCallback = null;
     vfr          = new VFRenderer();
     
-    stats = new Stats();
+    /*stats = new Stats();
     stats.showPanel(0);
     stats.dom.style.position = 'absolute';
     stats.dom.style.top = '0px';
     document.body.appendChild(stats.domElement);
-    
+    */
 }
 
 var VFRenderer = function() {
@@ -92,7 +92,7 @@ function render() {
         
         vfr.framesToRender--;   
 
-        stats.begin();
+        //stats.begin();
             
         updateUI();
         
@@ -112,7 +112,7 @@ function render() {
         
         sim.step();
         
-        stats.end();
+        //stats.end();
 
     }
     
