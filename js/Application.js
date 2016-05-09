@@ -404,17 +404,19 @@ var VFStateManager = function(app, states) {
     
     this.app = app;
     
-    this.states = states.map(function(s) {
+    this.states = states;
+    
+    // this.states = states.map(function(s) {
         
-        return {
+    //     return {
             
-            name : s.name,
+    //         name : s.name,
             
-            state : app.deserializeNugs(s.state)
+    //         state : app.deserializeNugs(s.state)
             
-        };
+    //     };
         
-    })
+    // })
             
 }
 
@@ -433,22 +435,25 @@ VFStateManager.prototype = {
         return f;
 
     },
+   
     
     serializeStates : function() {
         
-        var app = this.app;
+        return this.states;
         
-        return this.states.map(function(s) {
+        // var app = this.app;
+        
+        // return this.states.map(function(s) {
             
-            return {
+        //     return {
                 
-                name : s.name,
+        //         name : s.name,
                 
-                state : app.serializeNugs(s.state)
+        //         state : app.serializeNugs(s.state)
                 
-            }
+        //     }
             
-        })
+        // })
         
     },
     
@@ -473,7 +478,7 @@ VFStateManager.prototype = {
                 
         var newState = {
             name  : name,
-            state : this.app.deserializeNugs(this.app.serializeNugs())
+            state : this.app.serializeNugs() //this.app.deserializeNugs(this.app.serializeNugs())
         };
         
         this.states.push(newState);
@@ -522,7 +527,7 @@ VFStateManager.prototype = {
         
         filterObject = filterObject || this.createFilter();
         
-        app.applyNugs(toLoad, filter, filterObject);
+        app.applyNugs(app.deserializeNugs(toLoad), filter, filterObject);
         
     }
     

@@ -253,20 +253,21 @@ function initializeToolbar(toolbarInstance) {
     toolbarInstance.addButton("Save State", function() { saveStateToDropdown(); } );
     
     toolbarInstance.addButton("Cycle Inputs", function() {
-        if (window.cycling) {
+        if (isCycling) {
             return;
         }
-        cycleHandler = cycleInputs();
+        isCycling = true;
     });
-    toolbarInstance.addButton("Stop Cycle", 
-                     function() {
-                         if (window.cycling) {
-                             userInputOn = true;
-                             clearInterval(cycleHandler);
-                             inputIndex = 0;
-                             window.cycling = false;
-                         }
-                    });
+    
+    toolbarInstance.addButton("Stop Cycle", function() { cycleQueue = []; });
+    
+    toolbarInstance.addRange("Cycle Speed", {
+     
+        get : function()  { return cycleSpeed; },
+        set : function(x) { cycleSpeed = x; }
+        
+    }, [.002, .0002, .02]);
+
     
     toolbarInstance.addCheckbox("Invert X",
         app.effects.symmetry.invertX);
@@ -287,7 +288,11 @@ function initializeToolbar(toolbarInstance) {
     
     toolbarInstance.addInstruction("");
     
-    // toolbarInstance.addRange("Delay", "delay", [1, 1, 30]);
+    toolbarInstance.addRange("Delay", {
+        get : function() { sim.getDelay() },
+        set : function(x) { sim.setDelay(x) }
+    }, [1, 1, 30]);
+    
     toolbarInstance.addRange("Color Cycle", 
         app.effects.color.cycle);
     toolbarInstance.addRange("Gain", 
@@ -309,7 +314,7 @@ initializeToolbar(window.toolbar);
 
 function saveStateToDropdown(inputName) {
     
-        pause();
+        vfr.pause();
         
         if (inputName === undefined) {
             inputName = prompt("Please enter a name for the current state.");
@@ -333,6 +338,6 @@ function saveStateToDropdown(inputName) {
         
         select.value = inputName;
         
-        resume();
+        vfr.play();
     
 }

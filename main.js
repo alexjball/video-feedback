@@ -1,13 +1,17 @@
-oldFramesToRender = null;
-framesToRender = Infinity;
+// oldFramesToRender = null;
+// framesToRender = Infinity;
 
 function init() {
     
     app          = new VFApp(document.body, window.innerWidth, window.innerHeight);
     stateManager = new VFStateManager(app, DefaultAppStates);
     sim          = new VFSim(app, 10, 30);
+    
+    // Global state for cycling because now.
     cycleGen     = new VFCycleGenerator(app);
     cycleQueue   = [];
+    cycleSpeed   = .005;
+    isCycling    = false;
     vfr          = new VFRenderer();
     
     stats = new Stats();
@@ -40,7 +44,7 @@ VFRenderer.prototype = {
     
     stop : function() {
         
-        // if (this.state === VFRenderer.states.stop) return;
+        if (this.state === VFRenderer.states.stop) return;
         
         this.framesToRender = 0;
         this._oldframesToRender = 0;
@@ -55,6 +59,7 @@ VFRenderer.prototype = {
         
         this._oldframesToRender = this.framesToRender;
         this.framesToRender = 0;
+        this.state = VFRenderer.states.pause;
         
     },
     
@@ -63,12 +68,13 @@ VFRenderer.prototype = {
         switch (this.state) {
             
             case VFRenderer.states.play:
-                return;
+                this.framesToRender = Infinity;
+                break;
             case VFRenderer.states.stop:
                 this.framesToRender = Infinity;
                 this.state = VFRenderer.states.play;
                 break;
-            case VFRenderer.state.pause:
+            case VFRenderer.states.pause:
                 this.framesToRender = this._oldframesToRender;
                 this.state = VFRenderer.states.play;
                 break;
