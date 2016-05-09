@@ -14,6 +14,8 @@ VF.StateNugget.nuggetize = function(object) {
     object.serializeNugs   = VF.StateNugget.prototype.serializeNugs;
     object.deserializeNugs = VF.StateNugget.prototype.deserializeNugs;
     object.applyNugs       = VF.StateNugget.prototype.applyNugs;
+    object.processNugs     = VF.StateNugget.prototype.processNugs;
+    object.copyStructure   = VF.StateNugget.prototype.copyStructure;
     
     return object;
     
@@ -55,7 +57,9 @@ VF.StateNugget.prototype = (function() {
             
         } else if (typeof filter === "number") {
             
-            filter = function() { return filter; };
+            var f = filter;
+            
+            filter = function() { return f; };
             
         }
         
@@ -213,7 +217,7 @@ VF.StateNugget.prototype = (function() {
             // Copy fns on write.
             fns = { 
                 filter : condition,
-                merge  : fns.keep,
+                merge  : fns.merge,
                 pred   : fns.pred
             };
             
@@ -370,14 +374,39 @@ VF.StateNugget.prototype = (function() {
             
             filter = parseFilter(filter);
             
-            return startRecurse(
+            return startRecurse.apply(null,
                 
-                filter, apply.merge, apply.pred, this, state
+                [filter, apply.merge, apply.pred, this, state].concat(
+                    Array.prototype.slice.call(arguments, 2))
                 
             )
             
-        }
+        },
         
+        processNugs : function(filter, merge, pred, follower, tracked) {
+            
+            filter = parseFilter(filter);
+            
+            return startRecurse.apply(null,
+                
+                [filter, merge, pred, this].concat(Array.prototype.slice.call(arguments, 3))
+                
+            );
+            
+        },
+        
+        copyStructure : function(fieldName, defaultValue) {
+            
+            return this.processNugs(
+                
+                VF.StateNugget.keepGo, 
+                function(nodes) { nodes[1][fieldName] = defaultValue; },
+                function(nodes) { return nodes[0].isNugget; }, 
+                {}
+                
+            )
+            
+        }        
     }
 
 })();

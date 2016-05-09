@@ -290,19 +290,7 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
         })
         
     })
-    
-    function setBgSC() {
         
-        // TODO
-        
-    }
-    
-    function setBgTP() {
-        
-        // TODO
-        
-    }
-    
     function setUpRenderer(domParent, viewWidth, viewHeight) {
         
         renderer = new THREE.WebGLRenderer( {
