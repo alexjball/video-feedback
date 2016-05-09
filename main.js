@@ -3,9 +3,12 @@ framesToRender = Infinity;
 
 function init() {
     
-    app = new VFApp(document.body, window.innerWidth, window.innerHeight);
+    app          = new VFApp(document.body, window.innerWidth, window.innerHeight);
     stateManager = new VFStateManager(app, DefaultAppStates);
-    sim = new VFSim(app, 10, 30);
+    sim          = new VFSim(app, 10, 30);
+    cycleGen     = new VFCycleGenerator(app);
+    cycleQueue   = [];
+    vfr          = new VFRenderer();
     
     stats = new Stats();
     stats.showPanel(0);
@@ -15,59 +18,82 @@ function init() {
     
 }
 
-function stop() {
+var VFRenderer = function() {
+    // This is really hacky...
     
-    unpause();
+    this.state = VFRenderer.states.stop;
+    this.framesToRender = 0;
+    this._oldframesToRender = 0;
+    this.cycleQueue = [];
     
-    framesToRender = 0;
+}
+
+VFRenderer.states = {
+    
+    stop  : 0,
+    play  : 1,
+    pause : 2
+    
+}
+
+VFRenderer.prototype = {
+    
+    stop : function() {
         
-}
+        // if (this.state === VFRenderer.states.stop) return;
+        
+        this.framesToRender = 0;
+        this._oldframesToRender = 0;
+        this.state = VFRenderer.states.stop;
+        cycleQueue = [];
+        
+    },
+    
+    pause : function() {
+        
+        if (this.state !== VFRenderer.states.play) return;
+        
+        this._oldframesToRender = this.framesToRender;
+        this.framesToRender = 0;
+        
+    },
+    
+    play : function() {
+        
+        switch (this.state) {
+            
+            case VFRenderer.states.play:
+                return;
+            case VFRenderer.states.stop:
+                this.framesToRender = Infinity;
+                this.state = VFRenderer.states.play;
+                break;
+            case VFRenderer.state.pause:
+                this.framesToRender = this._oldframesToRender;
+                this.state = VFRenderer.states.play;
+                break;
 
-function step() {
-    
-    stop();
-    
-    framesToRender = 1;
-    
-}
-
-function pause() {
-    
-    oldFramesToRender = framesToRender;
-    
-    framesToRender = 0;
-    
-}
-
-function unpause() {
-    
-    if (oldFramesToRender !== null) {
-    
-        framesToRender = oldFramesToRender;
-         
-        oldFramesToRender = null;
-
+        }
+        
     }
-
-}
-
-function resume() {
-    
-    unpause();
-    
-    framesToRender = Infinity;
     
 }
 
 function render() {
     
-    if (framesToRender > 0) {
+    if (vfr.framesToRender > 0) {
         
-        framesToRender--;   
+        vfr.framesToRender--;   
 
         stats.begin();
             
         updateUI();
+        
+        if (cycleQueue.length > 0) {
+                                    
+            if (cycleQueue[0].step()) cycleQueue.shift();
+            
+        }
         
         sim.step();
         

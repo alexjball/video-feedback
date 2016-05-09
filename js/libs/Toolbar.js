@@ -157,7 +157,8 @@ Toolbar.prototype.addRange = function(text, setMe, options) {
         newInput.value = setMe.get().x;
         
         newInput.oninput = function() {
-            setMe.set([newInput.value, newInput.value, 1]);
+            setMe.set(new THREE.Vector3(
+                Number(newInput.value), Number(newInput.value), 1));
         }
     }
     else {

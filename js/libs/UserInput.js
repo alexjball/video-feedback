@@ -250,9 +250,17 @@ function keyboardHandler(event) {
             break;
         case " ":
             // Stop/resume toggle.
+            if (vfr.state !== VFRenderer.states.play) {
+                vfr.stop();
+                vfr.play();
+            } else {
+                vfr.stop();
+            }
             break;
         case "N":
             // Single frame step.
+            vfr.play();
+            vfr.framesToRender = 1;
             break;
             
     }

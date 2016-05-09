@@ -147,7 +147,11 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
                 
                 return json.map(function(x) { 
                     
-                    return (new VF.Spacemap()).copy(loader.parse(x));
+                    var obj = loader.parse(x);
+                    
+                    obj.updateMatrix();
+                    
+                    return (new VF.Spacemap()).copy(obj);
                     
                 });
                 
@@ -175,7 +179,15 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
             
             toJSON : function(c) { return c.toJSON(); },
             
-            fromJSON : function(json) { return loader.parse(json); }
+            fromJSON : function(json) { 
+                
+                var cam = loader.parse(json);
+                
+                cam.updateMatrix();
+                
+                return cam;
+            
+            }
         
         }),
         
@@ -218,9 +230,10 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
             // [1, 1, 1] corresponds to a border the same size as the portal 
             // (and won't be visible). [1.1, 1.1, 1] upsizes the border by 10%
             // in each direction.
-            set : function(s) { border.scale.fromArray(s); },
+            set : function(s) { border.scale.copy(s); },
             get : function()  { return border.scale },
-            toJSON : function(s) { return [s.x, s.y, s.z]; }
+            toJSON : function(s) { return [s.x, s.y, s.z]; },
+            fromJSON : function(s) { return (new THREE.Vector3()).fromArray(s); }
         })
         
     })
@@ -596,21 +609,19 @@ var VFSim = function(app, initialDelay, initialDelayCapacity) {
     
 }
 
-var VFCycler = function(app, stateManager) {
+////////////////
+// State Cycling
+////////////////
+
+var VFCycleGenerator = function(app) {
     
     this.app = app;
-    this.stateManager = stateManager;
-    
-    // Blending should probably be private since it assumes structure on app.
-    this.defaultBlending = this.createBlending();
-    this.defaultTransitions = this.createTransitions();
-    this.defaultFilter = this.createFilter();
-    
+        
 }
 
-VFCycler.prototype = {
+VFCycleGenerator.prototype = {
     
-    constructor : VFCycler,
+    constructor : VFCycleGenerator,
         
     createFilter : function() {
 
@@ -619,6 +630,7 @@ VFCycler.prototype = {
         // Making an assumption about the app structure.
         f.portal.resolution.transfer = false;
         f.view.resolution.transfer   = false;
+        f.effects.color.invert.transfer = false;
         
         return f;
 
@@ -626,13 +638,13 @@ VFCycler.prototype = {
 
     createBlending : function() {
         
-        var bf = VFCycler.blendingFunctions;
+        var bf = VFCycleGenerator.blendingFunctions;
 
         var f = this.app.copyStructure('blending', bf.discrete);
                 
         // Anything not listed here defaults to discrete blending.
         
-        f.portal.shape.blending            = bf.discreteLatch();
+        // f.portal.shape.blending            = bf.discreteLatch();
         f.portal.resolution.blending       = bf.continuousArray;
         f.portal.spacemap.blending         = bf.spacemap;
         
@@ -642,7 +654,7 @@ VFCycler.prototype = {
         f.background.color.blending        = bf.color;
         
         f.border.color.blending            = bf.color;
-        f.border.scale.blending            = bf.continuousArray;
+        f.border.scale.blending            = bf.vector;
         
         f.effects.color.cycle.blending     = bf.continuousNumber;
         f.effects.color.gain.blending      = bf.continuousNumber;
@@ -657,13 +669,13 @@ VFCycler.prototype = {
     createTransitions : function() {
         
         var f = this.app.copyStructure('transition', 
-            VFCycler.transitionFunctions.linear);
+            VFCycleGenerator.transitionFunctions.linear);
                 
         return f;
 
     },
     
-    createCycle : function(startState, endState, completionTime, filterObj, transitions, blending) {
+    createCycle : function(startState, endState, filterObj, transitions, blending) {
         // startState and endState should be valid input to app.applyNugs.
         // Other objects should not modify startState/endState while the cycle
         // is acting.
@@ -699,16 +711,12 @@ VFCycler.prototype = {
                     bNode = nodes[5]; 
                 
                 if ('set' in aNode) {
-                    
-                    aNode.set(
+                                            
+                    bNode.blending(
                         
-                        bNode.blending(
-                            
-                            sNode.stateNugget, eNode.stateNugget, tNode.transition(t)
-                            
-                        )
+                        aNode, sNode.stateNugget, eNode.stateNugget, tNode.transition(t)
                         
-                    );
+                    )
                     
                 }
                 
@@ -728,7 +736,7 @@ VFCycler.prototype = {
         // Return a function that applies the state at t \in [0, 1]
         // t = 1 corresponds to the target state, t = 0 corresponds to the
         // start state.
-        return function(t) {
+        return new VFCycle(function(t) {
             
             app.processNugs(
                 
@@ -736,19 +744,19 @@ VFCycler.prototype = {
                 
             )
             
-        }
+        });
         
     }
     
 }
 
-VFCycler.transitionFunctions = {
+VFCycleGenerator.transitionFunctions = {
     
     linear : function(t) { return t; }
     
 }
 
-VFCycler.blendingFunctions = (function(){
+VFCycleGenerator.blendingFunctions = (function(){
     
     function lerpObject3D(toLerp, end, b) {
                     
@@ -788,9 +796,16 @@ VFCycler.blendingFunctions = (function(){
         
         color : function(x, start, end, b) {
             
-            x.set(start.copy().lerp(end, b));
+            x.set(start.clone().lerp(end, b));
             
         },
+        
+        vector : function(x, start, end, b) {
+            
+            x.set(start.clone().lerp(end, b));
+            
+        },
+
             
         spacemap : function(x, start, end, b) {
             
@@ -826,6 +841,8 @@ VFCycler.blendingFunctions = (function(){
                 lerped[fields[i]] = lerpNumber(start[fields[i]], end[fields[i]], b);
                 
             }
+            
+            lerped.updateProjectionMatrix();
             
             x.set(lerped);
             
@@ -866,3 +883,30 @@ VFCycler.blendingFunctions = (function(){
     }
     
 })();
+
+///////////////
+// Cycle Timing
+///////////////
+
+VFCycle = function(cycleFn, speed) {
+    
+    this.speed = speed === undefined ? 1 / 60 : speed;
+    this.t     = 0;
+        
+    this.step = function() {
+        
+        if (this.t === 1) return;
+        
+        this.t += this.speed;
+        
+        if (this.t > 1) this.t = 1;
+            
+        cycleFn(this.t);
+        
+        return this.done();
+        
+    }
+    
+    this.done = function() { return this.t === 1; }
+        
+}
