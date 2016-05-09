@@ -78,51 +78,13 @@ Toolbar.prototype.addDropdown = function(text, id, options, callback) {
         newInput.appendChild(newOption);
     }
     
-    // // Add button to change selection
-    // var newButton = document.createElement("input");
-    // newButton.type = "button";
-    // newButton.value = "Go";
-    // newButton.id = id.concat("Button");
-    // newButton.onclick = options[newInput.selectedIndex][1];
-    // newInputDiv.appendChild(newButton);
-    
-    // Add an onclick method for the dropdown box itself so that 
-    // it updates the callback function for the "Go" button
-    newInput.oninput = callback;
+    newInput.onchange = callback;
     
     // Add to toolbar div
     newDiv.appendChild(newTextDiv);
     newDiv.appendChild(newInputDiv);
     this.element.appendChild(newDiv);
 }
-
-
-// function refreshDropdownById(id, options) {
-//     var input = document.getElementById(id);
-//     var button = document.getElementById(id.concat("Button"));
-    
-//     // Remove all options
-//     while (input.lastChild) {
-//         input.removeChild(input.lastChild);
-//     }
-    
-//     // Add new options
-//     for (item in options) {
-//         var newOption = document.createElement("option");
-//         var optionLabel = document.createTextNode(options[item][0]);
-//         newOption.appendChild(optionLabel);
-//         input.appendChild(newOption);
-//     }
-    
-//     // Update button behavior
-//     button.onclick = options[input.selectedIndex][1];
-    
-//     // Update button-updating behavior
-//     input.oninput = function() {
-//         button.onclick = options[input.selectedIndex][1];
-//     };
-// }
-
 
 // Method: add checkbox
 // - inputParam must match the name of the (Boolean) parameter in the 
@@ -281,7 +243,7 @@ function initializeToolbar(toolbarInstance) {
     // ];
     
     toolbarInstance.addDropdown("Select State", "stateSelect", 
-        stateManager.states.map( function(x) { return x.state; } ), 
+        stateManager.states.map( function(x) { return x.name; } ), 
         function() {
             stateManager.loadState(stateManager.states[this.selectedIndex].state);
         }

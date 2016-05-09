@@ -195,9 +195,10 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
         
         // color should be a hex number like 0xff0000
         color : nug({            
-            set    : function(c) { background.material.color = new THREE.Color(c); },
-            get    : function()  { return background.material.color; },
-            toJSON : function(c) { return c.getHex(); }
+            set      : function(c) { background.material.color = new THREE.Color(c); },
+            get      : function()  { return background.material.color; },
+            toJSON   : function(c) { return c.getHex(); },
+            fromJSON : function(c) { return new THREE.Color(c); }
         })
                 
     })
@@ -209,6 +210,7 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
             set : function(c) { border.material.color = new THREE.Color(c); },
             get : function() { return border.material.color; },
             toJSON : function(c) { return c.getHex(); },
+            fromJSON : function(c) { return new THREE.Color(c); }
         }),
         
         scale : nug({
@@ -389,7 +391,17 @@ var VFStateManager = function(app, states) {
     
     this.app = app;
     
-    this.states = states;
+    this.states = states.map(function(s) {
+        
+        return {
+            
+            name : s.name,
+            
+            state : app.deserializeNugs(s.state)
+            
+        };
+        
+    })
             
 }
 
@@ -397,7 +409,7 @@ VFStateManager.prototype = {
     
     constructor : VFStateManager,
     
-    getFilter : function() {
+    createFilter : function() {
 
         var f = this.app.copyStructure('transfer', true);
         
@@ -407,6 +419,24 @@ VFStateManager.prototype = {
         
         return f;
 
+    },
+    
+    serializeStates : function() {
+        
+        var app = this.app;
+        
+        return this.states.map(function(s) {
+            
+            return {
+                
+                name : s.name,
+                
+                state : app.serializeNugs(s.state)
+                
+            }
+            
+        })
+        
     },
     
     saveState : function(name) {
@@ -430,7 +460,7 @@ VFStateManager.prototype = {
                 
         var newState = {
             name  : name,
-            state : this.app.serializeNugs()
+            state : this.app.deserializeNugs(this.app.serializeNugs())
         };
         
         this.states.push(newState);
@@ -477,9 +507,9 @@ VFStateManager.prototype = {
             
         }
         
-        filterObject = filterObject || this.getFilter();
+        filterObject = filterObject || this.createFilter();
         
-        app.applyNugs(app.deserializeNugs(toLoad), filter, filterObject)
+        app.applyNugs(toLoad, filter, filterObject);
         
     }
     
@@ -565,3 +595,274 @@ var VFSim = function(app, initialDelay, initialDelayCapacity) {
     }
     
 }
+
+var VFCycler = function(app, stateManager) {
+    
+    this.app = app;
+    this.stateManager = stateManager;
+    
+    // Blending should probably be private since it assumes structure on app.
+    this.defaultBlending = this.createBlending();
+    this.defaultTransitions = this.createTransitions();
+    this.defaultFilter = this.createFilter();
+    
+}
+
+VFCycler.prototype = {
+    
+    constructor : VFCycler,
+        
+    createFilter : function() {
+
+        var f = this.app.copyStructure('transfer', true);
+        
+        // Making an assumption about the app structure.
+        f.portal.resolution.transfer = false;
+        f.view.resolution.transfer   = false;
+        
+        return f;
+
+    },
+
+    createBlending : function() {
+        
+        var bf = VFCycler.blendingFunctions;
+
+        var f = this.app.copyStructure('blending', bf.discrete);
+                
+        // Anything not listed here defaults to discrete blending.
+        
+        f.portal.shape.blending            = bf.discreteLatch();
+        f.portal.resolution.blending       = bf.continuousArray;
+        f.portal.spacemap.blending         = bf.spacemap;
+        
+        f.view.camera.blending             = bf.camera;
+        f.view.resolution.blending         = bf.continuousArray;
+        
+        f.background.color.blending        = bf.color;
+        
+        f.border.color.blending            = bf.color;
+        f.border.scale.blending            = bf.continuousArray;
+        
+        f.effects.color.cycle.blending     = bf.continuousNumber;
+        f.effects.color.gain.blending      = bf.continuousNumber;
+        
+        f.effects.RGBShift.amount.blending = bf.continuousNumber;
+        f.effects.RGBShift.angle.blending  = bf.continuousNumber;        
+        
+        return f;
+
+    },
+    
+    createTransitions : function() {
+        
+        var f = this.app.copyStructure('transition', 
+            VFCycler.transitionFunctions.linear);
+                
+        return f;
+
+    },
+    
+    createCycle : function(startState, endState, completionTime, filterObj, transitions, blending) {
+        // startState and endState should be valid input to app.applyNugs.
+        // Other objects should not modify startState/endState while the cycle
+        // is acting.
+        
+        filterObj   = filterObj   || this.createFilter();
+        transitions = transitions || this.createTransitions();
+        blending    = blending    || this.createBlending();
+        
+        var app = this.app;
+        
+        var filter = function(nodes) {
+            
+            if (!nodes[3].transfer) {
+                
+                return VF.StateNugget.dropStop;
+                
+            } else {
+                
+                return VF.StateNugget.keepGo;
+                
+            }
+            
+        }
+        
+        var getMerge = function(t) {
+            
+            return function(nodes) {
+                
+                var aNode = nodes[0], 
+                    sNode = nodes[1], 
+                    eNode = nodes[2],
+                    tNode = nodes[4],
+                    bNode = nodes[5]; 
+                
+                if ('set' in aNode) {
+                    
+                    aNode.set(
+                        
+                        bNode.blending(
+                            
+                            sNode.stateNugget, eNode.stateNugget, tNode.transition(t)
+                            
+                        )
+                        
+                    );
+                    
+                }
+                
+            }
+        
+        }
+        
+        var pred = function(nodes) {
+            
+            // Only follow structure that is shared between the app (template),
+            // start, and end states.
+            return nodes[0].isNugget && 
+                nodes[1] !== undefined && nodes[2] !== undefined;
+            
+        }
+        
+        // Return a function that applies the state at t \in [0, 1]
+        // t = 1 corresponds to the target state, t = 0 corresponds to the
+        // start state.
+        return function(t) {
+            
+            app.processNugs(
+                
+                filter, getMerge(t), pred, startState, endState, filterObj, transitions, blending
+                
+            )
+            
+        }
+        
+    }
+    
+}
+
+VFCycler.transitionFunctions = {
+    
+    linear : function(t) { return t; }
+    
+}
+
+VFCycler.blendingFunctions = (function(){
+    
+    function lerpObject3D(toLerp, end, b) {
+                    
+        toLerp.position.lerp(end.position, b);
+        
+        toLerp.scale.lerp(end.scale, b);
+        
+        toLerp.rotation.setFromVector3(
+            
+            toLerp.rotation.toVector3().lerp(end.rotation.toVector3(), b)
+            
+        )
+                
+        return toLerp;
+        
+    }
+    
+    function lerpNumber(s, e, b) {
+        
+        return s + b * e;
+        
+    }
+
+    return {
+    
+        continuousNumber : function(x, start, end, b) {
+            
+            x.set(lerpNumber(start, end, b));
+            
+        },
+        
+        continuousArray : function(x, start, end, b) {
+            
+            x.set(start.map(function(y, i) { return lerpNumber(y, end[i], b); }));
+            
+        },
+        
+        color : function(x, start, end, b) {
+            
+            x.set(start.copy().lerp(end, b));
+            
+        },
+            
+        spacemap : function(x, start, end, b) {
+            
+            var lerped = Array(start.length);
+            
+            for (var i = 0; i < lerped.length; i++) {
+                
+                lerped[i] = lerpObject3D(start[i].clone(), end[i], b);
+                
+            }
+
+            x.set(lerped);
+            
+        },
+        
+        camera : function(x, start, end, b) {
+            
+            // Should only be used with orthographic cameras.
+            
+            if (start instanceof THREE.OrthographicCamera === false) {
+                console.error('start and end must be orthographic cameras');
+                return;
+            }
+            
+            var lerped = start.clone();
+            
+            lerpObject3D(lerped, end, b);
+            
+            var fields = ['near', 'far', 'left', 'right', 'top', 'bottom', 'zoom'];
+            
+            for (var i = 0; i < fields.length; i++) {
+                
+                lerped[fields[i]] = lerpNumber(start[fields[i]], end[fields[i]], b);
+                
+            }
+            
+            x.set(lerped);
+            
+        },
+        
+        discreteLatch : function() {
+            
+            var latched = false;
+            
+            return function(x, start, end, b) {
+            
+                if (b > 0.5 && !latched) {
+                    
+                    x.set(end);
+                    
+                    latched = true;
+                    
+                }
+                
+            }
+            
+        },
+        
+        discrete : function(x, start, end, b) {
+            
+            if (b > 0.5) {
+                
+                x.set(end);
+                
+            } else {
+                
+                x.set(start);
+                
+            }
+            
+        }
+    
+    }
+    
+})();
