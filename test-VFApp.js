@@ -1,11 +1,12 @@
-stopRender = false;
+oldFramesToRender = null;
+framesToRender = Infinity;
 
 function init() {
     
     app = new VFApp(document.body, window.innerWidth, window.innerHeight);
+    stateManager = new VFStateManager(app, DefaultAppStates);
+    sim = new VFSim(app, 10, 30);
     
-    storage = [app.createStorage()];
-
     stats = new Stats();
     stats.showPanel(0);
     stats.dom.style.position = 'absolute';
@@ -14,28 +15,60 @@ function init() {
     
 }
 
-function render() {
-
-    stats.begin();
+function stop() {
+    
+    unpause();
+    
+    framesToRender = 0;
         
-    updateUI();
-    
-    var curr = storage.pop();
-    app.setPortalStorage(curr);                
-    var nextIt = app.iteratePortal();
-    app.deleteStorage(curr);
-    storage.unshift(nextIt);
-    app.setPortalStorage(nextIt);
+}
 
-    app.renderView();
+function pause() {
     
-    if (!stopRender) {
-        requestAnimationFrame(render);
-    } else {
-        console.log('Stopping render loop...');
+    oldFramesToRender = framesToRender;
+    
+    framesToRender = 0;
+    
+}
+
+function unpause() {
+    
+    if (oldFramesToRender !== null) {
+    
+        framesToRender = oldFramesToRender;
+         
+        oldFramesToRender = null;
+
     }
 
-    stats.end();
+}
+
+function resume() {
+    
+    unpause();
+    
+    framesToRender = Infinity;
+    
+}
+
+function render() {
+    
+    if (framesToRender > 0) {
+        
+        framesToRender--;   
+
+        stats.begin();
+            
+        updateUI();
+        
+        sim.step();
+        
+        stats.end();
+
+    }
+    
+    requestAnimationFrame(render);
+    
 }
 
 function keyboardHandler(event) {
