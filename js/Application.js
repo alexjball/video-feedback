@@ -625,13 +625,18 @@ VFCycleGenerator.prototype = {
         
     createFilter : function() {
 
-        var f = this.app.copyStructure('transfer', true);
+        // var f = this.app.copyStructure('transfer', true);
         
-        // Making an assumption about the app structure.
-        f.portal.resolution.transfer = false;
-        f.view.resolution.transfer   = false;
-        f.effects.color.invert.transfer = false;
+        // // Making an assumption about the app structure.
+        // f.portal.resolution.transfer = false;
+        // f.view.resolution.transfer   = false;
+        // f.effects.color.invert.transfer = false;
         
+        var f = this.app.copyStructure('transfer', false);
+        
+        // Only transfer the position.
+        f.portal.spacemap.transfer = true;
+
         return f;
 
     },
@@ -690,7 +695,7 @@ VFCycleGenerator.prototype = {
             
             if (!nodes[3].transfer) {
                 
-                return VF.StateNugget.dropStop;
+                return VF.StateNugget.dropGo;
                 
             } else {
                 
