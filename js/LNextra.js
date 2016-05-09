@@ -55,16 +55,16 @@ function getInput(field) {
             var scale = getInput("scale");
             var rot = getInput("rot");
             return (-scale) 
-            * (Math.cos(rot) * sm.position.x
-               - Math.sin(rot) * sm.position.y);
+            * (Math.cos(-rot) * sm.position.x
+               - Math.sin(-rot) * sm.position.y);
         case "y":
             var scale = getInput("scale");
             var rot = getInput("rot");
             return (-scale) 
-            * (Math.sin(rot) * sm.position.x
-               + Math.cos(rot) * sm.position.y);
+            * (Math.sin(-rot) * sm.position.x
+               + Math.cos(-rot) * sm.position.y);
         case "rot":
-            return -sm.rotation.z;
+            return sm.rotation.z;
         case "scale":
             return 1 / sm.scale.x;
         default:
@@ -108,14 +108,14 @@ function setInput() {
         sm.position.x = 0;
         sm.position.y = 0;
 
-        sm.rotation.z = -rot;
+        sm.rotation.z = rot;
         sm.scale.x = 1 / scale;
         sm.scale.y = 1 / scale;
 
-        sm.position.x = -(1 / scale) * (Math.cos(-rot) * x 
-                                       - Math.sin(-rot) * y);
-        sm.position.y = -(1 / scale) * (Math.sin(-rot) * x 
-                                       + Math.cos(-rot) * y);
+        sm.position.x = -(1 / scale) * (Math.cos(rot) * x 
+                                       - Math.sin(rot) * y);
+        sm.position.y = -(1 / scale) * (Math.sin(rot) * x 
+                                       + Math.cos(rot) * y);
     }
 }
 

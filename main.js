@@ -11,7 +11,7 @@ function init() {
     cycleGen     = new VFCycleGenerator(app);
     cycleQueue   = [];
     cycleSpeed   = .005;
-    isCycling    = false;
+    cycleEndCallback = null;
     vfr          = new VFRenderer();
     
     stats = new Stats();
@@ -50,6 +50,7 @@ VFRenderer.prototype = {
         this._oldframesToRender = 0;
         this.state = VFRenderer.states.stop;
         cycleQueue = [];
+        cycleEndCallback = null;
         
     },
     
@@ -96,8 +97,16 @@ function render() {
         updateUI();
         
         if (cycleQueue.length > 0) {
-                                    
-            if (cycleQueue[0].step()) cycleQueue.shift();
+            
+            cycleQueue[0].speed = cycleSpeed;
+            
+            if (cycleQueue[0].step()) {
+                
+                cycleQueue.shift();
+                
+                cycleEndCallback();
+                
+            }
             
         }
         

@@ -127,6 +127,8 @@ Toolbar.prototype.addCheckbox = function(text, setMe) {
     newDiv.appendChild(newTextDiv);
     newDiv.appendChild(newInputDiv);
     this.element.appendChild(newDiv);
+    
+    return newInput;
 }
 
 // Method: add range
@@ -253,13 +255,37 @@ function initializeToolbar(toolbarInstance) {
     toolbarInstance.addButton("Save State", function() { saveStateToDropdown(); } );
     
     toolbarInstance.addButton("Cycle Inputs", function() {
-        if (isCycling) {
-            return;
+        if (cycleEndCallback !== null) return;
+        
+        cycleEndCallback = function() {
+            
+            var startState = app.deserializeNugs(app.serializeNugs());
+            
+            var len = stateManager.states.length;
+            
+            var endState = app.deserializeNugs(
+                stateManager.states[Math.floor(Math.random() * len)].state
+            );
+            
+            var cycle = cycleGen.createCycle(startState, endState);
+            
+            cycle.speed = cycleSpeed;
+            
+            cycleQueue.push(cycle);
+            
         }
-        isCycling = true;
+        
+        cycleEndCallback();
+        
     });
     
-    toolbarInstance.addButton("Stop Cycle", function() { cycleQueue = []; });
+    toolbarInstance.addButton("Stop Cycle", function() { 
+    
+        cycleQueue = []; 
+    
+        cycleEndCallback = null;
+        
+    });
     
     toolbarInstance.addRange("Cycle Speed", {
      
@@ -274,7 +300,7 @@ function initializeToolbar(toolbarInstance) {
     toolbarInstance.addCheckbox("Invert Y", 
         app.effects.symmetry.invertY);
     toolbarInstance.addCheckbox("Mirror X", 
-        app.effects.symmetry.mirrorX);
+        app.effects.symmetry.mirrorX).checked = true;        
     toolbarInstance.addCheckbox("Mirror Y", 
         app.effects.symmetry.mirrorY);
     toolbarInstance.addCheckbox("Mirror NE",
