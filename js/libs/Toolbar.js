@@ -287,36 +287,7 @@ function initializeToolbar(toolbarInstance) {
         }
     );
     
-    toolbarInstance.addButton("Save State", function() {
-        // if (cycling) {
-        //     return;
-        // }
-        
-        pause();
-        
-        var inputName = prompt("Please enter a name for the current state.");
-        if (typeof inputName !== 'string') {
-            resume();
-            return;
-        } else if (inputName == "") {
-            inputName = "newState";
-        } 
-        
-        stateManager.saveState(inputName);
-            
-        var newOption = document.createElement("option");
-        var optionLabel = document.createTextNode(inputName);
-        newOption.appendChild(optionLabel);
-
-        var select = document.getElementById('stateSelect');
-        
-        select.appendChild(newOption);
-        
-        select.value = inputName;
-        
-        resume();
-
-    });
+    toolbarInstance.addButton("Save State", function() { saveStateToDropdown(); } );
     
     toolbarInstance.addButton("Cycle Inputs", function() {
         if (window.cycling) {
@@ -372,3 +343,33 @@ function initializeToolbar(toolbarInstance) {
 
 window.toolbar = new Toolbar();
 initializeToolbar(window.toolbar);
+
+function saveStateToDropdown(inputName) {
+    
+        pause();
+        
+        if (inputName === undefined) {
+            inputName = prompt("Please enter a name for the current state.");
+            if (typeof inputName !== 'string') {
+                resume();
+                return;
+            } else if (inputName == "") {
+                inputName = "newState";
+            } 
+        }
+        
+        inputName = stateManager.saveState(inputName).name;
+        
+        var newOption = document.createElement("option");
+        var optionLabel = document.createTextNode(inputName);
+        newOption.appendChild(optionLabel);
+
+        var select = document.getElementById('stateSelect');
+        
+        select.appendChild(newOption);
+        
+        select.value = inputName;
+        
+        resume();
+    
+}

@@ -23,6 +23,14 @@ function stop() {
         
 }
 
+function step() {
+    
+    stop();
+    
+    framesToRender = 1;
+    
+}
+
 function pause() {
     
     oldFramesToRender = framesToRender;
@@ -70,36 +78,3 @@ function render() {
     requestAnimationFrame(render);
     
 }
-
-function keyboardHandler(event) {
-    
-    var charCode = event.keyCode || event.which;
-    var charStr = String.fromCharCode(charCode);
-
-    switch (charStr) {
-        case " ":
-        
-            stopRender = !stopRender;
-            
-            if (!stopRender) {
-                console.log('Starting render loop...');
-                render();
-            }
-            break;
-            
-        case "N":
-            console.log('Single render...');
-            stopRender = true;
-            render();
-            
-            break;
-            
-        case "A":
-        
-            storage.push(app.createStorage());
-            break;
-    }
-    
-}
-
-window.addEventListener("keydown", keyboardHandler, false);

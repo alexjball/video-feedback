@@ -245,7 +245,17 @@ function keyboardHandler(event) {
         case "K":
             setInput(["y", getInput("y") + inputSettings.xyStep]);
             break;
-        }
+        case "V":
+            saveStateToDropdown('State');
+            break;
+        case " ":
+            // Stop/resume toggle.
+            break;
+        case "N":
+            // Single frame step.
+            break;
+            
+    }
 }
 
 function mousedownHandler(event) {

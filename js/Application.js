@@ -1,3 +1,7 @@
+///////////////////////////////
+// Application/Time-Independent
+///////////////////////////////
+
 var VFApp = function(domParent, viewWidth, viewHeight) {
     
     var app = this;
@@ -184,29 +188,7 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
                 return [s.width, s.height]; 
             }
         }),
-        
-        // mode : nug({
-            
-            
-                
-        // }),
-        
-        // tile : nug({
-            
-        //     _ : [new THREE.Vector2(1, 0), new THREE.Vector2(0, 1)],
-            
-        //     set : function(x) { this._ = x },
-        //     get : function()  { return this._; },
-        //     toJSON : function(x) { 
-        //         return [x[0].toArray(), x[1].toArray()];
-        //     },
-        //     fromJSON : function(json) { 
-        //         return [(new THREE.Vector2()).fromArray(json[0]),
-        //                 (new THREE.Vector2()).fromArray(json[1])];
-        //     }
-            
-        // })
-        
+
     });
         
     this.background = nug({
@@ -396,3 +378,190 @@ VFApp.defaultLogicalState = function(viewWidth, viewHeight) {
 }
 
 VF.StateNugget.nuggetize(VFApp.prototype);
+
+/////////////////
+// State Manageer
+/////////////////
+
+var VFStateManager = function(app, states) {
+    // jsonStates is an array of objects of the form
+    // { name : "statename", json : {serialized app state}}
+    
+    this.app = app;
+    
+    this.states = states;
+            
+}
+
+VFStateManager.prototype = {
+    
+    constructor : VFStateManager,
+    
+    getFilter : function() {
+
+        var f = this.app.copyStructure('transfer', true);
+        
+        // Making an assumption about the app structure.
+        f.portal.resolution.transfer = false;
+        f.view.resolution.transfer   = false;
+        
+        return f;
+
+    },
+    
+    saveState : function(name) {
+        
+        var states = this.states;
+        
+        var duplicate = function(n) {
+            return states.some(function(x) { return x.name === n; });
+        }
+        
+        if (duplicate(name)) {
+            
+            name = name + ' ';
+            var i = 2;
+            
+            while (duplicate(name + i)) i++;
+    
+            name = name + i;
+                        
+        }
+                
+        var newState = {
+            name  : name,
+            state : this.app.serializeNugs()
+        };
+        
+        this.states.push(newState);
+        
+        return newState;
+        
+    },
+    
+    loadState : function(toLoad, filterObject) {
+        
+        var filter = function(nodes) {
+            
+            if (!nodes[2].transfer) {
+                
+                return VF.StateNugget.dropStop;
+                
+            } else {
+                
+                return VF.StateNugget.keepGo;
+                
+            }
+            
+        }
+        
+        if (typeof toLoad === 'string') {
+            
+            var found = this.states.find(function(x) { 
+                
+                return x.name === toLoad;
+            
+            });
+            
+            if (found === undefined) {
+                
+                console.error(toLoad + ' is not a valid state name');
+                
+                return;
+                
+            } else {
+                
+                toLoad = found.state;
+                
+            }
+            
+        }
+        
+        filterObject = filterObject || this.getFilter();
+        
+        app.applyNugs(app.deserializeNugs(toLoad), filter, filterObject)
+        
+    }
+    
+}
+
+/////////////
+// Simulation
+/////////////
+
+var VFSim = function(app, initialDelay, initialDelayCapacity) {
+        
+    if (initialDelayCapacity === undefined) initialDelayCapacity = 30;
+    
+    var storage = [];    
+    var delay = initialDelay;
+    var currentDelay = 0;
+    
+    this.shouldUpdatePortal = true;
+    this.shouldUpdateView   = true;
+      
+    updateDelayCapacity(initialDelayCapacity);
+          
+    this.step = function() {
+        
+        if (this.shouldUpdatePortal) {
+            
+            iterate();
+                    
+        }
+        
+        if (this.shouldUpdateView) {
+            
+            display();
+        
+        }
+        
+    }
+    
+    this.setDelay = function(newDelay) {
+        
+        updateDelayCapacity(newDelay);
+        
+        delay = newDelay;
+        
+    }
+    
+    this.getDelay = function() { return delay; }
+    
+    function updateDelayCapacity(capacity) {
+        
+        while (storage.length < capacity) {
+            
+            storage.push(app.createStorage());
+            
+        }
+                
+    }
+    
+    function iterate() {
+        
+        var currIt, nextIt;
+        
+        currentDelay = (currentDelay + 1) % delay;
+        
+        currIt = storage[currentDelay];
+        
+        app.setPortalStorage(currIt);
+        
+        nextIt = app.iteratePortal();
+        
+        app.deleteStorage(currIt);
+        
+        storage[currentDelay] = nextIt;
+        
+        app.setPortalStorage(nextIt);
+        
+    }
+     
+    function display() {
+        
+        app.renderView();
+        
+    }
+    
+}

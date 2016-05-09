@@ -26,6 +26,23 @@ VFStateManager.prototype = {
     
     saveState : function(name) {
         
+        var states = this.states;
+        
+        var duplicate = function(n) {
+            return states.some(function(x) { return x.name === n; });
+        }
+        
+        if (duplicate(name)) {
+            
+            name = name + ' ';
+            var i = 2;
+            
+            while (duplicate(name + i)) i++;
+    
+            name = name + i;
+                        
+        }
+                
         var newState = {
             name  : name,
             state : this.app.serializeNugs()
