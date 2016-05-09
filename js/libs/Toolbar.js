@@ -55,7 +55,7 @@ Toolbar.prototype.addButton = function(text, callback) {
 
 
 // Method: add dropdown list
-Toolbar.prototype.addDropdown = function(text, id, options) {
+Toolbar.prototype.addDropdown = function(text, id, options, callback) {
     // Make div
     var newDiv = document.createElement("div");
     newDiv.classname = "toolbarDropdown";
@@ -73,24 +73,22 @@ Toolbar.prototype.addDropdown = function(text, id, options) {
     // Add list options to selection
     for (item in options) {
         var newOption = document.createElement("option");
-        var optionLabel = document.createTextNode(options[item][0]);
+        var optionLabel = document.createTextNode(options[item]);
         newOption.appendChild(optionLabel);
         newInput.appendChild(newOption);
     }
     
-    // Add button to change selection
-    var newButton = document.createElement("input");
-    newButton.type = "button";
-    newButton.value = "Go";
-    newButton.id = id.concat("Button");
-    newButton.onclick = options[newInput.selectedIndex][1];
-    newInputDiv.appendChild(newButton);
+    // // Add button to change selection
+    // var newButton = document.createElement("input");
+    // newButton.type = "button";
+    // newButton.value = "Go";
+    // newButton.id = id.concat("Button");
+    // newButton.onclick = options[newInput.selectedIndex][1];
+    // newInputDiv.appendChild(newButton);
     
     // Add an onclick method for the dropdown box itself so that 
     // it updates the callback function for the "Go" button
-    newInput.oninput = function() {
-        newButton.onclick = options[newInput.selectedIndex][1];
-    };
+    newInput.oninput = callback;
     
     // Add to toolbar div
     newDiv.appendChild(newTextDiv);
@@ -99,31 +97,31 @@ Toolbar.prototype.addDropdown = function(text, id, options) {
 }
 
 
-function refreshDropdownById(id, options) {
-    var input = document.getElementById(id);
-    var button = document.getElementById(id.concat("Button"));
+// function refreshDropdownById(id, options) {
+//     var input = document.getElementById(id);
+//     var button = document.getElementById(id.concat("Button"));
     
-    // Remove all options
-    while (input.lastChild) {
-        input.removeChild(input.lastChild);
-    }
+//     // Remove all options
+//     while (input.lastChild) {
+//         input.removeChild(input.lastChild);
+//     }
     
-    // Add new options
-    for (item in options) {
-        var newOption = document.createElement("option");
-        var optionLabel = document.createTextNode(options[item][0]);
-        newOption.appendChild(optionLabel);
-        input.appendChild(newOption);
-    }
+//     // Add new options
+//     for (item in options) {
+//         var newOption = document.createElement("option");
+//         var optionLabel = document.createTextNode(options[item][0]);
+//         newOption.appendChild(optionLabel);
+//         input.appendChild(newOption);
+//     }
     
-    // Update button behavior
-    button.onclick = options[input.selectedIndex][1];
+//     // Update button behavior
+//     button.onclick = options[input.selectedIndex][1];
     
-    // Update button-updating behavior
-    input.oninput = function() {
-        button.onclick = options[input.selectedIndex][1];
-    };
-}
+//     // Update button-updating behavior
+//     input.oninput = function() {
+//         button.onclick = options[input.selectedIndex][1];
+//     };
+// }
 
 
 // Method: add checkbox
@@ -257,50 +255,67 @@ function initializeToolbar(toolbarInstance) {
     toolbarInstance.addInstruction("Rotate: AD/right-drag");
     toolbarInstance.addInstruction("Zoom: WS/scroll");
     
-    window.savedStates = [
-        ["random", function() {
-                        if (cycling) {
-                            return;
-                        }
-                        setInput(
-                            ["x", Math.random() * 0.3 + 0.6],
-                            ["y", Math.random() * 0.7 - 0.35],
-                            ["rot", Math.random() * 2 * Math.PI],
-                            ["scale", Math.random() * 0.2 + 0.75]
-                        );
-        }]/*,
-        ["start", inputSetterFromObj(inputList[0])], 
-        ["cubers", inputSetterFromObj(inputList[1])],
-        ["eyes", inputSetterFromObj(inputList[2])],
-        ["owl", inputSetterFromObj(inputList[3])],
-        ["hot pants", inputSetterFromObj(inputList[4])],
-        ["plaid", inputSetterFromObj(inputList[5])],
-        ["snowflakes", inputSetterFromObj(inputList[6])],
-        ["turtles", inputSetterFromObj(inputList[7])],
-        ["pyramidal", inputSetterFromObj(inputList[8])],
-        ["what's a fractal", inputSetterFromObj(inputList[9])],
-    */
-    ];
+    // window.savedStates = [
+    //     ["random", function() {
+    //                     if (cycling) {
+    //                         return;
+    //                     }
+    //                     setInput(
+    //                         ["x", Math.random() * 0.3 + 0.6],
+    //                         ["y", Math.random() * 0.7 - 0.35],
+    //                         ["rot", Math.random() * 2 * Math.PI],
+    //                         ["scale", Math.random() * 0.2 + 0.75]
+    //                     );
+    //     }]/*,
+    //     ["start", inputSetterFromObj(inputList[0])], 
+    //     ["cubers", inputSetterFromObj(inputList[1])],
+    //     ["eyes", inputSetterFromObj(inputList[2])],
+    //     ["owl", inputSetterFromObj(inputList[3])],
+    //     ["hot pants", inputSetterFromObj(inputList[4])],
+    //     ["plaid", inputSetterFromObj(inputList[5])],
+    //     ["snowflakes", inputSetterFromObj(inputList[6])],
+    //     ["turtles", inputSetterFromObj(inputList[7])],
+    //     ["pyramidal", inputSetterFromObj(inputList[8])],
+    //     ["what's a fractal", inputSetterFromObj(inputList[9])],
+    // */
+    // ];
     
-    toolbarInstance.addDropdown("Select State", "stateSelect", window.savedStates);
+    toolbarInstance.addDropdown("Select State", "stateSelect", 
+        stateManager.states.map( function(x) { return x.state; } ), 
+        function() {
+            stateManager.loadState(stateManager.states[this.selectedIndex].state);
+        }
+    );
     
     toolbarInstance.addButton("Save State", function() {
-        if (cycling) {
-            return;
-        }
+        // if (cycling) {
+        //     return;
+        // }
+        
+        pause();
         
         var inputName = prompt("Please enter a name for the current state.");
-        if (inputName == "") {
+        if (typeof inputName !== 'string') {
+            resume();
+            return;
+        } else if (inputName == "") {
             inputName = "newState";
-        }
+        } 
+        
+        stateManager.saveState(inputName);
+            
+        var newOption = document.createElement("option");
+        var optionLabel = document.createTextNode(inputName);
+        newOption.appendChild(optionLabel);
 
-        window.savedStates.push(
-            [inputName, inputSetterFromObj(new Input(inputs))]
-        );
-    
-        window.inputList.push(new Input(inputs));
+        var select = document.getElementById('stateSelect');
+        
+        select.appendChild(newOption);
+        
+        select.value = inputName;
+        
+        resume();
 
-        refreshDropdownById("stateSelect", window.savedStates)
     });
     
     toolbarInstance.addButton("Cycle Inputs", function() {
