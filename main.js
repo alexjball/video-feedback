@@ -103,8 +103,14 @@ function render() {
             if (cycleQueue[0].step()) {
                 
                 cycleQueue.shift();
-                
+
+                sim.step();
+
                 cycleEndCallback();
+                
+                requestAnimationFrame(render);
+
+                return;
                 
             }
             

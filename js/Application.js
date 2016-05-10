@@ -903,20 +903,25 @@ VFCycle = function(cycleFn, speed) {
     this.speed = speed === undefined ? 1 / 60 : speed;
     this.t     = 0;
         
+    var lastRenderedT  = 0;
+    var maxT = 1;
+    
     this.step = function() {
         
-        if (this.t === 1) return;
+        if (this.done()) return true;
+        
+        if (this.t > maxT) this.t = maxT;
+        
+        cycleFn(this.t);
+        
+        lastRenderedT = this.t;
         
         this.t += this.speed;
         
-        if (this.t > 1) this.t = 1;
-            
-        cycleFn(this.t);
-        
         return this.done();
-        
+                
     }
     
-    this.done = function() { return this.t === 1; }
+    this.done = function() { return lastRenderedT === maxT && this.t >= maxT; }
         
 }
