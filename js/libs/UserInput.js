@@ -248,6 +248,14 @@ function keyboardHandler(event) {
         case "V":
             saveStateToDropdown('State');
             break;
+        case "T":
+            // toggle visibility of stats.
+            if (stats.dom.style.display == "") {
+                stats.dom.style.display = "none";
+            } else {
+                stats.dom.style.display = "";
+            }
+            break;
         case " ":
             // Stop/resume toggle.
             if (vfr.state !== VFRenderer.states.play) {
