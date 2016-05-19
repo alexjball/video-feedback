@@ -411,7 +411,7 @@ VF.FeedbackStorageManager.prototype = {
 VF.FeedbackStorageManager.defaultOptions = {
     
     minFilter     : THREE.LinearFilter,
-    magFilter     : THREE.NearestFilter,
+    magFilter     : THREE.LinearFilter,
     format        : THREE.RGBFormat,
     depthBuffer   : true,
     stencilBuffer : true,
