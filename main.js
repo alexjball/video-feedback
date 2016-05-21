@@ -6,6 +6,7 @@ function init() {
     app          = new VFApp(document.body, window.innerWidth, window.innerHeight);
     stateManager = new VFStateManager(app, DefaultAppStates);
     sim          = new VFSim(app, 10, 30);
+    geo          = new VFGeometry(app);
     
     // Global state for cycling because now.
     cycleGen     = new VFCycleGenerator(app);
@@ -20,6 +21,20 @@ function init() {
     stats.dom.style.top = '0px';
     stats.dom.style.display = "none";
     document.body.appendChild(stats.domElement);
+        
+    // Load the default state, which includes border width and symmetries.
+    stateManager.loadState('Default');
+    
+    // Set the geometry to match the aspect ratio of the window.
+    geo.set(geo.rectangle, window.innerWidth / window.innerHeight);
+
+    window.addEventListener( 'resize', onWindowResize, false );
+
+}
+
+function onWindowResize() {
+    
+    app.resizeView(window.innerWidth, window.innerHeight);
     
 }
 
@@ -118,7 +133,9 @@ function render() {
         }
         
         sim.step();
-        
+
+        if (vfr.framesToRender == 0) vfr.stop();
+                
         stats.end();
 
     }

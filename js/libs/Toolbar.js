@@ -5,7 +5,7 @@ function toggleToolbar() {
         toolbar.rect = toolbar.element.getBoundingClientRect();
     }
     else {
-        toolbar.element.style.width = "20%";
+        toolbar.element.style.width = "200px";
         toolbar.rect = toolbar.element.getBoundingClientRect();
     }
 }
@@ -32,6 +32,33 @@ Toolbar.prototype.addInstruction = function(text) {
     document.getElementById("toolbar").appendChild(newDiv);
 }
 
+// Method: add text field
+Toolbar.prototype.addField = function(label, id, callback) {
+        
+    // Make div
+    var newDiv = document.createElement("div");
+    newDiv.className = "toolbarField";
+    
+    // Make text label
+    var newTextDiv = document.createElement("div");
+    newTextDiv.appendChild(document.createTextNode(label));
+    
+    // Make input & div
+    var newInput = document.createElement("input");
+    newInput.type = "text";
+    newInput.id = id;
+    var newInputDiv = document.createElement("div");
+    newInputDiv.appendChild(newInput);
+    
+    newInput.value = '';
+    newInput.oninput = callback;
+    
+    // Add to toolbar div
+    newDiv.appendChild(newTextDiv);
+    newDiv.appendChild(newInputDiv);
+    this.element.appendChild(newDiv);
+    
+}
 
 // Method: add button
 Toolbar.prototype.addButton = function(text, callback) {
@@ -219,6 +246,8 @@ function initializeToolbar(toolbarInstance) {
     toolbarInstance.addInstruction("Pan: IJKL/drag");
     toolbarInstance.addInstruction("Rotate: AD/right-drag");
     toolbarInstance.addInstruction("Zoom: WS/scroll");
+    toolbarInstance.addInstruction("FPS: T");
+    toolbarInstance.addInstruction("Pause/Step: Space/N");
     
     // window.savedStates = [
     //     ["random", function() {
@@ -329,6 +358,52 @@ function initializeToolbar(toolbarInstance) {
     toolbarInstance.addColor("Border", app.border.color);
     toolbarInstance.addColor("Background", app.background.color);
     
+    // View and Geometry
+    toolbarInstance.addButton("Reset Geometry", function() {
+        
+        geo.set(geo.rectangle, window.innerWidth / window.innerHeight);
+        
+    });
+    
+    toolbarInstance.addButton("Go Home", function() {
+        
+        var fresh = new VF.Spacemap();
+        
+        fresh.scale.set(1.3, 1.3, 1);
+        
+        app.portal.spacemap.set([fresh]);
+
+    })
+    
+    toolbarInstance.addButton("Snap View", app.fitViewToPortal.bind(app));
+    toolbarInstance.addButton("Match Resolution", app.syncPortalResolution.bind(app));
+    
+    toolbarInstance.addField("Custom Res (h)", 'customResolution');
+    toolbarInstance.addButton("Set Res", function() {
+        
+        var el = document.getElementById('customResolution');
+        
+        var height = Math.round(Number(el.value));
+        
+        if (!(height > 0)) return;
+        
+        app.setPortalResolutionInView(Math.round(Number(el.value)));
+        
+    });
+    
+    toolbarInstance.addField("Rect Aspect", 'customAspect');
+    toolbarInstance.addButton('Set Rect', function() {
+        
+        var el = document.getElementById('customAspect');
+        
+        var aspect = Number(el.value);
+        
+        if (!(aspect > 0)) return;
+
+        geo.set(geo.rectangle, aspect);
+        
+    });
+        
     toolbarInstance.addButton("Open Image", 
                       function() {
                         window.open(document.getElementsByTagName("canvas")[0].toDataURL("image/png"));

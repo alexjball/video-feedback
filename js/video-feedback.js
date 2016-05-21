@@ -177,17 +177,6 @@ VF.Portal.prototype.computeIteration = function(sourceScene, replaceStorage) {
 
     var nextIteration = this._unsetRenderingState();
 
-    // // Render just nextIteration.
-    // var scene = new THREE.Scene();
-    // var camera = new THREE.OrthographicCamera(-1, 1, 1, -1);
-    // camera.position.z = 5;
-    // camera.lookAt(new THREE.Vector3(0, 0, 0));
-    // var disp = new THREE.Mesh(
-    //     new THREE.PlaneBufferGeometry(2, 2),
-    //     new THREE.MeshBasicMaterial({map : nextIteration}));
-    // scene.add(disp);
-    // renderer.render(scene, camera);
-
     if (replaceStorage || replaceStorage === undefined) {
 
         this.replaceStorage(nextIteration);

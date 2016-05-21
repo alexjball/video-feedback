@@ -9,7 +9,7 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
     var loader = new THREE.ObjectLoader();
 
     // Get defaults.     
-    var dls = VFApp.defaultLogicalState(viewWidth, viewHeight);
+    var dls = defaultLogicalState(viewWidth, viewHeight);
     
     // Create the renderer.
     var renderer;
@@ -22,7 +22,7 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
     
     // Create a portal.
     var portal = new VF.Portal(dls.portalGeometry, dls.spacemap, storageManager, renderer);
-
+    
     // Scene Setup
     
     var border, // Mesh object
@@ -43,7 +43,7 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
     
     // RGBShiftPass gets added by a nug.
     portal.passes = [symPass, colorPass];
-    
+            
     // Simulation methods
     
     this.createStorage = function() {
@@ -72,11 +72,7 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
     
     this.iteratePortal = function(replaceCurrent) {
         
-        for (var i = 0; i < feedbackChildren.length; i++) {
-            
-            scenes.feedback.add(feedbackChildren[i]);
-            
-        }
+        buildScene(scenes.feedback, feedbackChildren);
         
         if (replaceCurrent === undefined) replaceCurrent = false;
         
@@ -88,15 +84,33 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
         // Render the view, either to the screen (if target is undefined)
         // or to the specified render target.
         
-        for (var i = 0; i < viewChildren.length; i++) {
-            
-            scenes.view.add(viewChildren[i]);
-            
-        }
+        buildScene(scenes.view, viewChildren, false);
 
         renderer.render(scenes.view, this.view.camera.get(), target)
         
     }
+    
+    // Get pixels from portal
+    this.readPortalPixels = function(x, y, width, height, buffer) {
+        
+        if (height === undefined) height = this.portal.resolution.get()[1];
+        if (width  === undefined) width  = this.portal.resolution.get()[0];
+        if (buffer === undefined) buffer = new Uint8Array(width * height * 4);
+        if (x      === undefined) x = 0;
+        if (y      === undefined) y = 0;
+        
+        var ctx = renderer.context;
+        
+        renderer.setRenderTarget(portal.getStorage());
+        
+        // We have to read RGBA and UNSIGNED_BYTE according to the standard.
+        // Alpha's are set to 255.
+        ctx.readPixels(x, y, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, buffer);
+        
+        return buffer;
+        
+    }
+
     
     // Logical state variables
     
@@ -287,7 +301,173 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
         })
         
     })
+            
+    // View methods
+    
+    this.resizeView = function(width, height) {
         
+        // Set the view camera's aspect ratio and the renderer's size.
+        // The camera's xy clipping box has area 1.
+        
+        this.view.resolution.set([width, height]);
+        
+        var camera = this.view.camera.get();
+        
+        r = unitAspectRectangle(width, height);
+        
+        camera.left   = - r.width / 2;
+        camera.right  =   r.width / 2;
+        camera.top    =   r.height / 2;
+        camera.bottom = - r.height / 2;
+        
+        camera.updateProjectionMatrix();
+        
+    }
+    
+    this.portalViewAspect = function() {
+        
+        // Return the aspect ratio of the portal in the view scene in global
+        // coordinates.
+        
+        buildScene(scenes.view, viewChildren, true);
+        
+        var pScale = portal.getWorldScale(),
+            bb = this.portal.shape.get().boundingBox,
+            wPW = pScale.x * (bb.max.x - bb.min.x),
+            hPW = pScale.y * (bb.max.y - bb.min.y);
+        
+        return {
+            
+            w : wPW,
+            
+            h : hPW,
+            
+            aspect : wPW / hPW
+                
+        };
+        
+    }
+    
+    this.setPortalResolutionInView = function(height) {
+        
+        // Set the portal resolution to have uniform pixel density in the view
+        // scene. Width is computed using the density implied by height.
+        
+        var p = this.portalViewAspect();
+        
+        this.portal.resolution.set([Math.round(p.aspect * height), height]);
+        
+    }
+    
+    this.fitViewToPortal = function() {
+        
+        // Adjust the view camera to fit the geometry.
+        // The camera will be axis aligned.
+        
+        var camera = this.view.camera.get();
+        
+        if (camera.parent !== null) {
+            
+            console.error('The view camera must be a root object.');
+            
+            return;
+            
+        }
+        
+        // Set up the view scene graph and update the portal's view world
+        // matrix.
+        buildScene(scenes.view, viewChildren, true);
+        
+        // Bounding box in local coordinates.
+        var bb = this.portal.shape.get().boundingBox;
+        
+        // Transform the bounding box to world coordinates and compute the new
+        // min/max of the bounding box.
+        var wBB1 = portal.localToWorld(bb.min.clone()),
+            wBB2 = portal.localToWorld(bb.max.clone()),
+            min  = wBB1.clone().min(wBB2),
+            max  = wBB1.clone().max(wBB2);
+                
+        // Compute the dimensions of the portal bounding box in world coords
+        // and that of the camera in local coords. Set the scale of the
+        // camera such that the entire portal will be visible.
+        var wBB   = max.x - min.x,
+            hBB   = max.y - min.y,
+            wC    = camera.right - camera.left,
+            hC    = camera.top - camera.bottom,
+            scale = Math.max(wBB / wC, hBB / hC);
+        
+        // Center the camera over the portal bounding box, axis-align it,
+        // and scale it to fit the portal.
+        camera.scale.set(scale, scale, 1);
+        camera.position.x = 0.5 * (min.x + max.x);
+        camera.position.y = 0.5 * (min.y + max.y);
+        camera.rotation.z = 0;
+        
+    }
+    
+    this.syncPortalResolution = function() {
+        
+        // Set the portal resolution by matching the resolution density
+        // between the view and the portal.
+        
+        // Compute the view's pixels per unit in world coordinates.
+        
+        var camera = this.view.camera.get();
+
+        var wCW = (camera.right - camera.left) * camera.scale.x,
+            hCW = (camera.top - camera.bottom) * camera.scale.y,
+            res = this.view.resolution.get(),
+            ppx = res[0] / wCW,
+            ppy = res[1] / hCW,
+            ppu = (ppx + ppy) * 0.5;
+            
+        if (Math.abs((ppx - ppy) / (ppu)) > 1e-3) {
+            
+            console.warn('The view camera has different pixel densities in x/y.');
+            
+        }
+                
+        var p = this.portalViewAspect();
+                            
+        // Disallow configurations that would induce enormous resolutions
+        // relative to the view resolution.
+        var maxRelativeScale = 3;
+        if (p.w / wCW > maxRelativeScale || p.h / hCW > maxRelativeScale) {
+            
+            console.error('View-portal relative scale must be less than ' + 
+                maxRelativeScale + '.');
+            
+            return;
+            
+        }
+        
+        // Compute the width and height in pixels. Since exact 1:1 texture 
+        // can appear blurry regardless of min/mag filters, add a few pixels.
+        var height = Math.round(p.h * ppu),
+            width  = Math.round(p.w * ppu),
+            fudge  = 0;
+             
+        this.portal.resolution.set([width + fudge, height + fudge]);
+                        
+    }
+            
+    function buildScene(scene, children, updateMatrixWorld) {
+        
+        if (updateMatrixWorld === undefined) updateMatrixWorld = false;
+        
+        for (var i = 0; i < children.length; i++) {
+            
+            scene.add(children[i]);
+            
+        }
+        
+        if (updateMatrixWorld) scene.updateMatrixWorld();
+        
+        return scene;
+        
+    }
+    
     function setUpRenderer(domParent, viewWidth, viewHeight) {
         
         renderer = new THREE.WebGLRenderer( {
@@ -352,44 +532,67 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
         };
                 
     }
-}
-
-VFApp.defaultLogicalState = function(viewWidth, viewHeight) {
     
-    var aspect = viewWidth / viewHeight;
-    
-    var spacemap = new VF.Spacemap();
-    spacemap.scale.x = 2;
-    spacemap.scale.y = 2;
-    
-    return {
+    function defaultLogicalState(viewWidth, viewHeight) {
         
-        portalWidth : viewWidth,
+        var r = unitAspectRectangle(viewWidth, viewHeight);
+                
+        var spacemap = new VF.Spacemap();
+        spacemap.scale.x = 2;
+        spacemap.scale.y = 2;
         
-        portalHeight : viewHeight,
+        return {
+            
+            portalWidth : viewWidth,
+            
+            portalHeight : viewHeight,
 
-        portalGeometry : new THREE.PlaneBufferGeometry(aspect, 1),
-        
-        portalUVMapping : null,
+            // Use a rectangle with the same aspect ratio as the screen and 
+            // an area of 1.
+            portalGeometry : new THREE.PlaneBufferGeometry(r.width, r.height),
+            
+            portalUVMapping : null,
 
-        spacemap : spacemap,
-        
-        backgroundColor : 0x70b2c5,
-        
-        borderColor : 0x0000ff,
+            spacemap : spacemap,
+            
+            backgroundColor : 0x70b2c5,
+            
+            borderColor : 0x0000ff,
 
-        viewWidth : viewWidth,
-        
-        viewHeight : viewHeight,
+            viewWidth : viewWidth,
+            
+            viewHeight : viewHeight,
+                            
+            viewCamera : new THREE.OrthographicCamera(
+                - r.width / 2, r.width / 2, r.height / 2, - r.height / 2, -100, 100
+            ),
                         
-        viewCamera : new THREE.OrthographicCamera(-aspect / 2, aspect / 2, .5, -.5, -100, 100),
-                    
-        tileDisplay : false,
-        
-        storage : null
+            tileDisplay : false,
+            
+            storage : null
+            
+        }
         
     }
     
+    function unitAspectRectangle(width, height) {
+        
+        var aspect = width / height,
+            w      = Math.pow(aspect, 0.5),
+            h      = 1 / w;
+        
+        return {
+            
+            aspect : aspect,
+            
+            width : w,
+            
+            height : h
+                
+        }
+        
+    }
+
 }
 
 VF.StateNugget.nuggetize(VFApp.prototype);
@@ -431,6 +634,7 @@ VFStateManager.prototype = {
         // Making an assumption about the app structure.
         f.portal.resolution.transfer = false;
         f.view.resolution.transfer   = false;
+        f.view.camera.transfer       = false;
         
         return f;
 
@@ -440,21 +644,7 @@ VFStateManager.prototype = {
     serializeStates : function() {
         
         return this.states;
-        
-        // var app = this.app;
-        
-        // return this.states.map(function(s) {
-            
-        //     return {
                 
-        //         name : s.name,
-                
-        //         state : app.serializeNugs(s.state)
-                
-        //     }
-            
-        // })
-        
     },
     
     saveState : function(name) {
@@ -527,7 +717,11 @@ VFStateManager.prototype = {
         
         filterObject = filterObject || this.createFilter();
         
-        app.applyNugs(app.deserializeNugs(toLoad), filter, filterObject);
+        this.app.applyNugs(this.app.deserializeNugs(toLoad), filter, filterObject);
+        
+        // Fit the view camera to the geometry.
+        app.fitViewToPortal();
+        app.syncPortalResolution();
         
     }
     
@@ -924,4 +1118,41 @@ VFCycle = function(cycleFn, speed) {
     
     this.done = function() { return lastRenderedT === maxT && this.t >= maxT; }
         
+}
+
+///////////////////////
+// Geometry Creation //
+///////////////////////
+
+var VFGeometry = function(app) {
+
+    this.app = app;
+
+}
+
+VFGeometry.prototype = {
+    
+    constructor : VFGeometry,
+    
+    set : function(geometryConstructor, args) {
+        
+        var geom = geometryConstructor.apply(this, 
+            Array.prototype.slice.call(arguments, 1)
+        );
+        
+        this.app.portal.shape.set(geom);
+        this.app.fitViewToPortal();
+        this.app.syncPortalResolution();
+        
+    },
+    
+    rectangle : function(aspect) {
+        
+        var width = Math.pow(aspect, 0.5), 
+            height = 1 / width;
+            
+        return  new THREE.PlaneBufferGeometry(width, height);
+        
+    }
+    
 }
