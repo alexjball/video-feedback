@@ -91,23 +91,30 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
     }
     
     // Get pixels from portal
-    this.readPortalPixels = function(x, y, width, height, buffer) {
+    this.readPortalPixels = function(x, y, width, height, buffer, byteOffset) {
         
         if (height === undefined) height = this.portal.resolution.get()[1];
         if (width  === undefined) width  = this.portal.resolution.get()[0];
-        if (buffer === undefined) buffer = new Uint8Array(width * height * 4);
+        if (byteOffset === undefined) byteOffset = 0;
         if (x      === undefined) x = 0;
         if (y      === undefined) y = 0;
         
+        var arr;
+        if (buffer === undefined) {
+            arr = new Uint8Array(width * height * 4);  
+        } else {
+            arr = new Uint8Array(buffer, byteOffset, width * height * 4);
+        }
+                
         var ctx = renderer.context;
         
         renderer.setRenderTarget(portal.getStorage());
         
         // We have to read RGBA and UNSIGNED_BYTE according to the standard.
         // Alpha's are set to 255.
-        ctx.readPixels(x, y, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, buffer);
+        ctx.readPixels(x, y, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, arr);
         
-        return buffer;
+        return arr.buffer;
         
     }
 
@@ -647,7 +654,7 @@ VFStateManager.prototype = {
                 
     },
     
-    saveState : function(name) {
+    saveState : function(name, toFile) {
         
         var states = this.states;
         
@@ -668,10 +675,12 @@ VFStateManager.prototype = {
                 
         var newState = {
             name  : name,
-            state : this.app.serializeNugs() //this.app.deserializeNugs(this.app.serializeNugs())
+            state : this.app.serializeNugs()
         };
         
         this.states.push(newState);
+        
+        if (toFile) this.saveStateToFile(newState);
         
         return newState;
         
@@ -723,7 +732,27 @@ VFStateManager.prototype = {
         app.fitViewToPortal();
         app.syncPortalResolution();
         
+    },
+    
+    saveStateToFile : function(state) {
+        
+        var width  = this.app.portal.resolution.get()[0],
+            height = this.app.portal.resolution.get()[1],
+            buffer = this.app.readPortalPixels(0, 0, width, height);
+            ppm = toPPM(width, height, toPPM.RGBA, buffer);
+            
+        var zip = new JSZip();
+        var dir = zip.folder(state.name);
+        dir.file('image.ppm', ppm);
+        dir.file('state.json', JSON.stringify(state, undefined, 2));
+
+        zip.generateAsync({type : 'blob', compression : 'DEFLATE'})
+        .then(function (blob) {
+            saveAs(blob, state.name + '.zip');
+        });
+        
     }
+
     
 }
 

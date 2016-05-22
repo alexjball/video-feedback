@@ -404,19 +404,21 @@ function initializeToolbar(toolbarInstance) {
         
     });
         
-    toolbarInstance.addButton("Open Image", 
-                      function() {
-                        window.open(document.getElementsByTagName("canvas")[0].toDataURL("image/png"));
-                      });
+    toolbarInstance.addButton("Save to File", function() {
+        
+        var newState = saveStateToDropdown();
+        
+        stateManager.saveStateToFile(newState);
+        
+    });
+
 }
 
 window.toolbar = new Toolbar();
 initializeToolbar(window.toolbar);
 
 function saveStateToDropdown(inputName) {
-    
-        vfr.pause();
-        
+            
         if (inputName === undefined) {
             inputName = prompt("Please enter a name for the current state.");
             if (typeof inputName !== 'string') {
@@ -427,7 +429,8 @@ function saveStateToDropdown(inputName) {
             } 
         }
         
-        inputName = stateManager.saveState(inputName).name;
+        var newState = stateManager.saveState(inputName);
+        inputName = newState.name;
         
         var newOption = document.createElement("option");
         var optionLabel = document.createTextNode(inputName);
@@ -438,7 +441,7 @@ function saveStateToDropdown(inputName) {
         select.appendChild(newOption);
         
         select.value = inputName;
+            
+        return newState;
         
-        vfr.play();
-    
 }
