@@ -742,13 +742,14 @@ VFStateManager.prototype = {
             ppm = toPPM(width, height, toPPM.RGBA, buffer);
             
         var zip = new JSZip();
-        var dir = zip.folder(state.name);
-        dir.file('image.ppm', ppm);
-        dir.file('state.json', JSON.stringify(state, undefined, 2));
+        var name = state.name;
+        
+        zip.file(name + '.ppm', ppm);
+        zip.file(name + '.state.json', JSON.stringify(state, undefined, 2));
 
         zip.generateAsync({type : 'blob', compression : 'DEFLATE'})
         .then(function (blob) {
-            saveAs(blob, state.name + '.zip');
+            saveAs(blob, name + '.zip');
         });
         
     }
