@@ -10,4 +10,4 @@ A simple app to simulate the effects of video feedback in software.
 
 # License
 
-The code is free for personal use. Inquire for commercial use of the software and/or its output.
+This code is free.
