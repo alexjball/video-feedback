@@ -416,9 +416,7 @@ function updateUI() {
         // Panning
         else {
             var dx = inputSettings.xyStep * (userInput.mouse.X - userInput.mouse.X0) * 40 / c_width
-            / getInput("scale");
             var dy = inputSettings.xyStep * (userInput.mouse.Y - userInput.mouse.Y0) * 40 / c_height
-            / getInput("scale");
 
             setInput(
                 ["x", userInput.camera.X0 - dx], 
