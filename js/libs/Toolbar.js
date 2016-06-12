@@ -262,12 +262,16 @@ function initializeToolbar(toolbarInstance) {
     toolbarInstance.element.style.overflow = "auto";
     toolbarInstance.rect = toolbar.element.getBoundingClientRect();
     
+    toolbarInstance.addButton("About", showAbout);
+    
+    toolbarInstance.addDivider();
+
     toolbarInstance.addInstruction("Reset Position: R");
     toolbarInstance.addInstruction("Pan: IJKL/drag");
     toolbarInstance.addInstruction("Rotate: AD/right-drag");
     toolbarInstance.addInstruction("Zoom: WS/scroll");
     toolbarInstance.addInstruction("FPS: T");
-    toolbarInstance.addInstruction("Pause/Step: Space/N");
+    toolbarInstance.addInstruction("Pause: P");
     toolbarInstance.addInstruction("Quick Save State: V");
         
     toolbarInstance.addDivider();

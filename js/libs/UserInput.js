@@ -265,7 +265,7 @@ function keyboardHandler(event) {
                 stats.dom.style.display = "";
             }
             break;
-        case " ":
+        case "P":
             // Stop/resume toggle.
             if (vfr.state !== VFRenderer.states.play) {
                 vfr.stop();
@@ -274,11 +274,11 @@ function keyboardHandler(event) {
                 vfr.stop();
             }
             break;
-        case "N":
-            // Single frame step.
-            vfr.play();
-            vfr.framesToRender = 1;
-            break;
+        // case "N":
+        //     // Single frame step.
+        //     vfr.play();
+        //     vfr.framesToRender = 1;
+        //     break;
             
     }
 }

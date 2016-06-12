@@ -143,29 +143,45 @@
                 z-index: 1002;
             }
             
-            <!-- 
-            .instructionOverlay {
-                display: none;
-                position: absolute;
-                top: 0%;
-                left: 0%;
-                width: 100%;
-                height: 100%;
-                background-color: black;
-                z-index: 1001;
-                -moz-opacity: 0.8;
-                opacity: 0.8;
-                filter: alpha(opacity = 80);
-            }
-            -->
+        .black_overlay{
+            position: absolute;
+            top: 0%;
+            left: 0%;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            z-index:1019;
+            -moz-opacity: 0.8;
+            opacity:.80;
+            filter: alpha(opacity=80);
+        }
+        
+        .white_content {
+            position: absolute;
+            top: 25%;
+            left: 25%;
+            width: 50%;
+            height: 50%;
+            padding: 16px;
+            border: 16px solid cornflowerblue;
+            background-color: white;
+            z-index:1020;
+            overflow: auto;
+        }
+                
         </style>
+        
+        <div id="about" style="display:none">
+            <div id="aboutFade" class="black_overlay" onclick='hideAbout()'></div>
+            <div id="aboutLight" class="white_content">aslkdjfalskd</div>
+        </div>
         
         <div id="simulation"></div>
         <div id="toggleToolbar" class="toggleToolbar" onclick="toggleToolbar()">&#9881;</div>
         <div id="toolbar" class="toolbar">
             <!-- instructions & options added dynamically here -->
         </div>
-
+                
 		<script>
             initializeEventListeners();
 			init();

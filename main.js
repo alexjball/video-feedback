@@ -48,6 +48,18 @@ function onWindowResize() {
     
 }
 
+function showAbout() {
+    
+    document.getElementById('about').style.display = 'block';
+    
+}
+
+function hideAbout() {
+    
+    document.getElementById('about').style.display = 'none';
+    
+}
+
 var VFRenderer = function() {
     // This is really hacky...
     
