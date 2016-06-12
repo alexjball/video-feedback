@@ -73,6 +73,25 @@ function getInput(field) {
     }
 }
 
+var inputLimits = {
+    // [min, max]
+    
+    scale : [0.1, 1.1],
+    x : [-4, 4],
+    y : [-4, 4],
+    rot : [-Infinity, Infinity]
+    
+}
+
+function clampValue(x, minmax) {
+    
+    var min = minmax[0], max = minmax[1];
+    
+    x = x < min ? min : x;
+    
+    return x > max ? max : x;
+        
+}
 
 function setInput() {
     var sm = app.portal.spacemap.get()[0];
@@ -88,35 +107,37 @@ function setInput() {
         
         switch(field) {
             case "x":
-                x = value;
+                x = clampValue(value, inputLimits.x);
                 break;
             case "y":
-                y = value;
+                y = clampValue(value, inputLimits.y);
                 break;
             case "rot":
-                rot = value;
+                rot = clampValue(value, inputLimits.rot);
                 break;
             case "scale":
-                scale = value;
+                scale = clampValue(value, inputLimits.scale);
                 break;
             default:
                 console.log("invalid field");
                 break;
         }
-        
-        // Now set the spacemap
-        sm.position.x = 0;
-        sm.position.y = 0;
 
-        sm.rotation.z = rot;
-        sm.scale.x = 1 / scale;
-        sm.scale.y = 1 / scale;
-
-        sm.position.x = -(1 / scale) * (Math.cos(rot) * x 
-                                       - Math.sin(rot) * y);
-        sm.position.y = -(1 / scale) * (Math.sin(rot) * x 
-                                       + Math.cos(rot) * y);
     }
+
+    // Now set the spacemap
+    sm.position.x = 0;
+    sm.position.y = 0;
+
+    sm.rotation.z = rot;
+    sm.scale.x = 1 / scale;
+    sm.scale.y = 1 / scale;
+
+    sm.position.x = -(1 / scale) * (Math.cos(rot) * x 
+                                    - Math.sin(rot) * y);
+    sm.position.y = -(1 / scale) * (Math.sin(rot) * x 
+                                    + Math.cos(rot) * y);
+
 }
 
 
