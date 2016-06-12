@@ -3,10 +3,18 @@
 
 function init() {
     
-    app          = new VFApp(document.body, window.innerWidth, window.innerHeight);
-    stateManager = new VFStateManager(app, DefaultAppStates);
+    app          = new VFApp(document.getElementById('simulation'), window.innerWidth, window.innerHeight);
     sim          = new VFSim(app, 10, 30);
     geo          = new VFGeometry(app);
+    
+    var localStorageKey = "videoFeedbackStates";
+    isNewInstance = !localStorage.getItem(localStorageKey);
+    
+    // Set initial states if none have been set. 
+    if (isNewInstance) 
+        seedLocalStorage(localStorageKey);
+    
+    stateManager = new VFStateManager(app, localStorageKey);
     
     // Global state for cycling because now.
     cycleGen     = new VFCycleGenerator(app);
@@ -35,6 +43,8 @@ function init() {
 function onWindowResize() {
     
     app.resizeView(window.innerWidth, window.innerHeight);
+    
+    app.fitViewToPortal();
     
 }
 

@@ -32,6 +32,14 @@ Toolbar.prototype.addInstruction = function(text) {
     document.getElementById("toolbar").appendChild(newDiv);
 }
 
+Toolbar.prototype.addDivider = function() {
+    
+    var hr = document.createElement("hr");
+    hr.className = 'toolbarDivider';
+    document.getElementById("toolbar").appendChild(hr);  
+    
+}
+
 // Method: add text field
 Toolbar.prototype.addField = function(label, id, callback) {
         
@@ -218,18 +226,29 @@ Toolbar.prototype.addColor = function(text, setMe) {
     
     // Make input
     var newInput = document.createElement("input");
-    newInput.type = "color";
+    // newInput.type = "color";
+    var color = new jscolor(newInput, {
+        onFineChange : function() {
+            setMe.set(new THREE.Color(this.toHEXString()));
+        },
+        
+        value : "#" + setMe.get().getHexString(),
+        
+        zIndex : 1005
+        
+    })
+    
     var newInputDiv = document.createElement("div");
     newInputDiv.appendChild(newInput);
     
     newDiv.className = "toolbarColor";
 
-    // callback
-    newInput.oninput = function() {
-        setMe.set(newInput.value);
-    }
+    // // callback
+    // newInput.oninput = function() {
+    //     setMe.set(newInput.value);
+    // }
     
-    newInput.value = "#" + setMe.get().getHexString();
+    // newInput.value = "#" + setMe.get().getHexString();
     
     // Add to toolbar div
     newDiv.appendChild(newTextDiv);
@@ -242,38 +261,41 @@ Toolbar.prototype.addColor = function(text, setMe) {
 function initializeToolbar(toolbarInstance) {
     toolbarInstance.element.style.overflow = "auto";
     toolbarInstance.rect = toolbar.element.getBoundingClientRect();
-
+    
+    toolbarInstance.addInstruction("Reset Position: R");
     toolbarInstance.addInstruction("Pan: IJKL/drag");
     toolbarInstance.addInstruction("Rotate: AD/right-drag");
     toolbarInstance.addInstruction("Zoom: WS/scroll");
     toolbarInstance.addInstruction("FPS: T");
     toolbarInstance.addInstruction("Pause/Step: Space/N");
+    toolbarInstance.addInstruction("Quick Save State: V");
+        
+    toolbarInstance.addDivider();
+        
+    toolbarInstance.addButton("Reset Position", function() {
+        
+        var fresh = new VF.Spacemap();
+        
+        fresh.scale.set(1.3, 1.3, 1);
+        
+        app.portal.spacemap.set([fresh]);
+
+    })
     
-    // window.savedStates = [
-    //     ["random", function() {
-    //                     if (cycling) {
-    //                         return;
-    //                     }
-    //                     setInput(
-    //                         ["x", Math.random() * 0.3 + 0.6],
-    //                         ["y", Math.random() * 0.7 - 0.35],
-    //                         ["rot", Math.random() * 2 * Math.PI],
-    //                         ["scale", Math.random() * 0.2 + 0.75]
-    //                     );
-    //     }]/*,
-    //     ["start", inputSetterFromObj(inputList[0])], 
-    //     ["cubers", inputSetterFromObj(inputList[1])],
-    //     ["eyes", inputSetterFromObj(inputList[2])],
-    //     ["owl", inputSetterFromObj(inputList[3])],
-    //     ["hot pants", inputSetterFromObj(inputList[4])],
-    //     ["plaid", inputSetterFromObj(inputList[5])],
-    //     ["snowflakes", inputSetterFromObj(inputList[6])],
-    //     ["turtles", inputSetterFromObj(inputList[7])],
-    //     ["pyramidal", inputSetterFromObj(inputList[8])],
-    //     ["what's a fractal", inputSetterFromObj(inputList[9])],
-    // */
-    // ];
-    
+    toolbarInstance.addDivider();
+
+    toolbarInstance.addButton("Download Image", function() {
+        
+        canvas = app.renderer.domElement;
+        
+        canvas.toBlob(function(blob) {
+            saveAs(blob, "feedback.png");
+        });
+        
+    });
+        
+    toolbarInstance.addDivider();
+        
     toolbarInstance.addDropdown("Select State", "stateSelect", 
         stateManager.states.map( function(x) { return x.name; } ), 
         function() {
@@ -323,7 +345,29 @@ function initializeToolbar(toolbarInstance) {
         
     }, [.002, .0002, .02]);
 
+    toolbarInstance.addDivider();
+
+    // View and Geometry
+    toolbarInstance.addButton("Set Portal To Window", function() {
+        
+        geo.set(geo.rectangle, window.innerWidth / window.innerHeight);
+        
+    });
+    toolbarInstance.addField("Portal Aspect Ratio", 'customAspect');
+    toolbarInstance.addButton('Set Portal Aspect', function() {
+        
+        var el = document.getElementById('customAspect');
+        
+        var aspect = Number(el.value);
+        
+        if (!(aspect > 0)) return;
+
+        geo.set(geo.rectangle, aspect);
+        
+    });
     
+    toolbarInstance.addDivider();
+
     toolbarInstance.addCheckbox("Invert X",
         app.effects.symmetry.invertX);
     toolbarInstance.addCheckbox("Invert Y", 
@@ -341,7 +385,7 @@ function initializeToolbar(toolbarInstance) {
     toolbarInstance.addCheckbox("Far Out",
         app.effects.RGBShift.enable);
     
-    toolbarInstance.addInstruction("");
+    toolbarInstance.addDivider();
     
     toolbarInstance.addRange("Delay", {
         get : function() { sim.getDelay() },
@@ -355,62 +399,32 @@ function initializeToolbar(toolbarInstance) {
     toolbarInstance.addRange("Border Width", app.border.scale, [1, 0.001, 1.5]);
     // toolbarInstance.addRange("Beat Length", "beatLength", [500, 10, 2000]);
     
-    toolbarInstance.addColor("Border", app.border.color);
-    toolbarInstance.addColor("Background", app.background.color);
+    toolbarInstance.addColor("Border Color", app.border.color);
+    toolbarInstance.addColor("Background Color", app.background.color);
+            
+    // toolbarInstance.addButton("Snap View", app.fitViewToPortal.bind(app));
+    // toolbarInstance.addButton("Match Resolution", app.syncPortalResolution.bind(app));
     
-    // View and Geometry
-    toolbarInstance.addButton("Reset Geometry", function() {
+    // toolbarInstance.addField("Custom Res (h)", 'customResolution');
+    // toolbarInstance.addButton("Set Res", function() {
         
-        geo.set(geo.rectangle, window.innerWidth / window.innerHeight);
+    //     var el = document.getElementById('customResolution');
         
-    });
-    
-    toolbarInstance.addButton("Go Home", function() {
+    //     var height = Math.round(Number(el.value));
         
-        var fresh = new VF.Spacemap();
+    //     if (!(height > 0)) return;
         
-        fresh.scale.set(1.3, 1.3, 1);
+    //     app.setPortalResolutionInView(Math.round(Number(el.value)));
         
-        app.portal.spacemap.set([fresh]);
-
-    })
-    
-    toolbarInstance.addButton("Snap View", app.fitViewToPortal.bind(app));
-    toolbarInstance.addButton("Match Resolution", app.syncPortalResolution.bind(app));
-    
-    toolbarInstance.addField("Custom Res (h)", 'customResolution');
-    toolbarInstance.addButton("Set Res", function() {
+    // });
+            
+    // toolbarInstance.addButton("Save to File", function() {
         
-        var el = document.getElementById('customResolution');
+    //     var newState = saveStateToDropdown();
         
-        var height = Math.round(Number(el.value));
+    //     stateManager.saveStateToFile(newState);
         
-        if (!(height > 0)) return;
-        
-        app.setPortalResolutionInView(Math.round(Number(el.value)));
-        
-    });
-    
-    toolbarInstance.addField("Rect Aspect", 'customAspect');
-    toolbarInstance.addButton('Set Rect', function() {
-        
-        var el = document.getElementById('customAspect');
-        
-        var aspect = Number(el.value);
-        
-        if (!(aspect > 0)) return;
-
-        geo.set(geo.rectangle, aspect);
-        
-    });
-        
-    toolbarInstance.addButton("Save to File", function() {
-        
-        var newState = saveStateToDropdown();
-        
-        stateManager.saveStateToFile(newState);
-        
-    });
+    // });
 
 }
 

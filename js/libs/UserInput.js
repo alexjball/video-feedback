@@ -77,13 +77,13 @@ function touchstartHandler(event) {
         var x = event.targetTouches[0].clientX;
         var y = c_height - event.targetTouches[0].clientY;
         
-        // Exit handler when touch occurs within the toolbar.
-        if (toolbar.rect.left < x 
-            && x < toolbar.rect.right
-            && toolbar.rect.top < c_height - y
-            && c_height - y < toolbar.rect.bottom) {
-            return;
-        }
+        // // Exit handler when touch occurs within the toolbar.
+        // if (toolbar.rect.left < x 
+        //     && x < toolbar.rect.right
+        //     && toolbar.rect.top < c_height - y
+        //     && c_height - y < toolbar.rect.bottom) {
+        //     return;
+        // }
         
         userInput.updateMouseX(x);
         userInput.updateMouseY(y);
@@ -138,13 +138,13 @@ function touchmoveHandler(event) {
     var x = event.targetTouches[0].clientX;
     var y = c_height - event.targetTouches[0].clientY;
     
-    // Prevent default behavior (scrolling, &c.) unless inside the toolbar.
-    if (!(toolbar.rect.left < x 
-            && x < toolbar.rect.right
-            && toolbar.rect.top < c_height - y
-            && c_height - y < toolbar.rect.bottom)) {
-        event.preventDefault();
-    }
+    // // Prevent default behavior (scrolling, &c.) unless inside the toolbar.
+    // if (!(toolbar.rect.left < x 
+    //         && x < toolbar.rect.right
+    //         && toolbar.rect.top < c_height - y
+    //         && c_height - y < toolbar.rect.bottom)) {
+    //     event.preventDefault();
+    // }
     
     // Single touch input: just update the "mouse" position.
     if (event.targetTouches.length == 1) {
@@ -248,6 +248,15 @@ function keyboardHandler(event) {
         case "V":
             saveStateToDropdown('State');
             break;
+        case "R":
+        
+            var fresh = new VF.Spacemap();
+            
+            fresh.scale.set(1.3, 1.3, 1);
+            
+            app.portal.spacemap.set([fresh]);
+
+            break;
         case "T":
             // toggle visibility of stats.
             if (stats.dom.style.display == "") {
@@ -287,13 +296,13 @@ function mousedownHandler(event) {
     var x = event.clientX;
     var y = c_height - event.clientY;
     
-    // Exit handler if mouse is within the toolbar.
-    if (toolbar.rect.left < x 
-        && x < toolbar.rect.right
-        && toolbar.rect.top < c_height - y
-        && c_height - y < toolbar.rect.bottom) {
-        return;
-    }
+    // // Exit handler if mouse is within the toolbar.
+    // if (toolbar.rect.left < x 
+    //     && x < toolbar.rect.right
+    //     && toolbar.rect.top < c_height - y
+    //     && c_height - y < toolbar.rect.bottom) {
+    //     return;
+    // }
     
     // Update userInput object.
     userInput.updateMouseX(x);
@@ -347,17 +356,17 @@ function scrollHandler(event) {
     var c_width = document.getElementsByTagName("canvas")[0].width;
     var c_height = document.getElementsByTagName("canvas")[0].height;
     
-    // Get mouse coordinates relative to the SW corner.
-    var x = event.clientX;
-    var y = c_height - event.clientY;
+    // // Get mouse coordinates relative to the SW corner.
+    // var x = event.clientX;
+    // var y = c_height - event.clientY;
     
-    // Exit handler if mouse is within the toolbar.
-    if (toolbar.rect.left < x 
-        && x < toolbar.rect.right
-        && toolbar.rect.top < c_height - y
-        && c_height - y < toolbar.rect.bottom) {
-        return;
-    }
+    // // Exit handler if mouse is within the toolbar.
+    // if (toolbar.rect.left < x 
+    //     && x < toolbar.rect.right
+    //     && toolbar.rect.top < c_height - y
+    //     && c_height - y < toolbar.rect.bottom) {
+    //     return;
+    // }
     
     // Disable default action (scrolling).
     event.preventDefault();
@@ -426,27 +435,29 @@ function updateUI() {
 
 
 function initializeEventListeners() {
+    
+    d = document.getElementById('simulation');
+    
     // Keyboard handlers
     document.addEventListener("keydown", keyboardHandler, false);
     
     // Mouse handlers
-    document.addEventListener("mousedown", mousedownHandler, false);
-    document.addEventListener("mousemove", mousemoveHandler, false);
-    document.addEventListener("mouseup", mouseupHandler, false);
-
+    d.addEventListener("mousedown", mousedownHandler, false);
+    d.addEventListener("mousemove", mousemoveHandler, false);
+    d.addEventListener("mouseup", mouseupHandler, false);
+    d.addEventListener("mouseout", mouseupHandler, false);
+    
     // Scroll-wheel handlers
-    document.addEventListener('mousewheel', scrollHandler, false);
-    document.addEventListener('DOMMouseScroll', scrollHandler, false); // firefox
+    d.addEventListener('mousewheel', scrollHandler, false);
+    d.addEventListener('DOMMouseScroll', scrollHandler, false); // firefox
     
     // Touch handlers
-    document.addEventListener("touchstart", touchstartHandler, false);
-    document.addEventListener("touchmove", touchmoveHandler, false);
-    document.addEventListener("touchend", touchendHandler, false);
-    document.addEventListener("touchcancel", touchendHandler, false);
-    document.addEventListener("touchleave", touchendHandler, false);
+    d.addEventListener("touchstart", touchstartHandler, false);
+    d.addEventListener("touchmove", touchmoveHandler, false);
+    d.addEventListener("touchend", touchendHandler, false);
+    d.addEventListener("touchcancel", touchendHandler, false);
+    d.addEventListener("touchleave", touchendHandler, false);
 
     // Disable context menu
-    document.addEventListener("contextmenu", function(e) { e.preventDefault() }, false);
+    d.addEventListener("contextmenu", function(e) { e.preventDefault() }, false);
 }
-
-initializeEventListeners();

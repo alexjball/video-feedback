@@ -14,6 +14,7 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
     // Create the renderer.
     var renderer;
     setUpRenderer(domParent, dls.viewWidth, dls.viewHeight);
+    this.renderer = renderer;
 
     // Create an allocator for portal render targets.
     var storageManager = new VF.FeedbackStorageManager(
@@ -317,7 +318,7 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
         // The camera's xy clipping box has area 1.
         
         this.view.resolution.set([width, height]);
-        
+                
         var camera = this.view.camera.get();
         
         r = unitAspectRectangle(width, height);
@@ -608,26 +609,50 @@ VF.StateNugget.nuggetize(VFApp.prototype);
 // State Manageer
 /////////////////
 
-var VFStateManager = function(app, states) {
+var VFStateManager = function(app, localStorageKey, states) {
     // jsonStates is an array of objects of the form
     // { name : "statename", json : {serialized app state}}
     
     this.app = app;
     
-    this.states = states;
+    this.useLocalStorage = !!localStorageKey;
+    this.localStorageKey = localStorageKey;
     
-    // this.states = states.map(function(s) {
+    // If we're using local storage, check for existing states.
+    if (this.useLocalStorage) {
         
-    //     return {
-            
-    //         name : s.name,
-            
-    //         state : app.deserializeNugs(s.state)
-            
-    //     };
+        this.states = JSON.parse(localStorage.getItem(this.localStorageKey)) || [];
         
-    // })
+    } else {
+        
+        this.states = [];
+        
+    }
+    
+    // If states are provided, merge them into this.states, making sure not to 
+    // allow duplicate names.
+    if (states !== undefined) {
+        
+        var currNames = this.states.map(function(x) { x.name; });
+        
+        for (var i = 0; i < states.length; i++) {
             
+            var idx = currNames.indexOf(states[i].name);
+            
+            if (idx !== -1) {
+                
+                this.states.splice(idx, 1);
+                currNames.splice(idx, 1);
+                
+                this.states.push(states[i]);
+                currNames.push(states[i].name);
+                
+            }
+            
+        }
+        
+    }
+                
 }
 
 VFStateManager.prototype = {
@@ -647,7 +672,6 @@ VFStateManager.prototype = {
 
     },
    
-    
     serializeStates : function() {
         
         return this.states;
@@ -680,9 +704,24 @@ VFStateManager.prototype = {
         
         this.states.push(newState);
         
+        if (this.useLocalStorage) this.saveToLocalStorage();
+        
         if (toFile) this.saveStateToFile(newState);
         
         return newState;
+        
+    },
+    
+    saveToLocalStorage : function() {
+        
+        if (!this.useLocalStorage) return;
+        
+        try {
+            
+            localStorage.setItem(this.localStorageKey, 
+                JSON.stringify(this.states));
+        
+        } catch (e) {}
         
     },
     
@@ -738,7 +777,7 @@ VFStateManager.prototype = {
         
         var width  = this.app.portal.resolution.get()[0],
             height = this.app.portal.resolution.get()[1],
-            buffer = this.app.readPortalPixels(0, 0, width, height);
+            buffer = this.app.readPortalPixels(0, 0, width, height),
             ppm = toPPM(width, height, toPPM.RGBA, buffer);
             
         var zip = new JSZip();

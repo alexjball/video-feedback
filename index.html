@@ -8,9 +8,11 @@
 	</head>
 	<body>
 		<script src="js/libs/three.js"></script>
+		<script src="js/libs/jscolor.min.js"></script>
         <script src="js/libs/FileSaver.min.js"></script>
         <script src="js/libs/jszip.min.js"></script>
-		<script type="text/javascript" src="js/libs/stats.min.js"></script>
+        <script src="js/libs/canvas-toBlob.js"></script>
+		<script src="js/libs/stats.min.js"></script>
 		
 		<script src="js/postprocessing/EffectComposer.js"></script>
 		<script src="js/postprocessing/RenderPass.js"></script>
@@ -74,7 +76,15 @@
                 color: #DDDDDD;
                 text-align: center;
             }
-
+               
+            .toolbarDivider {
+            
+                width: 80%;
+                text-align: center;
+                
+                
+            }
+            
             .toolbar {
                 
                 -webkit-touch-callout: none; /* iOS Safari */
@@ -106,6 +116,14 @@
             }
             
             .toggleToolbar {
+                
+                -webkit-touch-callout: none; /* iOS Safari */
+                -webkit-user-select: none;   /* Chrome/Safari/Opera */
+                -khtml-user-select: none;    /* Konqueror */
+                -moz-user-select: none;      /* Firefox */
+                -ms-user-select: none;       /* Internet Explorer/Edge */
+                user-select: none;         
+                
                 padding: 0px;
                 border: 0px;
                 display: block;
@@ -142,12 +160,14 @@
             -->
         </style>
         
+        <div id="simulation"></div>
         <div id="toggleToolbar" class="toggleToolbar" onclick="toggleToolbar()">&#9881;</div>
         <div id="toolbar" class="toolbar">
             <!-- instructions & options added dynamically here -->
         </div>
 
 		<script>
+            initializeEventListeners();
 			init();
             vfr.play();
 			render();
