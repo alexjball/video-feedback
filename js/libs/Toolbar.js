@@ -297,7 +297,9 @@ function initializeToolbar(toolbarInstance) {
         });
         
     });
-        
+    
+    toolbarInstance.addButton('Shareable URL', saveToHash);
+    
     toolbarInstance.addDivider();
         
     toolbarInstance.addDropdown("Select State", "stateSelect", 

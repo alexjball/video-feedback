@@ -16,7 +16,6 @@ function init() {
         showAbout();
     }
     
-    
     stateManager = new VFStateManager(app, localStorageKey);
     
     // Global state for cycling because now.
@@ -41,6 +40,8 @@ function init() {
 
     window.addEventListener( 'resize', onWindowResize, false );
 
+    loadFromHash();
+
 }
 
 function onWindowResize() {
@@ -60,6 +61,42 @@ function showAbout() {
 function hideAbout() {
     
     document.getElementById('about').style.display = 'none';
+    
+}
+
+function loadFromHash() {
+    
+    // Get the hash without the #.
+    var str = window.location.hash.slice(1);
+    
+    if (str.length == 0) return;
+    
+    try {
+        
+        var state = JSON.parse(atob(str));
+        
+        stateManager.loadState(state);
+
+    } catch (e) {
+        
+        console.error("Couldn't load state from URL.");
+        
+    }    
+    
+}
+
+function saveToHash() {
+    
+    var hash = btoa(JSON.stringify(app.serializeNugs()));
+
+    window.location.hash = hash;
+    
+    // var currURL = window.location.href;
+    // var end = currURL.indexOf('#');
+    
+    // if (end == -1) end = currURL.length;
+    
+    // return currURL.slice(0, end) + '#' + hash;
     
 }
 
