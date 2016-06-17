@@ -93,7 +93,7 @@ Toolbar.prototype.addButton = function(text, callback) {
 Toolbar.prototype.addDropdown = function(text, id, options, callback) {
     // Make div
     var newDiv = document.createElement("div");
-    newDiv.classname = "toolbarDropdown";
+    newDiv.className = "toolbarDropdown";
     
     // Make text label
     var newTextDiv = document.createElement("div");
@@ -219,20 +219,20 @@ Toolbar.prototype.addRange = function(text, setMe, options) {
 Toolbar.prototype.addColor = function(text, setMe) {
     // Make div
     var newDiv = document.createElement("div");
-    
-    // Make text label
-    var newTextDiv = document.createElement("div");
-    newTextDiv.appendChild(document.createTextNode(text));
-    
+        
     // Make input
     var newInput = document.createElement("input");
-    // newInput.type = "color";
+    newInput.type = "button";
+    newInput.value = text;
+    newInput.className = 'inputColor';
     var color = new jscolor(newInput, {
         onFineChange : function() {
             setMe.set(new THREE.Color(this.toHEXString()));
         },
         
         value : "#" + setMe.get().getHexString(),
+        
+        valueElement : null,
         
         zIndex : 1005
         
@@ -242,16 +242,8 @@ Toolbar.prototype.addColor = function(text, setMe) {
     newInputDiv.appendChild(newInput);
     
     newDiv.className = "toolbarColor";
-
-    // // callback
-    // newInput.oninput = function() {
-    //     setMe.set(newInput.value);
-    // }
-    
-    // newInput.value = "#" + setMe.get().getHexString();
     
     // Add to toolbar div
-    newDiv.appendChild(newTextDiv);
     newDiv.appendChild(newInputDiv);
     this.element.appendChild(newDiv);
 }

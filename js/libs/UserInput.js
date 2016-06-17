@@ -69,6 +69,8 @@ function touchstartHandler(event) {
         return;
     }
     
+    event.preventDefault();
+
     var c_width = document.getElementsByTagName("canvas")[0].width;
     var c_height = document.getElementsByTagName("canvas")[0].height;
     
@@ -132,6 +134,8 @@ function touchmoveHandler(event) {
         return;
     }
     
+    event.preventDefault();
+    
     var c_width = document.getElementsByTagName("canvas")[0].width;
     var c_height = document.getElementsByTagName("canvas")[0].height;
     
@@ -186,6 +190,8 @@ function touchendHandler(event) {
         userInput.touchDown = false;
         userInput.rightClick = false;
     }
+    
+    event.preventDefault();
     
     if (event.targetTouches.length == 1) {
         // Temporarily disallow touch events while updating the reference.
