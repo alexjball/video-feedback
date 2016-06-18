@@ -352,7 +352,7 @@ function scrollHandler(event) {
 
 
 var updateUI = (function() {
-    var alpha = 0.5, dx = 0, dy = 0, drot = 0;
+    var alpha = 0.5, dx = 0, dy = 0, drot = 0, pi = Math.PI;
 
     return function() {
         var c_width = document.getElementsByTagName("canvas")[0].clientWidth;
@@ -363,6 +363,7 @@ var updateUI = (function() {
         if (userInput.touchDown) {
             // Rotation
             drotNew = (userInput.touch.rotation - userInput.touch.rotation0);
+            drotNew += (drotNew < -pi ? 2 * pi : (drotNew > pi ? -2 * pi : 0));
             drot = drotNew * alpha + (1 - alpha) * drot;
             setInput(["rot", getInput("rot") - drot]);
             userInput.updateTouchRotation0(userInput.touch.rotation);
