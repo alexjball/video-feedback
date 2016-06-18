@@ -71,8 +71,8 @@ function touchstartHandler(event) {
     
     event.preventDefault();
 
-    var c_width = document.getElementsByTagName("canvas")[0].width;
-    var c_height = document.getElementsByTagName("canvas")[0].height;
+    var c_width = document.getElementsByTagName("canvas")[0].clientWidth;
+    var c_height = document.getElementsByTagName("canvas")[0].clientHeight;
     
     // Single touch event: panning
     if (event.targetTouches.length == 1) {
@@ -128,8 +128,8 @@ function touchmoveHandler(event) {
     
     event.preventDefault();
     
-    var c_width = document.getElementsByTagName("canvas")[0].width;
-    var c_height = document.getElementsByTagName("canvas")[0].height;
+    var c_width = document.getElementsByTagName("canvas")[0].clientWidth;
+    var c_height = document.getElementsByTagName("canvas")[0].clientHeight;
     
     var x = event.targetTouches[0].clientX;
     var y = c_height - event.targetTouches[0].clientY;
@@ -279,8 +279,8 @@ function mousedownHandler(event) {
         return;
     }
     
-    var c_width = document.getElementsByTagName("canvas")[0].width;
-    var c_height = document.getElementsByTagName("canvas")[0].height;
+    var c_width = document.getElementsByTagName("canvas")[0].clientWidth;
+    var c_height = document.getElementsByTagName("canvas")[0].clientHeight;
     
     // Get mouse coordinates relative to the SW corner.
     var x = event.clientX;
@@ -309,8 +309,8 @@ function mousemoveHandler(event) {
         return;
     }
     
-    var c_width = document.getElementsByTagName("canvas")[0].width;
-    var c_height = document.getElementsByTagName("canvas")[0].height;
+    var c_width = document.getElementsByTagName("canvas")[0].clientWidth;
+    var c_height = document.getElementsByTagName("canvas")[0].clientHeight;
     
     // Get mouse coordinates relative to the SW corner.
     var x = event.clientX;
@@ -335,8 +335,8 @@ function scrollHandler(event) {
         return;
     }
     
-    var c_width = document.getElementsByTagName("canvas")[0].width;
-    var c_height = document.getElementsByTagName("canvas")[0].height;
+    var c_width = document.getElementsByTagName("canvas")[0].clientWidth;
+    var c_height = document.getElementsByTagName("canvas")[0].clientHeight;
         
     // Disable default action (scrolling).
     event.preventDefault();
@@ -351,38 +351,49 @@ function scrollHandler(event) {
 }
 
 
-function updateUI() {
-    
-    var c_width = document.getElementsByTagName("canvas")[0].clientWidth;
-    var c_height = document.getElementsByTagName("canvas")[0].clientHeight;
-    
-    // Touch inputs
-    if (userInput.touchDown) {
-        // Rotation
-        setInput(["rot", getInput("rot") - (userInput.touch.rotation - userInput.touch.rotation0)]);
-        userInput.updateTouchRotation0(userInput.touch.rotation);
-    }    
-    // Mouse inputs
-    else if (userInput.mouseDown) {
-        // Rotation
-        if (userInput.rightClick) {
-            var angle = (userInput.mouse.X - userInput.mouse.X0) / c_width / getInput("scale");
-            setInput(["rot", getInput("rot") + angle]);
-            userInput.updateMouseX0(userInput.mouse.X);
-        }
-    } else {
-        return;
-    }
-    
-    // Panning
-    var dx = inputSettings.xyStep * (userInput.mouse.X - userInput.mouse.X0) * 40 / c_width;
-    var dy = inputSettings.xyStep * (userInput.mouse.Y - userInput.mouse.Y0) * 40 / c_height;
+var updateUI = (function() {
+    var alpha = 0.5, dx = 0, dy = 0, drot = 0;
 
-    setInput(
-        ["x", userInput.camera.X0 - dx],
-        ["y", userInput.camera.Y0 - dy]
-    );
-}
+    return function() {
+        var c_width = document.getElementsByTagName("canvas")[0].clientWidth;
+        var c_height = document.getElementsByTagName("canvas")[0].clientHeight;
+        var dxNew = dyNew = drotNew = 0;
+
+        // Touch inputs
+        if (userInput.touchDown) {
+            // Rotation
+            drotNew = (userInput.touch.rotation - userInput.touch.rotation0);
+            drot = drotNew * alpha + (1 - alpha) * drot;
+            setInput(["rot", getInput("rot") - drot]);
+            userInput.updateTouchRotation0(userInput.touch.rotation);
+        }    
+        // Mouse inputs
+        else if (userInput.mouseDown) {
+            // Rotation
+            if (userInput.rightClick) {
+                drotNew = (userInput.mouse.X - userInput.mouse.X0) / c_width / getInput("scale");
+                drot = drotNew * alpha + (1 - alpha) * drot;
+                setInput(["rot", getInput("rot") + drot]);
+                userInput.updateMouseX0(userInput.mouse.X);
+                return;
+            }
+        } else {
+            dx = dy = drot = 0;
+            return;
+        }
+        
+        dxNew = inputSettings.xyStep * (userInput.mouse.X - userInput.mouse.X0) * 40 / c_width;
+        dyNew = inputSettings.xyStep * (userInput.mouse.Y - userInput.mouse.Y0) * 40 / c_height;
+
+        dx = dxNew * alpha + (1 - alpha) * dx;
+        dy = dyNew * alpha + (1 - alpha) * dy;
+
+        setInput(
+            ["x", userInput.camera.X0 - dx],
+            ["y", userInput.camera.Y0 - dy]
+        );
+    }
+})();
 
 
 function initializeEventListeners() {
