@@ -2,9 +2,20 @@
 	<head>
 		<title>Video Feedback</title>
 		<style>
-			body { margin: 0; }
-			canvas { width: 100%; height: 100% }
+			html, body { width: 100%; height: 100%; margin: 0; }
+			canvas { width: 100%; height: 100%; display: block }
 		</style>
+
+        <!-- Safari full screen tag -->
+        <meta name="apple-mobile-web-app-capable" content="yes">
+
+        <!-- Chrome (Android) full screen tag -->
+        <meta name="mobile-web-app-capable" content="yes">
+        <link rel="icon" sizes="192x192" href="app/icon.png">
+        <link rel="manifest" href="app/manifest.json">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
 	</head>
 	<body>
 		<script src="js/libs/three.js"></script>
@@ -173,7 +184,7 @@
             z-index:1020;
             overflow: auto;
         }
-                
+
         </style>
         
         <div id="about" style="display:none">
@@ -315,7 +326,9 @@
             </div>
         </div>
         
-        <div id="simulation"></div>
+        <div id="simulation">
+            <canvas id="simulation-canvas"></canvas>
+        </div>
         <div id="toggleToolbar" class="toggleToolbar" onclick="toggleToolbar()">&#9881;</div>
         <div id="toolbar" class="toolbar">
             <!-- instructions & options added dynamically here -->

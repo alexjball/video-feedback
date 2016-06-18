@@ -347,8 +347,8 @@ function initializeToolbar(toolbarInstance) {
 
     // View and Geometry
     toolbarInstance.addButton("Set Portal To Window", function() {
-        
-        geo.set(geo.rectangle, window.innerWidth / window.innerHeight);
+        var v = getViewportResolution();
+        geo.set(geo.rectangle, v.width / v.height);
         
     });
     toolbarInstance.addField("Portal Aspect Ratio", 'customAspect');

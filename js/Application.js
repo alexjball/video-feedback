@@ -2,7 +2,7 @@
 // Application/Time-Independent
 ///////////////////////////////
 
-var VFApp = function(domParent, viewWidth, viewHeight) {
+var VFApp = function(canvasElement, viewWidth, viewHeight) {
     
     var app = this;
 
@@ -13,7 +13,7 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
     
     // Create the renderer.
     var renderer;
-    setUpRenderer(domParent, dls.viewWidth, dls.viewHeight);
+    setUpRenderer(canvasElement, dls.viewWidth, dls.viewHeight);
     this.renderer = renderer;
 
     // Create an allocator for portal render targets.
@@ -216,7 +216,7 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
         // Specifies the resolution of the renderer.
         // Array of [width, height]
         resolution : nug({
-            set : function(res) { renderer.setSize(res[0], res[1]); },
+            set : function(res) { renderer.setSize(res[0], res[1], false); },
             get : function() {  
                 var s = renderer.getSize(); 
                 return [s.width, s.height]; 
@@ -476,9 +476,10 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
         
     }
     
-    function setUpRenderer(domParent, viewWidth, viewHeight) {
+    function setUpRenderer(canvasElement, viewWidth, viewHeight) {
         
         renderer = new THREE.WebGLRenderer( {
+            canvas    : canvasElement,
             antialias : false,
             stencil   : false,
             depth     : true,
@@ -493,9 +494,7 @@ var VFApp = function(domParent, viewWidth, viewHeight) {
             return;
         }
 
-        renderer.setSize(viewWidth, viewHeight);
-
-        domParent.appendChild( renderer.domElement );
+        renderer.setSize(viewWidth, viewHeight, false);
         
     };
     

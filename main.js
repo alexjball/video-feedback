@@ -3,7 +3,11 @@
 
 function init() {
     
-    app          = new VFApp(document.getElementById('simulation'), window.innerWidth, window.innerHeight);
+    // alert("innerWidth = " + window.innerWidth + " innerHeight = " + window.innerHeight);
+    // alert("clientWidth = " + document.documentElement.clientWidth + " clientWidth = " + document.documentElement.clientHeight);
+
+    var v = getViewportResolution();
+    app = new VFApp(document.getElementById('simulation-canvas'), v.width, v.height);
     sim          = new VFSim(app, 10, 30);
     geo          = new VFGeometry(app);
     
@@ -36,7 +40,7 @@ function init() {
     stateManager.loadState('Default');
     
     // Set the geometry to match the aspect ratio of the window.
-    geo.set(geo.rectangle, window.innerWidth / window.innerHeight);
+    geo.set(geo.rectangle, v.width / v.height);
 
     window.addEventListener( 'resize', onWindowResize, false );
 
@@ -44,12 +48,19 @@ function init() {
 
 }
 
+function getViewportResolution() {
+    var scale = window.devicePixelRatio || 1;
+    return {
+        scale : scale,
+        width : Math.round(window.innerWidth * scale),
+        height : Math.round(window.innerHeight * scale)
+    };
+}
+
 function onWindowResize() {
-    
-    app.resizeView(window.innerWidth, window.innerHeight);
-    
+    var v = getViewportResolution();
+    app.resizeView(v.width, v.height);
     app.fitViewToPortal();
-    
 }
 
 function showAbout() {

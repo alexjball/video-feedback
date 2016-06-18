@@ -79,14 +79,6 @@ function touchstartHandler(event) {
         var x = event.targetTouches[0].clientX;
         var y = c_height - event.targetTouches[0].clientY;
         
-        // // Exit handler when touch occurs within the toolbar.
-        // if (toolbar.rect.left < x 
-        //     && x < toolbar.rect.right
-        //     && toolbar.rect.top < c_height - y
-        //     && c_height - y < toolbar.rect.bottom) {
-        //     return;
-        // }
-        
         userInput.updateMouseX(x);
         userInput.updateMouseY(y);
         userInput.updateMouseX0(x);
@@ -141,15 +133,7 @@ function touchmoveHandler(event) {
     
     var x = event.targetTouches[0].clientX;
     var y = c_height - event.targetTouches[0].clientY;
-    
-    // // Prevent default behavior (scrolling, &c.) unless inside the toolbar.
-    // if (!(toolbar.rect.left < x 
-    //         && x < toolbar.rect.right
-    //         && toolbar.rect.top < c_height - y
-    //         && c_height - y < toolbar.rect.bottom)) {
-    //     event.preventDefault();
-    // }
-    
+        
     // Single touch input: just update the "mouse" position.
     if (event.targetTouches.length == 1) {
         userInput.updateMouseX(x);
@@ -301,15 +285,7 @@ function mousedownHandler(event) {
     // Get mouse coordinates relative to the SW corner.
     var x = event.clientX;
     var y = c_height - event.clientY;
-    
-    // // Exit handler if mouse is within the toolbar.
-    // if (toolbar.rect.left < x 
-    //     && x < toolbar.rect.right
-    //     && toolbar.rect.top < c_height - y
-    //     && c_height - y < toolbar.rect.bottom) {
-    //     return;
-    // }
-    
+        
     // Update userInput object.
     userInput.updateMouseX(x);
     userInput.updateMouseY(y);
@@ -361,19 +337,7 @@ function scrollHandler(event) {
     
     var c_width = document.getElementsByTagName("canvas")[0].width;
     var c_height = document.getElementsByTagName("canvas")[0].height;
-    
-    // // Get mouse coordinates relative to the SW corner.
-    // var x = event.clientX;
-    // var y = c_height - event.clientY;
-    
-    // // Exit handler if mouse is within the toolbar.
-    // if (toolbar.rect.left < x 
-    //     && x < toolbar.rect.right
-    //     && toolbar.rect.top < c_height - y
-    //     && c_height - y < toolbar.rect.bottom) {
-    //     return;
-    // }
-    
+        
     // Disable default action (scrolling).
     event.preventDefault();
     
@@ -389,27 +353,15 @@ function scrollHandler(event) {
 
 function updateUI() {
     
-    var c_width = document.getElementsByTagName("canvas")[0].width;
-    var c_height = document.getElementsByTagName("canvas")[0].height;
+    var c_width = document.getElementsByTagName("canvas")[0].clientWidth;
+    var c_height = document.getElementsByTagName("canvas")[0].clientHeight;
     
     // Touch inputs
     if (userInput.touchDown) {
         // Rotation
         setInput(["rot", getInput("rot") - (userInput.touch.rotation - userInput.touch.rotation0)]);
         userInput.updateTouchRotation0(userInput.touch.rotation);
-
-        // Panning
-        var dx = inputSettings.xyStep * (userInput.mouse.X - userInput.mouse.X0) * 40 / c_width
-        / getInput("scale");
-        var dy = inputSettings.xyStep * (userInput.mouse.Y - userInput.mouse.Y0) * 40 / c_height
-        / getInput("scale");
-
-        setInput(
-            ["x", userInput.camera.X0 - dx],
-            ["y", userInput.camera.Y0 - dy]
-        );
-    }
-    
+    }    
     // Mouse inputs
     else if (userInput.mouseDown) {
         // Rotation
@@ -418,23 +370,18 @@ function updateUI() {
             setInput(["rot", getInput("rot") + angle]);
             userInput.updateMouseX0(userInput.mouse.X);
         }
-
-        // Panning
-        else {
-            var dx = inputSettings.xyStep * (userInput.mouse.X - userInput.mouse.X0) * 40 / c_width
-            var dy = inputSettings.xyStep * (userInput.mouse.Y - userInput.mouse.Y0) * 40 / c_height
-
-            setInput(
-                ["x", userInput.camera.X0 - dx], 
-                ["y", userInput.camera.Y0 - dy]
-            );
-        }
-    }
-    
-    // Only run when the mouseDown or touchDown setting is on.
-    else {
+    } else {
         return;
     }
+    
+    // Panning
+    var dx = inputSettings.xyStep * (userInput.mouse.X - userInput.mouse.X0) * 40 / c_width;
+    var dy = inputSettings.xyStep * (userInput.mouse.Y - userInput.mouse.Y0) * 40 / c_height;
+
+    setInput(
+        ["x", userInput.camera.X0 - dx],
+        ["y", userInput.camera.Y0 - dy]
+    );
 }
 
 
