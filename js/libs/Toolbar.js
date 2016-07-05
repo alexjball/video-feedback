@@ -248,6 +248,22 @@ Toolbar.prototype.addColor = function(text, setMe) {
     this.element.appendChild(newDiv);
 }
 
+Toolbar.prototype.addFileInput = function(label, id, onChange) {
+    var newDiv = document.createElement("div");
+
+    var text = document.createTextNode(label);
+
+    var newInput = document.createElement("input");
+    newInput.type = "file";
+    newInput.id = id;
+    newInput.accept=".json,.JSON" 
+    newInput.onchange = onChange;
+
+    newDiv.appendChild(text);
+    newDiv.appendChild(newInput);
+
+    this.element.appendChild(newDiv);
+}
 
 // Initialize toolbar instance
 function initializeToolbar(toolbarInstance) {
@@ -403,26 +419,58 @@ function initializeToolbar(toolbarInstance) {
     // toolbarInstance.addButton("Snap View", app.fitViewToPortal.bind(app));
     // toolbarInstance.addButton("Match Resolution", app.syncPortalResolution.bind(app));
     
-    // toolbarInstance.addField("Custom Res (h)", 'customResolution');
-    // toolbarInstance.addButton("Set Res", function() {
+    toolbarInstance.addDivider();
+
+    toolbarInstance.addField("Custom Res (h)", 'customResolution');
+    toolbarInstance.addButton("Set Res", function() {
         
-    //     var el = document.getElementById('customResolution');
+        var el = document.getElementById('customResolution');
         
-    //     var height = Math.round(Number(el.value));
+        var height = Math.round(Number(el.value));
         
-    //     if (!(height > 0)) return;
+        if (!(height > 0)) return;
         
-    //     app.setPortalResolutionInView(Math.round(Number(el.value)));
+        app.setPortalResolutionInView(Math.round(Number(el.value)));
         
-    // });
+    });
             
-    // toolbarInstance.addButton("Save to File", function() {
+    toolbarInstance.addButton("Save to File", function() {
         
-    //     var newState = saveStateToDropdown();
+        var newState = saveStateToDropdown();
         
-    //     stateManager.saveStateToFile(newState);
+        stateManager.saveStateToFile(newState);
         
-    // });
+    });
+
+    toolbarInstance.addFileInput("Load JSON File", "loadfiles", function(evt) {        
+        var files = evt.target.files;
+        if (files.length == 0) return;
+        
+        var file = files[0];
+        
+        var name = file.name;
+        var parts = name.split('.');
+        if (parts.length == 0) return;
+        if (parts[parts.length - 1].toLowerCase() !== "json") {
+            alert("Only JSON files are supported for loading from file.");
+            return;
+        }
+        
+        var reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                var stateInfo = JSON.parse(evt.target.result);
+                stateManager.loadState(stateInfo.state);
+            } catch (e) {
+                alert("Couldn't load JSON file.");
+                console.error("Couldn't load JSON file.");
+            }
+        }
+
+        reader.readAsText(file);
+
+        document.getElementById("loadfiles").value = "";
+    })
 
 }
 
