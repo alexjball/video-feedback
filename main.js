@@ -17,7 +17,6 @@ function init() {
     // Set initial states if none have been set. 
     if (isNewInstance) {
         seedLocalStorage(localStorageKey);
-        showAbout();
     }
     
     stateManager = new VFStateManager(app, localStorageKey);
