@@ -44,9 +44,54 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
     
     // RGBShiftPass gets added by a nug.
     portal.passes = [symPass, colorPass];
-            
+
     // Simulation methods
-    
+
+    // State for rendering a 3d view. 
+    this.state3d = (function() {
+        var scene = new THREE.Scene();
+        scene.add(
+            new THREE.Mesh(
+                new THREE.PlaneBufferGeometry(1, 1), 
+                new THREE.ShaderMaterial(RayTracingShader)));
+        scene.updateMatrixWorld();
+
+        var viewCamera = new THREE.PerspectiveCamera();
+        viewCamera.position.z = 1;
+        viewCamera.lookAt(new THREE.Vector3(0, 0, -1));
+        viewCamera.updateMatrixWorld(true);;
+
+        return {
+            colorIncrementPass : new THREE.ShaderPass(ColorIncrementShader),
+            rayTracingUniforms : RayTracingShader.uniforms,
+            viewCamera : viewCamera,
+            quadScene : scene,
+            quadCamera : new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, -1, 1),
+            enabled : false
+        }
+    })();
+
+    this.setViewMode3d = (function() {
+        var cachedPasses, cachedBackground, cachedBorderScale;
+        return function(enable) {
+            if (this.state3d.enabled == enable) return;
+            this.state3d.enabled = !!enable;
+            if (enable) {
+                cachedPasses = portal.passes;
+                cachedBackground = this.background.color.get();
+                cachedBorderScale = this.border.scale.get();
+
+                portal.passes = [symPass, this.state3d.colorIncrementPass];
+                this.background.color.set(0x000000);
+                this.border.scale.set([1, 1, 1]);
+            } else {
+                portal.passes = cachedPasses;
+                this.background.color.set(cachedBackground);
+                this.border.scale.set(cachedBorderScale);
+            }
+        }
+    })();
+
     this.createStorage = function() {
       
         return portal.storageManager.getRenderTarget(true);
@@ -85,12 +130,33 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
         // Render the view, either to the screen (if target is undefined)
         // or to the specified render target.
         
-        buildScene(scenes.view, viewChildren, false);
-
-        renderer.render(scenes.view, this.view.camera.get(), target)
-        
+        if (this.state3d.enabled) {
+            this.render3dView(target);
+        } else {
+            this.render2dView(target);
+        }
     }
     
+    this.render2dView = function(target) {
+        buildScene(scenes.view, viewChildren, false);
+        renderer.render(scenes.view, this.view.camera.get(), target);
+    }
+
+    this.render3dView = function(target) {
+        var camera = this.state3d.viewCamera;
+        camera.updateMatrixWorld(true);
+        var res = target === undefined ? this.view.resolution.get() : [target.width, target.height];
+        var portalSize = this.portalViewAspect();
+        var distanceToSamplingPlane = 0.5 / Math.tan(camera.fov * 0.5 * Math.PI / 180);
+        this.state3d.rayTracingUniforms.tDiffuse.value = portal.getStorage();
+        this.state3d.rayTracingUniforms.inverseViewMatrix.value.copy(camera.matrixWorld);
+        this.state3d.rayTracingUniforms.resolution.value.fromArray(res);
+        this.state3d.rayTracingUniforms.projection.value.set(camera.aspect, distanceToSamplingPlane);
+        this.state3d.rayTracingUniforms.portalWidthHeight.value.fromArray([portalSize.w, portalSize.h]);
+
+        renderer.render(this.state3d.quadScene, this.state3d.quadCamera, target);
+    }
+
     // Get pixels from portal
     this.readPortalPixels = function(x, y, width, height, buffer, byteOffset) {
         
@@ -253,7 +319,7 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             // (and won't be visible). [1.1, 1.1, 1] upsizes the border by 10%
             // in each direction.
             set : function(s) { border.scale.copy(s); },
-            get : function()  { return border.scale },
+            get : function()  { return border.scale.clone() },
             toJSON : function(s) { return [s.x, s.y, s.z]; },
             fromJSON : function(s) { return (new THREE.Vector3()).fromArray(s); }
         })

@@ -472,6 +472,16 @@ function initializeToolbar(toolbarInstance) {
         document.getElementById("loadfiles").value = "";
     })
 
+    toolbarInstance.addDivider();
+    toolbarInstance.addCheckbox("3D Mode", { set : app.setViewMode3d.bind(app) });
+    toolbarInstance.addCheckbox(
+        "Disable Feedback",
+        {
+            set : function(shouldDisable) {
+                sim.shouldUpdateView = shouldDisable === 0;
+            }
+        }
+    )
 }
 
 window.toolbar = new Toolbar();
