@@ -473,15 +473,25 @@ function initializeToolbar(toolbarInstance) {
     })
 
     toolbarInstance.addDivider();
-    toolbarInstance.addCheckbox("3D Mode", { set : app.setViewMode3d.bind(app) });
+    toolbarInstance.addCheckbox("3D Mode", { 
+        set : function(enable) {
+            app.setViewMode3d(enable);
+            if (!enable && app.state3d.controlsController.controls.isEnabled()) {
+                app.state3d.controlsController.onPointerLockLostCallback = null
+                app.state3d.controlsController.stop();
+                userInputOn = true;
+            }
+        }
+    });
+    toolbarInstance.addButton(
+        "Reset 3D View", function() { app.state3d.controlsController.controls.resetPosition() })
     toolbarInstance.addCheckbox(
         "Disable Feedback",
         {
             set : function(shouldDisable) {
                 sim.shouldUpdateView = shouldDisable === 0;
             }
-        }
-    )
+        });
 }
 
 window.toolbar = new Toolbar();

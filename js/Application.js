@@ -57,9 +57,6 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
         scene.updateMatrixWorld();
 
         var viewCamera = new THREE.PerspectiveCamera();
-        viewCamera.position.z = 1;
-        viewCamera.lookAt(new THREE.Vector3(0, 0, -1));
-        viewCamera.updateMatrixWorld(true);;
 
         return {
             colorIncrementPass : new THREE.ShaderPass(ColorIncrementShader),
@@ -67,6 +64,7 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             viewCamera : viewCamera,
             quadScene : scene,
             quadCamera : new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, -1, 1),
+            controlsController : new Controls3DController(canvasElement, viewCamera),
             enabled : false
         }
     })();
@@ -142,20 +140,25 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
         renderer.render(scenes.view, this.view.camera.get(), target);
     }
 
-    this.render3dView = function(target) {
-        var camera = this.state3d.viewCamera;
-        camera.updateMatrixWorld(true);
-        var res = target === undefined ? this.view.resolution.get() : [target.width, target.height];
-        var portalSize = this.portalViewAspect();
-        var distanceToSamplingPlane = 0.5 / Math.tan(camera.fov * 0.5 * Math.PI / 180);
-        this.state3d.rayTracingUniforms.tDiffuse.value = portal.getStorage();
-        this.state3d.rayTracingUniforms.inverseViewMatrix.value.copy(camera.matrixWorld);
-        this.state3d.rayTracingUniforms.resolution.value.fromArray(res);
-        this.state3d.rayTracingUniforms.projection.value.set(camera.aspect, distanceToSamplingPlane);
-        this.state3d.rayTracingUniforms.portalWidthHeight.value.fromArray([portalSize.w, portalSize.h]);
+    this.render3dView = (function() {
+        var prevTime = performance.now();
+        return function(target) {
+            this.state3d.controlsController.controls.update(Math.min(1, performance.now() - prevTime));
+            prevTime = performance.now();
+            var camera = this.state3d.viewCamera;
+            camera.updateMatrixWorld(true);
+            var res = target === undefined ? this.view.resolution.get() : [target.width, target.height];
+            var portalSize = this.portalViewAspect();
+            var distanceToSamplingPlane = 0.5 / Math.tan(camera.fov * 0.5 * Math.PI / 180);
+            this.state3d.rayTracingUniforms.tDiffuse.value = portal.getStorage();
+            this.state3d.rayTracingUniforms.inverseViewMatrix.value.copy(camera.matrixWorld);
+            this.state3d.rayTracingUniforms.resolution.value.fromArray(res);
+            this.state3d.rayTracingUniforms.projection.value.set(camera.aspect, distanceToSamplingPlane);
+            this.state3d.rayTracingUniforms.portalWidthHeight.value.fromArray([portalSize.w, portalSize.h]);
 
-        renderer.render(this.state3d.quadScene, this.state3d.quadCamera, target);
-    }
+            renderer.render(this.state3d.quadScene, this.state3d.quadCamera, target);
+        }
+    })();
 
     // Get pixels from portal
     this.readPortalPixels = function(x, y, width, height, buffer, byteOffset) {

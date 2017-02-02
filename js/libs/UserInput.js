@@ -264,6 +264,19 @@ function keyboardHandler(event) {
                 vfr.stop();
             }
             break;
+        case "Y":
+            // Toggle 3D controls
+            if (app.state3d.enabled) {
+                if (app.state3d.controlsController.controls.isEnabled()) {
+                    app.state3d.controlsController.onPointerLockLostCallback = null
+                    app.state3d.controlsController.stop();
+                    userInputOn = true;
+                } else {
+                    app.state3d.controlsController.onPointerLockLostCallback = function() { userInputOn = true }
+                    app.state3d.controlsController.start();
+                    userInputOn = false;
+                }
+            }
         // case "N":
         //     // Single frame step.
         //     vfr.play();
@@ -305,7 +318,7 @@ function mousedownHandler(event) {
 
 function mousemoveHandler(event) {
     // If the mousedown event was never triggered, just return.
-    if (!userInput.mouseDown) {
+    if (!userInput.mouseDown || !userInputOn) {
         return;
     }
     
