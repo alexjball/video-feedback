@@ -8,11 +8,6 @@ RayTracingShader = (function() {
 
 	var maxDepth = 30;
 
-	// var initialColors = [];
-	// for (var i = 0; i < maxDepth; i++) {
-	// 	initialColors[i] = new THREE.Vector3(Math.random(), Math.random(), Math.random());
-	// }
-
 	return {
 
 		defines: {
