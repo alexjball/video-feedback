@@ -125,7 +125,7 @@ Controls3D.prototype.onKeyUp = function() {
 }
 
 Controls3D.prototype.onMouseMove = function(event) {
-    if (!this._enabled) return;
+    if (!this._enabled || !this._rotateRoll) return;
     var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
     this._rollObject.rotation.z -= movementX * this.rollRadPerPixel;
 }
