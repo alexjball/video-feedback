@@ -48,7 +48,8 @@ function init() {
 }
 
 function getViewportResolution() {
-    var scale = window.devicePixelRatio || 1;
+    // var scale = window.devicePixelRatio || 1;
+    var scale = 1;
     return {
         scale : scale,
         width : Math.round(window.innerWidth * scale),
