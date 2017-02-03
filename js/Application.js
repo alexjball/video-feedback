@@ -65,6 +65,7 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             quadScene : scene,
             quadCamera : new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, -1, 1),
             controlsController : new Controls3DController(canvasElement, viewCamera),
+            layerColors : ColorPaletteTexture.createRandomPalette(RayTracingShader.defines.MAX_DEPTH + 1),
             enabled : false
         }
     })();
@@ -155,7 +156,8 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             this.state3d.rayTracingUniforms.resolution.value.fromArray(res);
             this.state3d.rayTracingUniforms.projection.value.set(camera.aspect, distanceToSamplingPlane);
             this.state3d.rayTracingUniforms.portalWidthHeight.value.fromArray([portalSize.w, portalSize.h]);
-
+            this.state3d.rayTracingUniforms.layerColors.value = this.state3d.layerColors;
+            this.state3d.rayTracingUniforms.layerColorsSize.value = this.state3d.layerColors.colors.length;
             renderer.render(this.state3d.quadScene, this.state3d.quadCamera, target);
         }
     })();

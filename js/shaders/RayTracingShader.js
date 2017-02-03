@@ -17,7 +17,6 @@ RayTracingShader = (function() {
 
 		defines: {
 			MAX_DEPTH : maxDepth,
-			MAX_LAYERS : maxDepth + 1
 		},
 
 		uniforms: {
@@ -27,7 +26,8 @@ RayTracingShader = (function() {
 			resolution : { type: "v2", value: new THREE.Vector2() },
 			projection : { type: "v2", value: new THREE.Vector2() },
 			portalWidthHeight : { type: "v2", value: new THREE.Vector2() },
-			// layerColors : { type: "v3v", value: initialColors }
+			layerColors : { type: "t", value: null },
+			layerColorsSize : { type: "1f", value: 1 },
 		},
 
 		vertexShader: [
@@ -48,9 +48,12 @@ uniform vec2 resolution;
 uniform vec2 projection;
 uniform vec2 portalWidthHeight;
 uniform sampler2D layerColors;
+uniform float layerColorsSize;
 
 vec4 getColorFromDepth(int depth) {
-	return vec4(vec3(1, 1, 1) * float(depth + 1) / float(MAX_LAYERS), 1);
+	return texture2D(
+		layerColors, 
+		vec2(mod(float(depth + 1) + 0.5, layerColorsSize) / layerColorsSize, 0.0));
 }
 
 int getDepth(vec2 st) {
