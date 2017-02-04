@@ -6,7 +6,7 @@ Controls3D = function(element, camera) {
     this._rollObject.add(this._pointerLockControls.getObject());
 
     this.rollRadPerPixel = 0.002;
-    this.movementSpeed = .025; // world units per second
+    this.movementSpeed = .01; // world units per second
 
     this.resetPosition();
     this.stop();
@@ -30,10 +30,11 @@ Controls3D.prototype.getObject = function() {
 }
 
 Controls3D.prototype.resetPosition = function() {
+    this._rollObject.position.set(0, 0, 1);
     this._rollObject.rotation.set(0, 0, 0);
     this._rollObject.children[0].rotation.set(0, 0, 0);
     this._rollObject.children[0].children[0].rotation.set(0, 0, 0);
-    this._camera.position.set(0, 0, 1);
+    this._camera.position.set(0, 0, 0);
     this._camera.rotation.set(0, 0, 0);
 }
 
@@ -56,6 +57,7 @@ Controls3D.prototype.stop = function() {
     this._moveUp = false;
     this._moveDown = false;
     this._rotateRoll = false;
+    this._moveFast = false;
 }
 
 Controls3D.prototype.onMouseDown = function(event) {
@@ -97,6 +99,9 @@ Controls3D.prototype.onKeyDown = function(event) {
         case 27: // escape
             this.stop();
             break;
+        case 16: // shift
+            this._moveFast = true;
+            break;
     }
 }
 
@@ -121,6 +126,9 @@ Controls3D.prototype.onKeyUp = function() {
         case 70: // f
             this._moveDown = false;
             break;
+        case 16: // shift
+            this._moveFast = false;
+            break;
     }
 }
 
@@ -132,15 +140,17 @@ Controls3D.prototype.onMouseMove = function(event) {
 
 Controls3D.prototype.update = function(delta /* seconds */) {
     var velocity = new THREE.Vector3();
+    var speed = this._moveFast ? this.movementSpeed * 2.5 : this.movementSpeed;
 
-    if (this._moveForward) velocity.z -= this.movementSpeed;
-    if (this._moveBackward) velocity.z += this.movementSpeed;
-    if (this._moveLeft) velocity.x -= this.movementSpeed;
-    if (this._moveRight) velocity.x += this.movementSpeed;
-    if (this._moveUp) velocity.y += this.movementSpeed;
-    if (this._moveDown) velocity.y -= this.movementSpeed;
+    if (this._moveForward) velocity.z -= speed;
+    if (this._moveBackward) velocity.z += speed;
+    if (this._moveLeft) velocity.x -= speed;
+    if (this._moveRight) velocity.x += speed;
+    if (this._moveUp) velocity.y += speed;
+    if (this._moveDown) velocity.y -= speed;
 
-    this._camera.position.add(velocity.multiplyScalar(delta));
+    velocity.multiplyScalar(delta).applyQuaternion(this._camera.getWorldQuaternion());
+    this._rollObject.position.add(velocity);
     this._rollObject.updateMatrixWorld(true);
 }
 
