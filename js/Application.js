@@ -150,9 +150,10 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
         return function(target) {
             this.state3d.controlsController.controls.update(Math.min(1, performance.now() - prevTime));
             prevTime = performance.now();
+            var res = target === undefined ? this.view.resolution.get() : [target.width, target.height];
             var camera = this.state3d.viewCamera;
             camera.updateMatrixWorld(true);
-            var res = target === undefined ? this.view.resolution.get() : [target.width, target.height];
+            camera.aspect = res[0] / res[1];
             var portalSize = this.portalViewAspect();
             var distanceToSamplingPlane = 0.5 / Math.tan(camera.fov * 0.5 * Math.PI / 180);
             this.state3d.rayTracingUniforms.tDiffuse.value = portal.getStorage();
