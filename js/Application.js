@@ -58,6 +58,10 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
 
         var viewCamera = new THREE.PerspectiveCamera();
 
+        var layerColors = ColorPaletteTexture.createGrayscalePalette(9);
+        layerColors.colors.splice(0, 0, new THREE.Color(0, .1, 0));
+        layerColors.uploadColors();
+
         return {
             colorIncrementPass : new THREE.ShaderPass(ColorIncrementShader),
             rayTracingUniforms : RayTracingShader.uniforms,
@@ -65,7 +69,7 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             quadScene : scene,
             quadCamera : new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, -1, 1),
             controlsController : new Controls3DController(canvasElement, viewCamera),
-            layerColors : ColorPaletteTexture.createRandomPalette(RayTracingShader.defines.MAX_DEPTH + 1),
+            layerColors : layerColors,
             enabled : false
         }
     })();
