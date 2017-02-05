@@ -16,6 +16,7 @@ RayTracingShader = (function() {
 			MAX_DEPTH : maxDepth,
 			MAX_ITERATIONS : maxIterations,
 			FOG_FACTOR : fogFactor,
+			WRAP_PORTAL : 0,
 		},
 
 		uniforms: {
@@ -58,7 +59,7 @@ vec4 getColorFromDepth(int depth) {
 
 /** Get the depth of the feedback pattern according to the texture */
 float getTextureDepth(vec2 st) {
-	vec4 color = texture2D(tDiffuse, st);
+	vec4 color = texture2D(tDiffuse, fract(st));
 	return color.r * 256.0;
 }
 
@@ -74,6 +75,9 @@ vec2 toTextureSpace(vec2 feedbackSpacePosition) {
  */
 float getDepthConfidence(vec2 position, int depth) {
 	position = toTextureSpace(position);
+	#if WRAP_PORTAL
+	return 1.0 - clamp(getTextureDepth(position) - float(depth), 0.0, 1.0);
+	#else
 	if (position.s < 0.0 
 			|| position.s > 1.0 
 			|| position.t < 0.0 
@@ -82,6 +86,7 @@ float getDepthConfidence(vec2 position, int depth) {
 	} else {
 		return 1.0 - clamp(getTextureDepth(position) - float(depth), 0.0, 1.0);
 	}
+	#endif
 }
 
 /** Return the z-coord (in feedback-space) of the layer at the given depth. */
@@ -186,7 +191,11 @@ void main() {
 
 	intersectFeedback(eye.xyz, dir.xyz, layerDepth, intersection);
 
+	#if WRAP_PORTAL
+	gl_FragColor = applyFog(getColorFromDepth(layerDepth), length(intersection.xy - eye.xy));
+	#else
 	gl_FragColor = applyFog(getColorFromDepth(layerDepth), length(intersection.xy));
+	#endif
 } 
 
 `};
