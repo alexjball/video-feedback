@@ -202,14 +202,56 @@ function touchendHandler(event) {
 }
 
 
-function keyboardHandler(event) {
-    if (!userInputOn) {
-        return;
-    }
-    
+function keyboardHandler(event) {    
     var charCode = event.keyCode || event.which;
     var charStr = String.fromCharCode(charCode);
+    handleNonUserInputKeys(charStr);
+    if (userInputOn) {
+        handleUserInputKeys(charStr);
+    }            
+}
 
+function handleNonUserInputKeys(charStr) {
+    switch(charStr) {
+        case "U":
+            app.resetPosition();
+            break;
+        case "Y":
+            // Toggle 3D controls
+            if (app.state3d.enabled) {
+                if (app.state3d.controlsController.controls.isEnabled()) {
+                    app.state3d.controlsController.onPointerLockLostCallback = null
+                    app.state3d.controlsController.stop();
+                    userInputOn = true;
+                } else {
+                    app.state3d.controlsController.onPointerLockLostCallback = function() { userInputOn = true }
+                    app.state3d.controlsController.start();
+                    userInputOn = false;
+                }
+            }
+            break;
+        case "V":
+            saveStateToDropdown('State');
+            break;
+        case "T":
+            // toggle visibility of stats.
+            if (stats.dom.style.display == "") {
+                stats.dom.style.display = "none";
+            } else {
+                stats.dom.style.display = "";
+            }
+            break;
+        case " ":
+            if (app.state3d.enabled) {
+                app.state3d.colorController.addAnimation(
+                    ColorPulse.createBasic(
+                        new THREE.Color(Math.random(), Math.random(), Math.random()), 
+                        1 / 20));
+            }
+    }
+}
+
+function handleUserInputKeys(charStr) {
     switch(charStr) {
         case "A":
             setInput(["rot", getInput("rot") - inputSettings.rotStep]);
@@ -235,26 +277,6 @@ function keyboardHandler(event) {
         case "K":
             setInput(["y", getInput("y") + inputSettings.xyStep]);
             break;
-        case "V":
-            saveStateToDropdown('State');
-            break;
-        case "R":
-        
-            var fresh = new VF.Spacemap();
-            
-            fresh.scale.set(1.3, 1.3, 1);
-            
-            app.portal.spacemap.set([fresh]);
-
-            break;
-        case "T":
-            // toggle visibility of stats.
-            if (stats.dom.style.display == "") {
-                stats.dom.style.display = "none";
-            } else {
-                stats.dom.style.display = "";
-            }
-            break;
         case "P":
             // Stop/resume toggle.
             if (vfr.state !== VFRenderer.states.play) {
@@ -264,25 +286,11 @@ function keyboardHandler(event) {
                 vfr.stop();
             }
             break;
-        case "Y":
-            // Toggle 3D controls
-            if (app.state3d.enabled) {
-                if (app.state3d.controlsController.controls.isEnabled()) {
-                    app.state3d.controlsController.onPointerLockLostCallback = null
-                    app.state3d.controlsController.stop();
-                    userInputOn = true;
-                } else {
-                    app.state3d.controlsController.onPointerLockLostCallback = function() { userInputOn = true }
-                    app.state3d.controlsController.start();
-                    userInputOn = false;
-                }
-            }
         // case "N":
         //     // Single frame step.
         //     vfr.play();
         //     vfr.framesToRender = 1;
         //     break;
-            
     }
 }
 

@@ -274,25 +274,35 @@ function initializeToolbar(toolbarInstance) {
     
     toolbarInstance.addDivider();
 
-    toolbarInstance.addInstruction("Reset Position: R");
-    toolbarInstance.addInstruction("Pan: IJKL/drag");
-    toolbarInstance.addInstruction("Rotate: AD/right-drag");
-    toolbarInstance.addInstruction("Zoom: WS/scroll");
+    toolbarInstance.addInstruction("Reset Position: U");
     toolbarInstance.addInstruction("FPS: T");
     toolbarInstance.addInstruction("Pause: P");
     toolbarInstance.addInstruction("Quick Save State: V");
-        
+    toolbarInstance.addDivider();
+    toolbarInstance.addInstruction("2D Mode:");
+    toolbarInstance.addInstruction("Pan: IJKL/drag");
+    toolbarInstance.addInstruction("Rotate: AD/right-drag");
+    toolbarInstance.addInstruction("Zoom: WS/scroll");
+    toolbarInstance.addDivider();
+    toolbarInstance.addCheckbox("3D Mode", { 
+        set : function(enable) {
+            app.setViewMode3d(enable);
+            if (!enable && app.state3d.controlsController.controls.isEnabled()) {
+                app.state3d.controlsController.onPointerLockLostCallback = null
+                app.state3d.controlsController.stop();
+                userInputOn = true;
+            }
+        }
+    });
+    toolbarInstance.addInstruction("Toggle Controls: Y");
+    toolbarInstance.addInstruction("Forward/Back/Left/Right/Up/Down: WSADRF");
+    toolbarInstance.addInstruction("Move Fast: hold shift");
+    toolbarInstance.addInstruction("Rotate: right-drag");
+
+
     toolbarInstance.addDivider();
         
-    toolbarInstance.addButton("Reset Position", function() {
-        
-        var fresh = new VF.Spacemap();
-        
-        fresh.scale.set(1.3, 1.3, 1);
-        
-        app.portal.spacemap.set([fresh]);
-
-    })
+    toolbarInstance.addButton("Reset Position", function() { app.resetPosition() })
     
     toolbarInstance.addDivider();
 
@@ -471,27 +481,6 @@ function initializeToolbar(toolbarInstance) {
 
         document.getElementById("loadfiles").value = "";
     })
-
-    toolbarInstance.addDivider();
-    toolbarInstance.addCheckbox("3D Mode", { 
-        set : function(enable) {
-            app.setViewMode3d(enable);
-            if (!enable && app.state3d.controlsController.controls.isEnabled()) {
-                app.state3d.controlsController.onPointerLockLostCallback = null
-                app.state3d.controlsController.stop();
-                userInputOn = true;
-            }
-        }
-    });
-    toolbarInstance.addButton(
-        "Reset 3D View", function() { app.state3d.controlsController.controls.resetPosition() })
-    toolbarInstance.addCheckbox(
-        "Disable Feedback",
-        {
-            set : function(shouldDisable) {
-                sim.shouldUpdateView = shouldDisable === 0;
-            }
-        });
 }
 
 window.toolbar = new Toolbar();

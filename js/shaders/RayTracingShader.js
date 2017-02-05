@@ -8,7 +8,7 @@ RayTracingShader = (function() {
 
 	var maxDepth = 30;
 	var maxIterations = 30;
-	var fogFactor = .1;
+	var fogFactor = .05;
 
 	return {
 
@@ -21,7 +21,7 @@ RayTracingShader = (function() {
 		uniforms: {
 			tDiffuse : { type: "t", value: null },
 			inverseViewMatrix : { type: "m4", value: new THREE.Matrix4() },
-			layerSpacing : { type: "1f", value: 0.5 },
+			layerSpacing : { type: "1f", value: 0.2 },
 			resolution : { type: "v2", value: new THREE.Vector2() },
 			projection : { type: "v2", value: new THREE.Vector2() },
 			portalWidthHeight : { type: "v2", value: new THREE.Vector2() },
@@ -53,7 +53,7 @@ uniform float layerColorsSize;
 vec4 getColorFromDepth(int depth) {
 	return texture2D(
 		layerColors, 
-		vec2(mod(float(depth + 1) + 0.5, layerColorsSize) / layerColorsSize, 0.0));
+		vec2(clamp((float(depth + 1) + 0.5) / layerColorsSize, 0.0, 1.0), 0.0));
 }
 
 /** Get the depth of the feedback pattern according to the texture */
@@ -162,8 +162,8 @@ void intersectFeedback(
 	getLayerIntersection(eye, dir, start, end, layerDepth, intersection);
 }
 
-vec4 applyFog(vec4 color, vec3 eye, vec3 target) {
-	float fogAmount = 1.0 - exp(-distance(eye, target) * FOG_FACTOR);
+vec4 applyFog(vec4 color, float distance) {
+	float fogAmount = 1.0 - exp(-distance * FOG_FACTOR);
     vec4 fogColor = vec4(0.5, 0.6, 0.7, 1.0);
     return mix(color, fogColor, fogAmount);
 }
@@ -179,7 +179,6 @@ void main() {
 	// Transform ray to xyz world space (== feedback space right now)
 	eye = inverseViewMatrix * eye;
 	dir = inverseViewMatrix * dir;
-
 	dir.xyz = normalize(dir.xyz - eye.xyz);
 	
 	vec3 intersection;
@@ -187,7 +186,7 @@ void main() {
 
 	intersectFeedback(eye.xyz, dir.xyz, layerDepth, intersection);
 
-	gl_FragColor = applyFog(getColorFromDepth(layerDepth), eye.xyz, intersection.xyz);
+	gl_FragColor = applyFog(getColorFromDepth(layerDepth), length(intersection.xy));
 } 
 
 `};

@@ -6,8 +6,11 @@ Controls3D = function(element, camera) {
     this._rollObject.add(this._pointerLockControls.getObject());
 
     this.rollRadPerPixel = 0.002;
-    this.movementSpeed = .01; // world units per second
-
+    this.movementSpeed = .3; // world units per second
+    this.boundingBox = { 
+        min: new THREE.Vector3(-Infinity, -Infinity, -Infinity), 
+        max: new THREE.Vector3(Infinity, Infinity, Infinity) 
+    };
     this.resetPosition();
     this.stop();
 
@@ -36,6 +39,15 @@ Controls3D.prototype.resetPosition = function() {
     this._rollObject.children[0].children[0].rotation.set(0, 0, 0);
     this._camera.position.set(0, 0, 0);
     this._camera.rotation.set(0, 0, 0);
+}
+
+/** 
+ * Set the limits of the camera position. boundingBox is an object with fields
+ * { min: THREE.Vector3, max: THREE.Vector3 }.
+ */
+Controls3D.prototype.setBoundingBox = function(boundingBox) {
+    this.boundingBox.min.set(boundingBox.min);
+    this.boundingBox.max.set(boundingBox.max);
 }
 
 Controls3D.prototype.start = function() {
@@ -96,9 +108,6 @@ Controls3D.prototype.onKeyDown = function(event) {
         case 70: // f
             this._moveDown = true;
             break;
-        case 27: // escape
-            this.stop();
-            break;
         case 16: // shift
             this._moveFast = true;
             break;
@@ -140,7 +149,7 @@ Controls3D.prototype.onMouseMove = function(event) {
 
 Controls3D.prototype.update = function(delta /* seconds */) {
     var velocity = new THREE.Vector3();
-    var speed = this._moveFast ? this.movementSpeed * 2.5 : this.movementSpeed;
+    var speed = this._moveFast ? this.movementSpeed * 3 : this.movementSpeed;
 
     if (this._moveForward) velocity.z -= speed;
     if (this._moveBackward) velocity.z += speed;
@@ -151,6 +160,7 @@ Controls3D.prototype.update = function(delta /* seconds */) {
 
     velocity.multiplyScalar(delta).applyQuaternion(this._camera.getWorldQuaternion());
     this._rollObject.position.add(velocity);
+    this._rollObject.position.clamp(this.boundingBox.min, this.boundingBox.max);
     this._rollObject.updateMatrixWorld(true);
 }
 

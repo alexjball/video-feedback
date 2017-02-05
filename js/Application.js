@@ -58,9 +58,8 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
 
         var viewCamera = new THREE.PerspectiveCamera();
 
-        var layerColors = ColorPaletteTexture.createGrayscalePalette(9);
-        layerColors.colors.splice(0, 0, new THREE.Color(0, .1, 0));
-        layerColors.uploadColors();
+        var controlsController = new Controls3DController(canvasElement, viewCamera);
+        controlsController.controls.boundingBox.max.z = 3;
 
         return {
             colorIncrementPass : new THREE.ShaderPass(ColorIncrementShader),
@@ -68,8 +67,8 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             viewCamera : viewCamera,
             quadScene : scene,
             quadCamera : new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, -1, 1),
-            controlsController : new Controls3DController(canvasElement, viewCamera),
-            layerColors : layerColors,
+            controlsController : controlsController,
+            colorController : new ColorPaletteController(),
             enabled : false
         }
     })();
@@ -129,6 +128,16 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
         
     }
     
+    this.resetPosition = function() {
+        if (this.state3d.controlsController.controls.isEnabled()) {
+            this.state3d.controlsController.controls.resetPosition()
+        } else {
+            var fresh = new VF.Spacemap();
+            fresh.scale.set(1.3, 1.3, 1);
+            this.portal.spacemap.set([fresh]);
+        }
+    }
+
     this.renderView = function(target) {
         // Render the view, either to the screen (if target is undefined)
         // or to the specified render target.
@@ -146,23 +155,30 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
     }
 
     this.render3dView = (function() {
-        var prevTime = performance.now();
+        var prevTime = performance.now() * 1e-3;
         return function(target) {
-            this.state3d.controlsController.controls.update(Math.min(1, performance.now() - prevTime));
-            prevTime = performance.now();
+            var portalSize = this.portalViewAspect();
+            var time = performance.now() * 1e-3; 
+            var delta = Math.min(1, time - prevTime);
+            this.state3d.controlsController.controls.boundingBox.max.x = portalSize.w;
+            this.state3d.controlsController.controls.boundingBox.min.x = -portalSize.w;
+            this.state3d.controlsController.controls.boundingBox.max.y = portalSize.h;
+            this.state3d.controlsController.controls.boundingBox.min.y = -portalSize.h;
+            this.state3d.controlsController.controls.update(delta);
+            prevTime = time;
+            this.state3d.colorController.update();
             var res = target === undefined ? this.view.resolution.get() : [target.width, target.height];
             var camera = this.state3d.viewCamera;
             camera.updateMatrixWorld(true);
             camera.aspect = res[0] / res[1];
-            var portalSize = this.portalViewAspect();
             var distanceToSamplingPlane = 0.5 / Math.tan(camera.fov * 0.5 * Math.PI / 180);
             this.state3d.rayTracingUniforms.tDiffuse.value = portal.getStorage();
             this.state3d.rayTracingUniforms.inverseViewMatrix.value.copy(camera.matrixWorld);
             this.state3d.rayTracingUniforms.resolution.value.fromArray(res);
             this.state3d.rayTracingUniforms.projection.value.set(camera.aspect, distanceToSamplingPlane);
             this.state3d.rayTracingUniforms.portalWidthHeight.value.fromArray([portalSize.w, portalSize.h]);
-            this.state3d.rayTracingUniforms.layerColors.value = this.state3d.layerColors;
-            this.state3d.rayTracingUniforms.layerColorsSize.value = this.state3d.layerColors.colors.length;
+            this.state3d.rayTracingUniforms.layerColors.value = this.state3d.colorController.texture;
+            this.state3d.rayTracingUniforms.layerColorsSize.value = this.state3d.colorController.baseColors.length;
             renderer.render(this.state3d.quadScene, this.state3d.quadCamera, target);
         }
     })();
