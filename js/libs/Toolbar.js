@@ -298,7 +298,15 @@ function initializeToolbar(toolbarInstance) {
     toolbarInstance.addInstruction("Forward/Back/Left/Right/Up/Down: WSADRF");
     toolbarInstance.addInstruction("Move Fast: hold shift");
     toolbarInstance.addInstruction("Rotate: right-drag");
-
+    toolbarInstance.addInstruction("Color: space");
+    toolbarInstance.addColor("Top Color", {
+        set : function(c) { app.state3d.topColor = c; },
+        get : function() { return app.state3d.topColor }
+    });
+    toolbarInstance.addColor("Bottom Color", {
+        set : function(c) { app.state3d.bottomColor = c; },
+        get : function() { return app.state3d.bottomColor }
+    })
 
     toolbarInstance.addDivider();
         

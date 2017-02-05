@@ -67,6 +67,8 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             viewCamera : viewCamera,
             quadScene : scene,
             quadCamera : new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, -1, 1),
+            topColor : new THREE.Color(0, 0, 0),
+            bottomColor : new THREE.Color(1, 1, 1),
             controlsController : controlsController,
             colorController : new ColorPaletteController(),
             enabled : false
@@ -166,7 +168,14 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             this.state3d.controlsController.controls.boundingBox.min.y = -portalSize.h;
             this.state3d.controlsController.controls.update(delta);
             prevTime = time;
+
+            this.state3d.colorController.baseColors = 
+                ColorPaletteController.createHSLGradientPalette(
+                    this.state3d.topColor, 
+                    this.state3d.bottomColor, 
+                    RayTracingShader.defines.MAX_DEPTH + 1)
             this.state3d.colorController.update();
+
             var res = target === undefined ? this.view.resolution.get() : [target.width, target.height];
             var camera = this.state3d.viewCamera;
             camera.updateMatrixWorld(true);

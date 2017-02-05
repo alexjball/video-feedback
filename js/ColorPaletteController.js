@@ -2,7 +2,6 @@ var ColorPaletteController = function(colors, clock /* clock.now() returns curre
     this.baseColors = colors || ColorPaletteController.createGrayscaleColorPalette(30);
     this.texture = new ColorPaletteTexture(this.baseColors);
     this._colorAnimators = [];
-    this._isTextureDirty = false;
     this._clock = clock || { now : window.performance.now.bind(window.performance) };
 }
 
@@ -23,10 +22,8 @@ ColorPaletteController.prototype.addAnimation = function(colorAnimator) {
 ColorPaletteController.prototype.update = function() {
     var colors = this.baseColors.map(function() { return []});
 
-    var hasSet = false;
     var setColor = function(color, alpha, position) {
         if (position < colors.length && position >= 0) {
-            hasSet = true;
             colors[position].push({
                 color : color,
                 alpha : alpha,
@@ -43,11 +40,7 @@ ColorPaletteController.prototype.update = function() {
     });
 
     this.texture.colors = this._merge(this.baseColors, colors);
-
-    if (hasSet || this._isTextureDirty) {
-        this.texture.uploadColors();
-        this._isTextureDirty = hasSet;
-    }
+    this.texture.uploadColors();
 }
 
 ColorPaletteController.prototype._merge = function(baseColors, colors) {
@@ -87,6 +80,39 @@ ColorPaletteController.createRandomColorPalette = function(numColors) {
         colors[i] = new THREE.Color(Math.random(), Math.random(), Math.random());
     }
     return colors;
+}
+
+ColorPaletteController.createRGBGradientPalette = function(colorFrom, colorTo, numColors) {
+    return ColorPaletteController.createLerpedVectorPalette(
+        new THREE.Vector3(colorFrom.r, colorFrom.g, colorFrom.b),
+        new THREE.Vector3(colorTo.r, colorTo.g, colorTo.b),
+        numColors)
+        .map(function(v) { return new THREE.Color(v.x, v.y, v.z); })
+}
+
+ColorPaletteController.createHSLGradientPalette = function(colorFrom, colorTo, numColors) {
+    var c1 = colorFrom.getHSL();
+    var c2 = colorTo.getHSL();
+    return ColorPaletteController.createLerpedVectorPalette(
+        new THREE.Vector3(c1.h, c1.s, c1.l),
+        new THREE.Vector3(c2.h, c2.s, c2.l),
+        numColors)
+        .map(function(v) { return (new THREE.Color()).setHSL(v.x, v.y, v.z); })
+}
+
+/** 
+ * Create a gradient by linearly interpolating between two Vector3's. 
+ * Returns an array of Vectors. 
+ */
+ColorPaletteController.createLerpedVectorPalette = function(vectorFrom, vectorTo, numSteps) {
+    var dStep = 1 / Math.max(1, numSteps - 1);
+    var vectors = [];
+    var alpha = 0;
+    for (var i = 0; i < numSteps; i++) {
+        vectors[i] = (new THREE.Vector3()).lerpVectors(vectorFrom, vectorTo, alpha);
+        alpha += dStep;
+    }
+    return vectors;
 }
 
 /**
