@@ -1,0 +1,349 @@
+<html>
+	<head>
+		<title>Video Feedback</title>
+		<style>
+			html, body { width: 100%; height: 100%; margin: 0; }
+			canvas { width: 100%; height: 100%; display: block }
+		</style>
+
+        <!-- Safari full screen tag -->
+        <meta name="apple-mobile-web-app-capable" content="yes">
+
+        <!-- Chrome (Android) full screen tag -->
+        <meta name="mobile-web-app-capable" content="yes">
+        <link rel="icon" sizes="192x192" href="app/icon.png">
+        <link rel="manifest" href="app/manifest.json">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+	</head>
+	<body>
+		<script src="js/libs/three.js"></script>
+		<script src="js/libs/jscolor.min.js"></script>
+        <script src="js/libs/FileSaver.min.js"></script>
+        <script src="js/libs/jszip.min.js"></script>
+        <script src="js/libs/canvas-toBlob.js"></script>
+		<script src="js/libs/stats.min.js"></script>
+		<script src="js/libs/PointerLockControls.js"></script>
+		
+		<script src="js/postprocessing/EffectComposer.js"></script>
+		<script src="js/postprocessing/RenderPass.js"></script>
+		<script src="js/postprocessing/ShaderPass.js"></script>
+		<script src="js/postprocessing/ClearPass.js"></script>
+		<script src="js/postprocessing/MaskPass.js"></script> 
+
+		<script src="js/shaders/CopyShader.js"></script>
+		<script src="js/shaders/ColorShader.js"></script>
+		<script src="js/shaders/ColorIncrementShader.js"></script>
+		<script src="js/shaders/RayTracingShader.js"></script>
+		<script src="js/shaders/SymmetryShader.js"></script>
+		<script src="js/shaders/RGBShiftShader.js"></script>
+        
+        <script src="js/ColorPaletteTexture.js"></script>
+        <script src="js/ColorPaletteController.js"></script>
+        <script src="js/Controls3D.js"></script>
+        <script src="js/LNextra.js"></script>
+        <script src="js/NonUserInputKeyHandler_index.js"></script>
+        <script src="js/libs/UserInput.js"></script>
+        <script src="js/video-feedback.js"></script>
+		<script src="js/StateNugget.js"></script>
+		<script src="js/Application.js"></script>
+		<script src="js/ImageUtilities.js"></script>
+		<script src="js/DefaultAppStates.js"></script>
+		<script src="main.js"></script>
+        
+        <style media="screen" type="text/css">
+            .body {
+                height: 100%; 
+                overflow: hidden;
+                margin: 0px;
+                padding: 0px;
+                border: 0px;
+            }
+            
+            .container {
+                position: absolute;
+                top: 0px;
+                left: 0px;
+            }
+
+            .toolbarInstruction {
+                padding-top: 5px;
+                padding-bottom: 5px;
+            }
+
+            .toolbarRange {
+                padding-top: 5px;
+                padding-bottom: 5px;
+            }
+
+            .toolbarButton {
+                padding-top: 5px;
+                padding-bottom: 5px;
+            }
+
+            .toolbarCheckbox {
+                padding-top: 10px;
+                padding-bottom: 10px;
+                color: #DDDDDD;
+            }
+
+            .toolbarColor {
+                padding-top: 10px;
+                padding-bottom: 5px;
+                color: #DDDDDD;
+                text-align: center;
+            }
+            
+            .inputColor {
+                height: 3em;
+                width: 80%;
+            }
+               
+            .toolbarDivider {
+            
+                width: 80%;
+                text-align: center;
+                
+                
+            }
+            
+            .toolbar {
+                
+                -webkit-touch-callout: none; /* iOS Safari */
+                -webkit-user-select: none;   /* Chrome/Safari/Opera */
+                -khtml-user-select: none;    /* Konqueror */
+                -moz-user-select: none;      /* Firefox */
+                -ms-user-select: none;       /* Internet Explorer/Edge */
+                user-select: none;         
+
+                padding: 0px;
+                border: 0px;
+                display: block;
+                position: absolute;
+                opacity: 0.9;
+                
+                top: 5%;
+                height: 95%;
+                width: 200px;
+                right: 0px;
+                
+                text-align: center;
+                background-color: #000000;
+                color: #DDDDDD;
+                font-size: 12px;
+                z-index: 1002;
+                overflow: auto;
+                
+
+            }
+            
+            .toggleToolbar {
+                
+                -webkit-touch-callout: none; /* iOS Safari */
+                -webkit-user-select: none;   /* Chrome/Safari/Opera */
+                -khtml-user-select: none;    /* Konqueror */
+                -moz-user-select: none;      /* Firefox */
+                -ms-user-select: none;       /* Internet Explorer/Edge */
+                user-select: none;         
+                
+                padding: 0px;
+                border: 0px;
+                display: block;
+                position: absolute;
+                opacity: 0.9;
+                
+                top: 0px;
+                right: 0px;
+                height: 5%;
+                width: 5%;
+                
+                text-align: center;
+                vertical-align: middle;
+                background-color: #000000;
+                color: #DDDDDD;
+                font-size: 20px;
+                z-index: 1002;
+            }
+            
+        .black_overlay{
+            position: absolute;
+            top: 0%;
+            left: 0%;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            z-index:1019;
+            -moz-opacity: 0.8;
+            opacity:.80;
+            filter: alpha(opacity=80);
+        }
+        
+        .white_content {
+            position: absolute;
+            top: 25%;
+            left: 25%;
+            width: 50%;
+            height: 50%;
+            padding: 16px;
+            border: 16px solid cornflowerblue;
+            background-color: white;
+            z-index:1020;
+            overflow: auto;
+        }
+
+        </style>
+        
+        <div id="about" style="display:none">
+            <div id="aboutFade" class="black_overlay" onclick='hideAbout()'></div>
+            <div id="aboutLight" class="white_content">
+                
+                <a href="http://www.theseasquirt.com/2016/04/video-feedback-simulator.html" target="_blank">About</a>
+
+                <br /><br />
+                                
+                <b>Getting Started</b>
+                <br />
+                <ul>
+                <li>Skim the "About" link above for a rough overview</li>
+                <li>Try selecting patterns from the "Select State" dropdown box and panning/rotating a little bit around each one</li>
+                <li>Try to keep track of the outermost border that seems to "follow" your input, though this can be a little bit confusing when mirror effects are turned on</li>
+                <li>The system is very sensitive to zooming, and tends to work best near the initial zoom level</li>
+                <li>Hit "Cycle Inputs" for a quick tour through some of the pre-configured states</li>
+                <li>If you get lost, just hit "Reset Position" to return to the default configuration</li>
+                <li>If the main canvas stops responding, make sure that you haven't paused the rendering (try clicking on the main canvas and hitting "P")</li>
+                <li>We are quite far from bug-free. Feel free to contact us about any significant impediments to your having fun (see below).</li>
+                </ul>
+
+                <br /><br />
+
+                <b>Settings</b>
+                <br />
+                <table style="width:100%">
+
+                <tr>
+                <td>Reset Position</td>
+                <td>Move the "TV" to its default orientation</td>
+                </tr>
+
+                <tr>
+                <td>Download Image</td>
+                <td>Downlaod the current canvas as a PNG image</td>
+                </tr>
+
+                <tr>
+                <td>Select State</td>
+                <td>Jump to a pre-specified state (may change color/other settings)</td>
+                </tr>
+
+                <tr>
+                <td>Save State</td>
+                <td>Save current configuration to dropdown list</td>
+                </tr>
+
+                <tr>
+                <td>Cycle Inputs</td>
+                <td>Move linearly from one state to another random state in the dropdown list</td>
+                </tr>
+
+                <tr>
+                <td>Stop Cycle</td>
+                <td>Stop the cycling process</td>
+                </tr>
+
+                <tr>
+                <td>Cycle Speed</td>
+                <td>Change the cycling speed through states</td>
+                </tr>
+
+                <tr>
+                <td>Set Portal To Window</td>
+                <td>Remove "dead space" around the edge of the screen after resizing window</td>
+                </tr>
+
+                <tr>
+                <td>Set Portal Aspect Ratio</td>
+                <td>Enforce an aspect ratio for the feedback camera regardless of canvas size</td>
+                </tr>
+
+                <tr>
+                <td>Invert _</td>
+                <td>Invert one axis of the feedback camera on each iteration</td>
+                </tr>
+
+                <tr>
+                <td>Mirror _</td>
+                <td>Mirror each iteration across a straight line</td>
+                </tr>
+
+                <tr>
+                <td>Invert Color</td>
+                <td>Invert the colors on each iteration</td>
+                </tr>
+
+                <tr>
+                <td>Far Out</td>
+                <td>Spread out the RGB components of each pixel</td>
+                </tr>
+
+                <tr>
+                <td>Delay</td>
+                <td>Change the lag between each iteration</td>
+                </tr>
+
+                <tr>
+                <td>Color Cycle</td>
+                <td>Change the amount of hue shift between iterations</td>
+                </tr>
+
+                <tr>
+                <td>Gain</td>
+                <td>Change the amount of saturation increase between iterations</td>
+                </tr>
+
+                <tr>
+                <td>Border Width</td>
+                <td>Change the width of the border around the "TV"</td>
+                </tr>
+
+                <tr>
+                <td>Border Color</td>
+                <td>Change the starting border color</td>
+                </tr>
+
+                <tr>
+                <td>Background Color</td>
+                <td>Change the starting background color</td>
+                </tr>
+                </table>
+
+                <br /><br />
+
+                <b>Other</b>
+                <br />
+                <ul>
+                <li>Mobile users may have issues with touch-based features. So sorry! If you think you can help us then drop us an email.</li>
+                <li>Contact: Please contact (Alex) through the email listed at github.com/aljaball</li>
+                </ul>
+                
+            </div>
+        </div>
+        
+        <div id="simulation">
+            <canvas id="simulation-canvas"></canvas>
+        </div>
+        <div id="toggleToolbar" class="toggleToolbar" onclick="toggleToolbar()">&#9881;</div>
+        <div id="toolbar" class="toolbar">
+            <!-- instructions & options added dynamically here -->
+        </div>
+                
+		<script>
+            initializeEventListeners();
+            nonUserInputKeyHandler.init();
+			init();
+            vfr.play();
+			render();
+		</script>
+        <script src="js/libs/Toolbar.js"></script>
+	</body>
+</html>

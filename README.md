@@ -2,7 +2,9 @@
 
 A simple app to simulate the effects of video feedback in software.
 
-[Demo.](https://aljaball.github.io/video-feedback/)
+[Demo of 3D mode.](https://aljaball.github.io/video-feedback/demo_3d.html)
+
+[Full-featured, difficult-to-use studio.](https://aljaball.github.io/video-feedback/studio.html)
 
 [Explanation and Discussion.](http://www.theseasquirt.com/2016/04/video-feedback-simulator.html)
 
