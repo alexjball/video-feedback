@@ -3,15 +3,15 @@ var Demo3dInputController = function() {
     this.resetButton = document.getElementById('reset-button');
     this.pauseButton = document.getElementById('pause-button');
     this.controlsButton = document.getElementById('controls-button');
-    var helpContainer = document.getElementById('help-container');
+    this.helpContainer = document.getElementById('help-container');
 
     document.addEventListener("keydown", this.keyDownHandler.bind(this), false);
     
     document.getElementById('simulation')
         .addEventListener('mousedown', this.mouseDownHandler.bind(this), false);
 
-    helpContainer.onclick = function() { helpContainer.style.display = 'none'; }
-    this.helpButton.onclick = function() { helpContainer.style.display = 'block'; }
+    this.helpContainer.onclick = function() { this.style.display = 'none'; }
+    this.helpButton.onclick = this.showHelp.bind(this);
     this.resetButton.onclick = function() {
         app.state3d.controlsController.controls.resetPosition();
     }
@@ -51,7 +51,14 @@ Demo3dInputController.prototype.keyDownHandler = function(event) {
                         1 / 20));
             }
             break;
+        case "H":
+            this.showHelp();
+            break;
     }
+}
+
+Demo3dInputController.prototype.showHelp = function() {
+    this.helpContainer.style.display = 'block';
 }
 
 Demo3dInputController.prototype.toggleCycleState = function() {
