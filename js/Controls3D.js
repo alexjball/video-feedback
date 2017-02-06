@@ -46,8 +46,8 @@ Controls3D.prototype.resetPosition = function() {
  * { min: THREE.Vector3, max: THREE.Vector3 }.
  */
 Controls3D.prototype.setBoundingBox = function(boundingBox) {
-    this.boundingBox.min.set(boundingBox.min);
-    this.boundingBox.max.set(boundingBox.max);
+    this.boundingBox.min.copy(boundingBox.min);
+    this.boundingBox.max.copy(boundingBox.max);
 }
 
 Controls3D.prototype.start = function() {

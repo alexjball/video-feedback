@@ -337,43 +337,14 @@ function initializeToolbar(toolbarInstance) {
     
     toolbarInstance.addButton("Save State", function() { saveStateToDropdown(); } );
     
-    toolbarInstance.addButton("Cycle Inputs", function() {
-        if (cycleEndCallback !== null) return;
-        
-        cycleEndCallback = function() {
-            
-            var startState = app.deserializeNugs(app.serializeNugs());
-            
-            var len = stateManager.states.length;
-            
-            var endState = app.deserializeNugs(
-                stateManager.states[Math.floor(Math.random() * len)].state
-            );
-            
-            var cycle = cycleGen.createCycle(startState, endState);
-            
-            cycle.speed = cycleSpeed;
-            
-            cycleQueue.push(cycle);
-            
-        }
-        
-        cycleEndCallback();
-        
-    });
+    toolbarInstance.addButton("Cycle Inputs", vfr.startCycle.bind(vfr));
     
-    toolbarInstance.addButton("Stop Cycle", function() { 
-    
-        cycleQueue = []; 
-    
-        cycleEndCallback = null;
-        
-    });
+    toolbarInstance.addButton("Stop Cycle", vfr.stopCycle.bind(vfr));
     
     toolbarInstance.addRange("Cycle Speed", {
      
-        get : function()  { return cycleSpeed; },
-        set : function(x) { cycleSpeed = x; }
+        get : function()  { return vfr.cycleSpeed; },
+        set : function(x) { vfr.cycleSpeed = x; }
         
     }, [.002, .0002, .02]);
 

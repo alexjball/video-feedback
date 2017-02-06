@@ -71,6 +71,7 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             bottomColor : new THREE.Color(1, 1, 1),
             controlsController : controlsController,
             colorController : new ColorPaletteController(),
+            clampPosition : true,
             enabled : false
         }
     })();
@@ -162,10 +163,17 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             var portalSize = this.portalViewAspect();
             var time = performance.now() * 1e-3; 
             var delta = Math.min(1, time - prevTime);
-            this.state3d.controlsController.controls.boundingBox.max.x = portalSize.w;
-            this.state3d.controlsController.controls.boundingBox.min.x = -portalSize.w;
-            this.state3d.controlsController.controls.boundingBox.max.y = portalSize.h;
-            this.state3d.controlsController.controls.boundingBox.min.y = -portalSize.h;
+            if (this.state3d.clampPosition) {
+                this.state3d.controlsController.controls.setBoundingBox({
+                    min : new THREE.Vector3(-portalSize.w, -portalSize.h, -Infinity),
+                    max : new THREE.Vector3(portalSize.w, portalSize.h, 3)
+                });
+            } else {
+                this.state3d.controlsController.controls.setBoundingBox({
+                    min: new THREE.Vector3(-Infinity, -Infinity, -Infinity),
+                    max: new THREE.Vector3(Infinity, Infinity, Infinity),
+                })
+            }
             this.state3d.controlsController.controls.update(delta);
             prevTime = time;
 

@@ -21,12 +21,7 @@ function init() {
     
     stateManager = new VFStateManager(app, localStorageKey);
     
-    // Global state for cycling because now.
-    cycleGen     = new VFCycleGenerator(app);
-    cycleQueue   = [];
-    cycleSpeed   = .005;
-    cycleEndCallback = null;
-    vfr          = new VFRenderer();
+    vfr = new VFRenderer(app);
     
     stats = new Stats();
     stats.showPanel(0);
@@ -111,13 +106,16 @@ function saveToHash() {
     
 }
 
-var VFRenderer = function() {
+var VFRenderer = function(app) {
     // This is really hacky...
     
     this.state = VFRenderer.states.stop;
     this.framesToRender = 0;
     this._oldframesToRender = 0;
-    this.cycleQueue = [];
+    this.cycleGen     = new VFCycleGenerator(app);
+    this.cycleQueue   = [];
+    this.cycleSpeed   = .005;
+    this.cycleEndCallback = null;
     
 }
 
@@ -138,9 +136,7 @@ VFRenderer.prototype = {
         this.framesToRender = 0;
         this._oldframesToRender = 0;
         this.state = VFRenderer.states.stop;
-        cycleQueue = [];
-        cycleEndCallback = null;
-        
+        this.stopCycle();        
     },
     
     pause : function() {
@@ -171,8 +167,36 @@ VFRenderer.prototype = {
 
         }
         
+    },
+
+    isCycling : function() {
+        return this.cycleEndCallback != null;
+    },
+
+    stopCycle : function() {
+        this.cycleQueue = [];
+        this.cycleEndCallback = null;
+    },
+
+    startCycle : function() {
+        if (this.cycleEndCallback !== null) return;
+        
+        var scope = this;
+
+        this.cycleEndCallback = function() {
+            var startState = app.deserializeNugs(app.serializeNugs());
+            var len = stateManager.states.length;
+            var endState = app.deserializeNugs(
+                stateManager.states[Math.floor(Math.random() * len)].state
+            );
+            var cycle = scope.cycleGen.createCycle(startState, endState);
+            cycle.speed = scope.cycleSpeed;
+            scope.cycleQueue.push(cycle);
+            
+        }
+        
+        this.cycleEndCallback();
     }
-    
 }
 
 function render() {
@@ -185,17 +209,17 @@ function render() {
             
         updateUI();
         
-        if (cycleQueue.length > 0) {
+        if (vfr.cycleQueue.length > 0) {
             
-            cycleQueue[0].speed = cycleSpeed;
+            vfr.cycleQueue[0].speed = vfr.cycleSpeed;
             
-            if (cycleQueue[0].step()) {
+            if (vfr.cycleQueue[0].step()) {
                 
-                cycleQueue.shift();
+                vfr.cycleQueue.shift();
 
                 sim.step();
 
-                cycleEndCallback();
+                vfr.cycleEndCallback();
                 
                 requestAnimationFrame(render);
 
