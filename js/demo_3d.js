@@ -19,12 +19,16 @@ demo3d.init = function() {
     // Enable XY symmetry (X is already enabled)
     app.effects.symmetry.mirrorY.set(true);
 
+    // Override states with our custom ones. 
+    // They should not be added to localStorage.
+    stateManager.states = getDemo3DStates();
+
     // Enable cycling
     vfr.cycleSpeed = .007;
     vfr.startCycle();
 
     // Set number of delay frames
-    sim.setDelay(20);
+    sim.setDelay(10);
 
     // Set the portal geometry to a square
     geo.set(geo.rectangle, 1);

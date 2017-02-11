@@ -8,13 +8,13 @@ ColorPaletteTexture = function(colors) {
     this._context = this._canvas.getContext('2d');
     this.colors = colors || [new THREE.Color()];
 
-    this.uploadColors();
+    this.upload();
 };
 
 ColorPaletteTexture.prototype = Object.create( THREE.Texture.prototype );
 ColorPaletteTexture.prototype.constructor = ColorPaletteTexture;
 
-ColorPaletteTexture.prototype.uploadColors = function() {
+ColorPaletteTexture.prototype.upload = function() {
     this._canvas.width = this.colors.length;
     this._canvas.height = 1;
 

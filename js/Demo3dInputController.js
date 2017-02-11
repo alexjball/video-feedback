@@ -6,7 +6,8 @@ var Demo3dInputController = function() {
     this.helpContainer = document.getElementById('help-container');
 
     document.addEventListener("keydown", this.keyDownHandler.bind(this), false);
-    
+    document.addEventListener("keyup", this.keyUpHandler.bind(this), false);
+
     document.getElementById('simulation')
         .addEventListener('mousedown', this.mouseDownHandler.bind(this), false);
 
@@ -17,6 +18,12 @@ var Demo3dInputController = function() {
     }
     this.pauseButton.onclick = this.toggleCycleState.bind(this);
     this.controlsButton.onclick = this.toggleControlsState.bind(this);
+    
+    this.layerSpacingAnimator = new LayerSpacingAnimator(1, 
+        function(t) {
+            app.state3d.layerController.layerSpacing = 
+                0.25 + 0.25 * Math.cos(t * Math.PI);
+        });
 }
 
 Demo3dInputController.prototype.mouseDownHandler = function(event) {
@@ -43,7 +50,7 @@ Demo3dInputController.prototype.keyDownHandler = function(event) {
             // Toggle cycling
             this.toggleCycleState();
             break;
-        case " ":
+        case "C":
             if (app.state3d.enabled) {
                 app.state3d.colorController.addAnimation(
                     ColorPulse.createBasic(
@@ -51,8 +58,30 @@ Demo3dInputController.prototype.keyDownHandler = function(event) {
                         1 / 20));
             }
             break;
+        case " ":
+            this.layerSpacingAnimator.setDirection(1);
+            break;
+        case "P":
+            // toggle visibility of stats.
+            if (stats.dom.style.display == "") {
+                stats.dom.style.display = "none";
+            } else {
+                stats.dom.style.display = "";
+            }
+            break;
         case "H":
             this.showHelp();
+            break;
+    }
+}
+
+Demo3dInputController.prototype.keyUpHandler = function(event) {
+    var charCode = event.keyCode || event.which;
+    var charStr = String.fromCharCode(charCode);
+
+    switch(charStr) {
+        case " ":
+            this.layerSpacingAnimator.setDirection(-1);
             break;
     }
 }
@@ -95,5 +124,40 @@ Demo3dInputController.prototype.setControlsState = function(state) {
         app.state3d.controlsController.stop();        
         userInputOn = true;
         this.controlsButton.textContent = "Control View (Z)";
+    }
+}
+
+var LayerSpacingAnimator = function(transitionDuration, transitionFunction) {
+    this._t = 0;
+    this._timerId = null;
+    this._dir = -1;
+    this._prevTime = null;
+    this._transitionDuration = transitionDuration * 1e3;
+    this._transitionFunction = transitionFunction;
+}
+
+LayerSpacingAnimator.prototype._updateInternal = function() {
+    var time = performance.now();
+    var dt = this._dir * (time - this._prevTime) / this._transitionDuration;
+    this._t = Math.max(0, Math.min(1, this._t + dt));
+    this._prevTime = time;
+    this._transitionFunction(this._t);
+    if ((this._t === 1 && this._dir === 1) || (this._t === 0 && this._dir === -1)) {
+        this.cancel();
+    }
+}
+
+LayerSpacingAnimator.prototype.setDirection = function(dir) {
+    this._dir = dir >= 0 ? 1 : -1;
+    if (this._timerId === null) {
+        this._prevTime = performance.now();
+        this._timerId = setInterval(this._updateInternal.bind(this), 1e3 / 60);
+    }
+}
+
+LayerSpacingAnimator.prototype.cancel = function() {
+    if (this._timerId !== null) {
+        clearInterval(this._timerId);
+        this._timerId = null;
     }
 }

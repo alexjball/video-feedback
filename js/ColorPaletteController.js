@@ -40,7 +40,7 @@ ColorPaletteController.prototype.update = function() {
     });
 
     this.texture.colors = this._merge(this.baseColors, colors);
-    this.texture.uploadColors();
+    this.texture.upload();
 }
 
 ColorPaletteController.prototype._merge = function(baseColors, colors) {

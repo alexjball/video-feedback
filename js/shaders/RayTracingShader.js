@@ -22,12 +22,14 @@ RayTracingShader = (function() {
 		uniforms: {
 			tDiffuse : { type: "t", value: null },
 			inverseViewMatrix : { type: "m4", value: new THREE.Matrix4() },
-			layerSpacing : { type: "1f", value: 0.2 },
 			resolution : { type: "v2", value: new THREE.Vector2() },
 			projection : { type: "v2", value: new THREE.Vector2() },
 			portalWidthHeight : { type: "v2", value: new THREE.Vector2() },
 			layerColors : { type: "t", value: null },
-			layerColorsSize : { type: "1f", value: 1 },
+			layerColorsSize : { type: "1f", value: 1 },			
+			layerZ : { type: "t", value: null },
+			layerZSize : { type: "1f", value: 1 },
+			layerTop : { type: "1i", value: -1 },
 		},
 
 		vertexShader: [
@@ -42,13 +44,17 @@ precision highp float;
 
 uniform mat4 inverseViewMatrix;
 uniform sampler2D tDiffuse;
-uniform float layerSpacing;
 uniform vec2 resolution;
 // {aspect, distance from eye to sampling plane}
 uniform vec2 projection;
 uniform vec2 portalWidthHeight;
+
 uniform sampler2D layerColors;
 uniform float layerColorsSize;
+
+uniform sampler2D layerZ;
+uniform float layerZSize;
+uniform int layerTop;
 
 /** Convert a depth value to a color. depth is in the inverval [-1, inf) */
 vec4 getColorFromDepth(int depth) {
@@ -91,7 +97,11 @@ float getDepthConfidence(vec2 position, int depth) {
 
 /** Return the z-coord (in feedback-space) of the layer at the given depth. */
 float getLayerZ(int depth) {
-	return -layerSpacing * float(depth);
+	vec4 layerCoords = texture2D(
+		layerZ, 
+		vec2(clamp((float(depth + 1) + 0.5) / layerZSize, 0.0, 1.0), 0.0));
+	// First component holds the z coordinate.
+	return layerCoords.x;
 }
 
 /** 
@@ -155,10 +165,10 @@ void intersectFeedback(
 	int end;
 	float dirz = sign(dir.z);
 	if (dirz == 1.0) {
-		start = getTopLayer(eye.z);
+		start = layerTop;
 		end = -1;
 	} else if (dirz == -1.0) { 
-		start = getTopLayer(eye.z) + 1;
+		start = layerTop + 1;
 		end = MAX_DEPTH + 1;
 	} else { // dirz == 0.0 
 		start = 0;
