@@ -4,6 +4,7 @@ var Demo3dInputController = function() {
     this.pauseButton = document.getElementById('pause-button');
     this.controlsButton = document.getElementById('controls-button');
     this.helpContainer = document.getElementById('help-container');
+    this._fresh = true;
 
     document.addEventListener("keydown", this.keyDownHandler.bind(this), false);
     document.addEventListener("keyup", this.keyUpHandler.bind(this), false);
@@ -11,8 +12,8 @@ var Demo3dInputController = function() {
     document.getElementById('simulation')
         .addEventListener('mousedown', this.mouseDownHandler.bind(this), false);
 
-    this.helpContainer.onclick = function() { this.style.display = 'none'; }
-    this.helpButton.onclick = this.showHelp.bind(this);
+    this.helpContainer.onclick = this.toggleHelp.bind(this);
+    this.helpButton.onclick = this.toggleHelp.bind(this);
     this.resetButton.onclick = function() {
         app.state3d.controlsController.controls.resetPosition();
     }
@@ -70,7 +71,7 @@ Demo3dInputController.prototype.keyDownHandler = function(event) {
             }
             break;
         case "H":
-            this.showHelp();
+            this.toggleHelp();
             break;
     }
 }
@@ -86,16 +87,26 @@ Demo3dInputController.prototype.keyUpHandler = function(event) {
     }
 }
 
-Demo3dInputController.prototype.showHelp = function() {
-    this.helpContainer.style.display = 'block';
+Demo3dInputController.prototype.toggleHelp = function() {
+    if (this.helpContainer.style.display == 'none') {
+        this.helpButton.textContent = "Hide Help (H)";
+        this.helpContainer.style.display = 'block';
+    } else {
+        this.helpButton.textContent = "Show Help (H)";
+        this.helpContainer.style.display = 'none';
+    }
+    if (this._fresh) {
+        this.toggleControlsState();
+    }
+    this._fresh = false;
 }
 
 Demo3dInputController.prototype.toggleCycleState = function() {
     if (vfr.isCycling()) {
-        this.pauseButton.textContent = "Resume Animation (X)";
+        this.pauseButton.textContent = "Start Animation (X)";
         vfr.stopCycle();
     } else {
-        this.pauseButton.textContent = "Pause Animation (X)";
+        this.pauseButton.textContent = "Stop Animation (X)";
         vfr.startCycle();
     }
 }

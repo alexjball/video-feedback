@@ -25,7 +25,10 @@ demo3d.init = function() {
 
     // Enable cycling
     vfr.cycleSpeed = .007;
-    vfr.startCycle();
+
+    // Initialize to a good looking state.
+    stateManager.loadState("3d-22");
+    app.border.scale.set(new THREE.Vector3(.01, .01, .01));
 
     // Set number of delay frames
     sim.setDelay(10);

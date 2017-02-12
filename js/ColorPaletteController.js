@@ -6,7 +6,7 @@ var ColorPaletteController = function(colors, clock /* clock.now() returns curre
 }
 
 /** 
- * colorAnimator is an object with an update(delta, setColor) method.
+ * colorAnimator is an object with an update(delta, nuColors, setColor) method.
  * delta is the number of seconds since the last update. 
  * setColor(color, alpha, position) is a function that sets a color
  * at the specified position with the specified alpha. update must 
@@ -98,6 +98,14 @@ ColorPaletteController.createHSLGradientPalette = function(colorFrom, colorTo, n
         new THREE.Vector3(c2.h, c2.s, c2.l),
         numColors)
         .map(function(v) { return (new THREE.Color()).setHSL(v.x, v.y, v.z); })
+}
+
+ColorPaletteController.createRepeatedPalette = function(colorsToRepeat, numColors) {
+    var colors = [];
+    for (var i = 0; i < numColors; i++) {
+        colors[i] = new THREE.Color(colorsToRepeat[i % colorsToRepeat.length]);
+    }
+    return colors;
 }
 
 /** 

@@ -31,6 +31,7 @@ LayerZController = function(maxDepth, layerSpacing) {
     this.layerSpacing = layerSpacing;
     this.texture = new LayerZTexture();
     this.coords = [];
+    this.eyePosition = new THREE.Vector3(1, 0, 0);
 }
 
 /** 
@@ -65,7 +66,8 @@ LayerZController.prototype.updateCoords = function() {
  * the coordinates and top layer index in an object of the form 
  * { coords: Array[Number], layerTop: Integer in [-1, maxDepth] }
  */
-LayerZController.prototype.update = function() {
+LayerZController.prototype.update = function(eyePosition) {
+    this.eyePosition.copy(eyePosition);
     this.updateCoords();
     this.texture.upload(this.coords);
 }
@@ -81,13 +83,17 @@ LayerZController.prototype.getTextureSize = function() {
  * Returned value is an integer in the range [-1, maxDepth]. -1 is returned if 
  * eyeZ is greater than getLayerZ(0).
  */
-LayerZController.prototype.getLayerTop = function(eyeZ) {
+LayerZController.prototype.getLayerTop = function() {
     for (var depth = -1; depth < this.coords.length - 2; depth++) {
-        if (eyeZ >= this.coords[depth + 2]) {
+        if (this.eyePosition.z >= this.coords[depth + 2]) {
             return depth;
         }
     }
     return this.maxDepth;
+}
+
+LayerZController.prototype.getCachedLayerZ = function(depth) {
+    return this.coords[depth + 1];
 }
 
 DynamicLayers = function(maxDepth, layerSpacing, layerZ0) {
@@ -105,19 +111,46 @@ DynamicLayers.prototype.getSkyZ = function() {
 
 DynamicLayers.prototype.getLayerZ = function(depth) {
     var baseZ = -this.layerSpacing * depth;
-    var p = Math.max(0, Math.min(1, 1 - this.eyeZ / this.layerZ0))
+    var p = Math.max(0, Math.min(1, 1 - this.eyePosition.z / this.layerZ0))
     return p * baseZ;
 }
 
-DynamicLayers.prototype.update = function(eyeZ) {
-    this.eyeZ = eyeZ;
-    LayerZController.prototype.update.call(this);
+UnreachableLayers = function(maxDepth, layerSpacing, layerZ0) {
+    LayerZController.call(this, maxDepth, layerSpacing);
+    this.distanceToMaxDepth = maxDepth * layerSpacing;
+    this.layerZ0 = layerZ0;
 }
 
-// if (depth == -1) {
-// 	return 5.0;
-// }
-// return layerScaleFactor 
-// 		* clamp(1.0 - z / layerZ0, 0.0, 1.0) 
-// 		* (-layerSpacing * float(depth) 
-// 				+ min(0.0, z * (1.0 - pow(1.0 - layerExpansionFactor, float(depth)))));
+UnreachableLayers.prototype = Object.create(LayerZController.prototype);
+UnreachableLayers.prototype.constructor = UnreachableLayers;
+
+UnreachableLayers.prototype.getSkyZ = function() {
+    return this.layerZ0;
+}
+
+UnreachableLayers.prototype.getLayerZ = function(depth) {
+    var p = Math.max(0, Math.min(1, 1 - this.eyePosition.z / this.layerZ0));
+    var maxDepthZ = p * Math.min(0, -this.layerSpacing * this.maxDepth + this.eyePosition.z);
+    return maxDepthZ * depth / (this.maxDepth === 0 ? 1 : this.maxDepth);
+}
+
+/**
+ * Returns a smoothed measure of the apparent movement speed between layers.
+ * 
+ * The returned value is in the range [0, 1] and specifies dz_l/dz_e, or the
+ * change in distance to the nearest layer for each unit change in the z 
+ * coordinate of the eye. Since layer spacing can depend on the eye position,
+ * this is not invariant. This factor can be used to scale movement in the xy
+ * directions to match the apparent slowing of movement in the z direction.
+ */
+UnreachableLayers.prototype.getVelocityScaleFactor = function() {
+    var d0 = this.getLayerTop();
+    if (d0 === -1) {
+        return 1;
+    }
+    var d1 = Math.min(this.maxDepth, d0 + 1);
+    var z1 = this.getCachedLayerZ(d1);
+    var z0 = this.getCachedLayerZ(d0);
+    var f =  (this.eyePosition.z - z0) / (z1 - z0);
+    return 1 - ((1 - f) * d0 / this.maxDepth + f * d1 / this.maxDepth);
+}

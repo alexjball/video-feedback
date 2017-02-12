@@ -11,6 +11,7 @@ Controls3D = function(element, camera) {
         min: new THREE.Vector3(-Infinity, -Infinity, -Infinity), 
         max: new THREE.Vector3(Infinity, Infinity, Infinity) 
     };
+    this.velocityScaleFactor = new THREE.Vector3(1, 1, 1);
     this.resetPosition();
     this.stop();
 
@@ -33,7 +34,7 @@ Controls3D.prototype.getObject = function() {
 }
 
 Controls3D.prototype.resetPosition = function() {
-    this._rollObject.position.set(0, 0, 1);
+    this._rollObject.position.set(0, 0, 1.5);
     this._rollObject.rotation.set(0, 0, 0);
     this._rollObject.children[0].rotation.set(0, 0, 0);
     this._rollObject.children[0].children[0].rotation.set(0, 0, 0);
@@ -158,7 +159,11 @@ Controls3D.prototype.update = function(delta /* seconds */) {
     if (this._moveUp) velocity.y += speed;
     if (this._moveDown) velocity.y -= speed;
 
-    velocity.multiplyScalar(delta).applyQuaternion(this._camera.getWorldQuaternion());
+    velocity
+        .multiplyScalar(delta)
+        .applyQuaternion(this._camera.getWorldQuaternion())
+        .multiply(this.velocityScaleFactor);
+
     this._rollObject.position.add(velocity);
     this._rollObject.position.clamp(this.boundingBox.min, this.boundingBox.max);
     this._rollObject.updateMatrixWorld(true);

@@ -39,6 +39,7 @@
 		<script src="js/shaders/SymmetryShader.js"></script>
 		<script src="js/shaders/RGBShiftShader.js"></script>
         
+        <script src="js/LayerZ.js"></script>        
         <script src="js/ColorPaletteTexture.js"></script>
         <script src="js/ColorPaletteController.js"></script>
         <script src="js/Controls3D.js"></script>
@@ -341,6 +342,7 @@
             initializeEventListeners();
             nonUserInputKeyHandler.init();
 			init();
+            RayTracingShader.defines.WRAP_PORTAL = 1;
             vfr.play();
 			render();
 		</script>

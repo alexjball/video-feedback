@@ -71,7 +71,7 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             bottomColor : new THREE.Color(1, 1, 1),
             controlsController : controlsController,
             colorController : new ColorPaletteController(),
-            layerController : new DynamicLayers(RayTracingShader.defines.MAX_DEPTH, 0.3, 4),
+            layerController : new UnreachableLayers(RayTracingShader.defines.MAX_DEPTH, 0.2, 3),
             clampPosition : true,
             enabled : false
         }
@@ -160,6 +160,7 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
 
     this.render3dView = (function() {
         var prevTime = performance.now() * 1e-3;
+        var velocityScaleFactor = 1;
         return function(target) {
             var portalSize = this.portalViewAspect();
             var time = performance.now() * 1e-3; 
@@ -176,16 +177,19 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
                     max: new THREE.Vector3(Infinity, Infinity, Infinity),
                 })
             }
+            this.state3d.controlsController.controls.velocityScaleFactor.set(
+                velocityScaleFactor, velocityScaleFactor, 1)
             this.state3d.controlsController.controls.update(delta);
-            
+
             this.state3d.colorController.baseColors = 
                 ColorPaletteController.createHSLGradientPalette(
                     this.state3d.topColor, 
                     this.state3d.bottomColor, 
-                    RayTracingShader.defines.MAX_DEPTH + 1)
+                    RayTracingShader.defines.MAX_DEPTH + 1);
             this.state3d.colorController.update();
 
-            this.state3d.layerController.update(this.state3d.controlsController.controls.getObject().position.z);
+            this.state3d.layerController.update(this.state3d.controlsController.controls.getObject().position);
+            velocityScaleFactor = this.state3d.layerController.getVelocityScaleFactor();
 
             var res = target === undefined ? this.view.resolution.get() : [target.width, target.height];
             var camera = this.state3d.viewCamera;
@@ -202,8 +206,7 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             uniforms.layerColorsSize.value = this.state3d.colorController.baseColors.length;
             uniforms.layerZ.value = this.state3d.layerController.texture;
             uniforms.layerZSize.value = this.state3d.layerController.getTextureSize();
-            uniforms.layerTop.value = this.state3d.layerController.getLayerTop(
-                this.state3d.controlsController.controls.getObject().position.z);
+            uniforms.layerTop.value = this.state3d.layerController.getLayerTop();
             renderer.render(this.state3d.quadScene, this.state3d.quadCamera, target);
         }
     })();
