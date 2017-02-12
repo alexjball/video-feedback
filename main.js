@@ -115,6 +115,8 @@ var VFRenderer = function(app) {
     this.cycleGen     = new VFCycleGenerator(app);
     this.cycleQueue   = [];
     this.cycleSpeed   = .005;
+    // Amount of time in seconds to wait at each target state.
+    this.cyclePauseDuration = 1;
     this.cycleEndCallback = null;
     
 }
@@ -176,12 +178,14 @@ VFRenderer.prototype = {
     stopCycle : function() {
         this.cycleQueue = [];
         this.cycleEndCallback = null;
+        clearTimeout(this._cycleTimeoutId);
     },
 
     startCycle : function() {
         if (this.cycleEndCallback !== null) return;
         
         var scope = this;
+        var fresh = true;
 
         this.cycleEndCallback = function() {
             var startState = app.deserializeNugs(app.serializeNugs());
@@ -191,8 +195,14 @@ VFRenderer.prototype = {
             );
             var cycle = scope.cycleGen.createCycle(startState, endState);
             cycle.speed = scope.cycleSpeed;
-            scope.cycleQueue.push(cycle);
-            
+            if (scope.cyclePauseDuration > 0 && !fresh) {
+                scope._cycleTimeoutId = setTimeout(
+                    function() { scope.cycleQueue.push(cycle) }, 
+                    scope.cyclePauseDuration * 1e3);
+            } else {
+                scope.cycleQueue.push(cycle);
+            }
+            fresh = false;
         }
         
         this.cycleEndCallback();

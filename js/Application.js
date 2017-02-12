@@ -71,7 +71,7 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             bottomColor : new THREE.Color(1, 1, 1),
             controlsController : controlsController,
             colorController : new ColorPaletteController(),
-            layerController : new LayerZController(RayTracingShader.defines.MAX_DEPTH + 1, 0.3),
+            layerController : new DynamicLayers(RayTracingShader.defines.MAX_DEPTH, 0.3, 4),
             clampPosition : true,
             enabled : false
         }
@@ -185,7 +185,7 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
                     RayTracingShader.defines.MAX_DEPTH + 1)
             this.state3d.colorController.update();
 
-            this.state3d.layerController.update();
+            this.state3d.layerController.update(this.state3d.controlsController.controls.getObject().position.z);
 
             var res = target === undefined ? this.view.resolution.get() : [target.width, target.height];
             var camera = this.state3d.viewCamera;

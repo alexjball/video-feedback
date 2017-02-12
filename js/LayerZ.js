@@ -55,7 +55,7 @@ LayerZController.prototype.getLayerZ = function(depth) {
 LayerZController.prototype.updateCoords = function() {
     this.coords = [this.getSkyZ()];
     for (var depth = 1; depth <= this.maxDepth; depth++) {
-        this.coords[depth - 1] = this.getLayerZ(depth);
+        this.coords[depth] = this.getLayerZ(depth);
     }
     return this.coords;
 }
@@ -88,6 +88,30 @@ LayerZController.prototype.getLayerTop = function(eyeZ) {
         }
     }
     return this.maxDepth;
+}
+
+DynamicLayers = function(maxDepth, layerSpacing, layerZ0) {
+    LayerZController.call(this, maxDepth, layerSpacing);
+    this.layerZ0 = layerZ0;
+    this.eyeZ = 1;
+}
+
+DynamicLayers.prototype = Object.create(LayerZController.prototype);
+DynamicLayers.prototype.constructor = DynamicLayers;
+
+DynamicLayers.prototype.getSkyZ = function() {
+    return this.layerZ0;
+}
+
+DynamicLayers.prototype.getLayerZ = function(depth) {
+    var baseZ = -this.layerSpacing * depth;
+    var p = Math.max(0, Math.min(1, 1 - this.eyeZ / this.layerZ0))
+    return p * baseZ;
+}
+
+DynamicLayers.prototype.update = function(eyeZ) {
+    this.eyeZ = eyeZ;
+    LayerZController.prototype.update.call(this);
 }
 
 // if (depth == -1) {

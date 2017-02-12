@@ -104,14 +104,6 @@ float getLayerZ(int depth) {
 	return layerCoords.x;
 }
 
-/** 
- * Return the depth of the closest layer with a larger z coordinate in 
- * feedback-space, or -1 if there is none.
- */
-int getTopLayer(float z) {
-	return int(max(floor(-z / layerSpacing), -1.0));
-}
-
 /**
  * Returns feedback-space intersection of a ray with the feedback pattern.
  * 
