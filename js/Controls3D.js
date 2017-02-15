@@ -1,4 +1,4 @@
-Controls3D = function(element, camera) {
+Controls3D = function(element, camera, scrollCallback) {
     this._camera = camera;
     this._pointerLockControls = new THREE.PointerLockControls(camera);
     this._pointerLockControls.getObject().position.y = 0;
@@ -12,6 +12,9 @@ Controls3D = function(element, camera) {
         max: new THREE.Vector3(Infinity, Infinity, Infinity) 
     };
     this.velocityScaleFactor = new THREE.Vector3(1, 1, 1);
+    this.scrollSettings = { pixelsPerLine : 10, pixelsPerPage : 100, response : .5 };
+    this.scrollCallback = scrollCallback;
+
     this.resetPosition();
     this.stop();
 
@@ -23,6 +26,8 @@ Controls3D = function(element, camera) {
     element.addEventListener("mousedown", this.onMouseDown.bind(this), false);
     element.addEventListener("mousemove", this.onMouseMove.bind(this), false);
     element.addEventListener("mouseup", this.onMouseUp.bind(this), false);
+
+    element.addEventListener("wheel", this.onScroll.bind(this), false);
 }
 
 Controls3D.prototype.isEnabled = function() {
@@ -59,7 +64,7 @@ Controls3D.prototype.start = function() {
 }
 
 Controls3D.prototype.stop = function() {
-    if (!this._enabled) return;
+    if (this._enabled !== undefined && !this._enabled) return;
 
     this._pointerLockControls.enabled = false;
     this._enabled = false;
@@ -71,6 +76,8 @@ Controls3D.prototype.stop = function() {
     this._moveDown = false;
     this._rotateRoll = false;
     this._moveFast = false;
+    this._scrollTarget = 0;
+    this._scrollValue = 0;
 }
 
 Controls3D.prototype.onMouseDown = function(event) {
@@ -148,6 +155,21 @@ Controls3D.prototype.onMouseMove = function(event) {
     this._rollObject.rotation.z -= movementX * this.rollRadPerPixel;
 }
 
+Controls3D.prototype.onScroll = function(event) {
+    if (!this._enabled) return;
+    switch (event.deltaMode) {
+        case 0: // DOM_DELTA_PIXEL
+            this._scrollTarget += event.deltaY;
+            break;
+        case 1: // DOM_DELTA_LINE
+            this._scrollTarget += this.scrollSettings.pixelsPerLine * event.deltaY;
+            break;
+        case 2: // DOM_DELTA_PAGE
+            this._scrollTarget += this.scrollSettings.pixelsPerPage * event.deltaY;
+            break;
+    }
+}
+
 Controls3D.prototype.update = function(delta /* seconds */) {
     var velocity = new THREE.Vector3();
     var speed = this._moveFast ? this.movementSpeed * 3 : this.movementSpeed;
@@ -167,6 +189,12 @@ Controls3D.prototype.update = function(delta /* seconds */) {
     this._rollObject.position.add(velocity);
     this._rollObject.position.clamp(this.boundingBox.min, this.boundingBox.max);
     this._rollObject.updateMatrixWorld(true);
+
+    var dScroll = this._scrollTarget - this._scrollValue;
+    if (this.scrollCallback) {
+        this.scrollCallback(dScroll);
+    }
+    this._scrollValue = this._scrollTarget = 0;
 }
 
 PointerLockHelper = function(element, callback) {
@@ -227,9 +255,18 @@ PointerLockHelper = function(element, callback) {
     }
 }
 
-Controls3DController = function(element, camera) {
+/**
+ * element is the element to attach mouse/wheel events to.
+ * camera is the camera that will be managed by this object. The camera is 
+ * added to a scene, and its world matrix is updated by this object.
+ * scrollCallback is a function that is called from #update with a 
+ * number indicating the accumulated scroll amount since the last update.
+ * The number is nominally in pixels and may be smoothed. A negative value
+ * corresponds to scrolling up the page, consistent with the DOM's convention.
+ */
+Controls3DController = function(element, camera, scrollCallback) {
     this.onPointerLockLostCallback = null;
-    this.controls = new Controls3D(element, camera);
+    this.controls = new Controls3D(element, camera, scrollCallback);
     this.pointerLockHelper = new PointerLockHelper(element, this);
 }
 

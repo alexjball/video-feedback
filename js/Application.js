@@ -58,7 +58,11 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
 
         var viewCamera = new THREE.PerspectiveCamera();
 
-        var controlsController = new Controls3DController(canvasElement, viewCamera);
+        var layerController = new UnreachableLayers(RayTracingShader.defines.MAX_DEPTH, 0.2, 3);
+        var controlsController = new Controls3DController(
+            canvasElement, 
+            viewCamera, 
+            function(scrollAmount) {});
         controlsController.controls.boundingBox.max.z = 3;
 
         return {
@@ -71,7 +75,7 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             bottomColor : new THREE.Color(1, 1, 1),
             controlsController : controlsController,
             colorController : new ColorPaletteController(),
-            layerController : new UnreachableLayers(RayTracingShader.defines.MAX_DEPTH, 0.2, 3),
+            layerController : layerController,
             clampPosition : true,
             enabled : false
         }

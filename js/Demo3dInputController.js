@@ -22,8 +22,9 @@ var Demo3dInputController = function() {
     
     this.layerSpacingAnimator = new LayerSpacingAnimator(1, 
         function(t) {
+            var prevLayerSpacing = 
             app.state3d.layerController.layerSpacing = 
-                0.25 + 0.25 * Math.cos(t * Math.PI);
+                0.102 + 0.098 * Math.cos(t * Math.PI);
         });
 }
 
@@ -155,6 +156,8 @@ LayerSpacingAnimator.prototype._updateInternal = function() {
     this._transitionFunction(this._t);
     if ((this._t === 1 && this._dir === 1) || (this._t === 0 && this._dir === -1)) {
         this.cancel();
+    } else if (this._timerId === null) {
+        this._timerId = setInterval(this._updateInternal.bind(this), 1e3 / 60);
     }
 }
 
@@ -162,7 +165,7 @@ LayerSpacingAnimator.prototype.setDirection = function(dir) {
     this._dir = dir >= 0 ? 1 : -1;
     if (this._timerId === null) {
         this._prevTime = performance.now();
-        this._timerId = setInterval(this._updateInternal.bind(this), 1e3 / 60);
+        this._updateInternal();
     }
 }
 
