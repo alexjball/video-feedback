@@ -49,10 +49,36 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
 
     // State for rendering a 3d view. 
     this.state3d = (function() {
+        var geometry = new THREE.BufferGeometry();
+        geometry.addAttribute(
+            'position', 
+            new THREE.BufferAttribute(
+                new Float32Array([
+                    -0.5, 0.5, 0,
+                    -0.5, -0.5, 0,
+                    0.5, -0.5, 0,
+
+                    -0.5, 0.5, 0,
+                    0.5, -0.5, 0,
+                    0.5, 0.5, 0]), 
+                3));
+        geometry.addAttribute(
+            'ndcPositionAttribute', 
+            new THREE.BufferAttribute(
+                new Float32Array([
+                    -1, 1,
+                    -1, -1,
+                    1, -1,
+
+                    -1, 1,
+                    1, -1,
+                    1, 1]), 
+                2));
+
         var scene = new THREE.Scene();
         scene.add(
             new THREE.Mesh(
-                new THREE.PlaneBufferGeometry(1, 1), 
+                geometry, 
                 new THREE.ShaderMaterial(RayTracingShader)));
         scene.updateMatrixWorld();
 
@@ -198,13 +224,12 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             var res = target === undefined ? this.view.resolution.get() : [target.width, target.height];
             var camera = this.state3d.viewCamera;
             camera.updateMatrixWorld(true);
+            camera.updateProjectionMatrix();
             camera.aspect = res[0] / res[1];
-            var distanceToSamplingPlane = 0.5 / Math.tan(camera.fov * 0.5 * Math.PI / 180);
             var uniforms = this.state3d.rayTracingUniforms;
             uniforms.tDiffuse.value = portal.getStorage();
             uniforms.inverseViewMatrix.value.copy(camera.matrixWorld);
-            uniforms.resolution.value.fromArray(res);
-            uniforms.projection.value.set(camera.aspect, distanceToSamplingPlane);
+            uniforms.inverseProjectionMatrix.value.getInverse(camera.projectionMatrix);
             uniforms.portalWidthHeight.value.fromArray([portalSize.w, portalSize.h]);
             uniforms.layerColors.value = this.state3d.colorController.texture;
             uniforms.layerColorsSize.value = this.state3d.colorController.baseColors.length;

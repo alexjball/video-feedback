@@ -22,8 +22,7 @@ RayTracingShader = (function() {
 		uniforms: {
 			tDiffuse : { type: "t", value: null },
 			inverseViewMatrix : { type: "m4", value: new THREE.Matrix4() },
-			resolution : { type: "v2", value: new THREE.Vector2() },
-			projection : { type: "v2", value: new THREE.Vector2() },
+			inverseProjectionMatrix : { type: "m4", value: new THREE.Matrix4() },
 			portalWidthHeight : { type: "v2", value: new THREE.Vector2() },
 			layerColors : { type: "t", value: null },
 			layerColorsSize : { type: "1f", value: 1 },			
@@ -32,21 +31,26 @@ RayTracingShader = (function() {
 			layerTop : { type: "1i", value: -1 },
 		},
 
-		vertexShader: [
-			"void main() {",
-				"gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
-			"}"
-		].join("\n"),
+		vertexShader: `
+
+attribute vec2 ndcPositionAttribute;
+
+varying vec2 ndcPosition;
+
+void main() {
+	ndcPosition = ndcPositionAttribute;
+	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+
+`,
 
 		fragmentShader: `
 
 precision highp float;
 
 uniform mat4 inverseViewMatrix;
+uniform mat4 inverseProjectionMatrix;
 uniform sampler2D tDiffuse;
-uniform vec2 resolution;
-// {aspect, distance from eye to sampling plane}
-uniform vec2 projection;
 uniform vec2 portalWidthHeight;
 
 uniform sampler2D layerColors;
@@ -55,6 +59,8 @@ uniform float layerColorsSize;
 uniform sampler2D layerZ;
 uniform float layerZSize;
 uniform int layerTop;
+
+varying vec2 ndcPosition;
 
 /** Convert a depth value to a color. depth is in the inverval [-1, inf) */
 vec4 getColorFromDepth(int depth) {
@@ -176,22 +182,29 @@ vec4 applyFog(vec4 color, float distance) {
 }
 
 void main() {
-	// Compute ray in view space
-	vec4 eye = vec4(0, 0, 0, 1);
-	vec4 dir = vec4(
-		(-0.5 + (gl_FragCoord.xy / resolution)) * vec2(projection.x, 1), 
-		-projection.y, 
-		1);
+	// Express ray in NDC space using homogeneous coordinates
+	vec4 p1 = vec4(ndcPosition, -1.0, 1.0);
+	vec4 p2 = vec4(ndcPosition, 1.0, 1.0);
 
-	// Transform ray to xyz world space (== feedback space right now)
-	eye = inverseViewMatrix * eye;
-	dir = inverseViewMatrix * dir;
-	dir.xyz = normalize(dir.xyz - eye.xyz);
+	// Transform ray to view space.
+	// http://feepingcreature.github.io/math.html
+	p1 = inverseProjectionMatrix * p1;
+	p2 = inverseProjectionMatrix * p2;
+	p1 = p1 / p1.w;
+	p2 = p2 / p2.w;
+
+	// Transform ray to world space (== feedback space)
+	p1 = inverseViewMatrix * p1;
+	p2 = inverseViewMatrix * p2;
+
+	// Express ray as a point + direction
+	vec3 eye = p1.xyz;
+	vec3 dir = normalize(p2.xyz - p1.xyz);
 	
 	vec3 intersection;
 	int layerDepth;
 
-	intersectFeedback(eye.xyz, dir.xyz, layerDepth, intersection);
+	intersectFeedback(eye, dir, layerDepth, intersection);
 
 	#if WRAP_PORTAL
 	gl_FragColor = applyFog(getColorFromDepth(layerDepth), length(intersection.xy - eye.xy));
