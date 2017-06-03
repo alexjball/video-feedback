@@ -8,7 +8,8 @@ RayTracingRenderer = function(renderer) {
         setViewport : renderer.setViewport.bind(renderer),
         clear : function() {},
         render : function(scene, camera) {
-            configureCamera(camera);
+            camera.updateMatrixWorld(true);
+            setUniforms(camera);
             renderer.render(_renderScene, _renderCamera, _target);
         }
     });
@@ -19,6 +20,7 @@ RayTracingRenderer = function(renderer) {
 
     this.render3d = function(renderScene, renderCamera, target, viewCamera) {
         configureCamera(viewCamera, target);
+        setUniforms(viewCamera);
         renderer.render(renderScene, renderCamera, target);
     }
 
@@ -43,7 +45,9 @@ RayTracingRenderer = function(renderer) {
         viewCamera.aspect = size.width / size.height;
         viewCamera.updateMatrixWorld(true);
         viewCamera.updateProjectionMatrix();
+    }
 
+    function setUniforms(viewCamera) {
         RayTracingShader.uniforms.inverseViewMatrix.value
             .copy(viewCamera.matrixWorld);
         RayTracingShader.uniforms.inverseProjectionMatrix.value
