@@ -183,11 +183,13 @@ ClickMovementControls = function(element, params) {
 
     this.start = function() {
         document.addEventListener('touchstart', onClick, false);
+        document.addEventListener('touchend', onClick, false);
     }
 
     this.stop = function() {
         moveForward = false;
         document.removeEventListener('touchstart', onClick, false);
+        document.removeEventListener('touchend', onClick, false);
     }
 
     this.update = function(delta, position, quaternion) {

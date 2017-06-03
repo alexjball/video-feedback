@@ -20,12 +20,12 @@
 		</style>
 
         <!-- Safari full screen tag -->
-        <!--<meta name="apple-mobile-web-app-capable" content="yes">-->
+        <meta name="apple-mobile-web-app-capable" content="yes">
 
         <!-- Chrome (Android) full screen tag -->
-        <!--<meta name="mobile-web-app-capable" content="yes">
+        <meta name="mobile-web-app-capable" content="yes">
         <link rel="icon" sizes="192x192" href="app/icon.png">
-        <link rel="manifest" href="app/manifest.json">-->
+        <link rel="manifest" href="app/manifest.json">
 
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 
@@ -67,6 +67,7 @@
 		<script src="js/ImageUtilities.js"></script>
 		<script src="js/DefaultAppStates.js"></script>
 		<script src="main.js"></script>
+        <script src="js/DemoVrInputController.js"></script>     
         <script src="js/demo_3d_states.js"></script>   
         <script src="js/demo_vr.js"></script>
 
@@ -92,6 +93,7 @@
                 } else if (element.webkitRequestFullscreen) {
                     element.webkitRequestFullscreen();
                 }
+                screen.orientation.lock('landscape');
                 event.stopPropagation();
                 element.removeEventListener("touchend", fullscreen, true);
                 demoVr.startControls();

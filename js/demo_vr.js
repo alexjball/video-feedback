@@ -1,7 +1,8 @@
 var demoVr = {};
 
 demoVr.init = function() {
-
+    this.inputController = new DemoVrInputController();
+    
     // Enable 3d view mode
     app.setViewMode3d('vr');
     
