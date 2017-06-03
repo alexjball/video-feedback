@@ -176,27 +176,37 @@ DeviceOrientationControls = function(element) {
 }
 
 ClickMovementControls = function(element, params) {
-    var moveForward = false;
-    var onClick = function() {
-        moveForward = !moveForward;
+    var thresholdTime = 300; // ms
+    var previousClickTime = -Infinity;
+    var direction = 0;
+
+    var onTouchStart = function() {
+        var clickTime = performance.now();
+        if (clickTime - previousClickTime < thresholdTime) {
+            direction = -1;
+        } else {
+            direction = 1;
+        }
+        previousClickTime = clickTime;
+    }
+
+    var onTouchEnd = function() {
+        direction = 0;
     }
 
     this.start = function() {
-        document.addEventListener('touchstart', onClick, false);
-        document.addEventListener('touchend', onClick, false);
+        document.addEventListener('touchstart', onTouchStart, false);
+        document.addEventListener('touchend', onTouchEnd, false);
     }
 
     this.stop = function() {
-        moveForward = false;
-        document.removeEventListener('touchstart', onClick, false);
-        document.removeEventListener('touchend', onClick, false);
+        document.removeEventListener('touchstart', onTouchStart, false);
+        document.removeEventListener('touchend', onTouchEnd, false);
     }
 
     this.update = function(delta, position, quaternion) {
         var velocity = new THREE.Vector3();
-        if (moveForward) {
-            velocity.z -= params.movementSpeed;
-        }
+        velocity.z -= direction * 2 * params.movementSpeed;
         velocity.multiplyScalar(delta).applyQuaternion(quaternion);
         position.add(velocity);
     }
