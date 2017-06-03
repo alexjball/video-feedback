@@ -1,200 +1,203 @@
-Controls3D = function(element, camera, scrollCallback) {
-    this._camera = camera;
-    this._pointerLockControls = new THREE.PointerLockControls(camera);
-    this._pointerLockControls.getObject().position.y = 0;
-    this._rollObject = new THREE.Object3D();
-    this._rollObject.add(this._pointerLockControls.getObject());
+PointerLockOrientationControls = function(element, params) {
+    var pointerLockControlsObject = new THREE.Object3D();
+    var pointerLockControls = 
+        new THREE.PointerLockControls(pointerLockControlsObject);
+    pointerLockControls.getObject().position.y = 0;
 
-    this.rollRadPerPixel = 0.002;
-    this.movementSpeed = .3; // world units per second
-    this.boundingBox = { 
-        min: new THREE.Vector3(-Infinity, -Infinity, -Infinity), 
-        max: new THREE.Vector3(Infinity, Infinity, Infinity) 
-    };
-    this.velocityScaleFactor = new THREE.Vector3(1, 1, 1);
-    this.scrollSettings = { pixelsPerLine : 10, pixelsPerPage : 100, response : .5 };
-    this.scrollCallback = scrollCallback;
+    var rollObject = new THREE.Object3D();
+    var rotateRoll = false;
+    rollObject.add(pointerLockControls.getObject());
 
-    this.resetPosition();
-    this.stop();
+    var pointerLockHelper = new PointerLockHelper(element, {
+        onPointerLockGained : function() {},
+        onPointerLockLost : params.onPointerLockLost,
+        onPointerLockError : function() {}
+    });
 
-    // Keyboard handlers
-    document.addEventListener("keydown", this.onKeyDown.bind(this), false);
-    document.addEventListener("keyup", this.onKeyUp.bind(this), false);
+    this.start = function() {
+        pointerLockControls.enabled = true;
+        element.addEventListener("mousedown", onMouseDown, false);
+        element.addEventListener("mousemove", onMouseMove, false);
+        element.addEventListener("mouseup", onMouseUp, false);
+        pointerLockHelper.requestPointerLock();
+    }
+
+    this.stop = function() {
+        pointerLockControls.enabled = false;
+        rotateRoll = false;
+        element.removeEventListener("mousedown", onMouseDown, false);
+        element.removeEventListener("mousemove", onMouseMove, false);
+        element.removeEventListener("mouseup", onMouseUp, false);
+        pointerLockHelper.exitPointerLock();
+    }
+
+    this.update = function(delta, position, quaternion) {
+        rollObject.updateMatrixWorld(true);
+        pointerLockControlsObject.getWorldQuaternion(quaternion);
+    }
+
+    function onMouseDown(event) {
+        if (event.button == 2) {
+            rotateRoll = true;
+            pointerLockControls.enabled = false;
+        }
+    }
+
+    function onMouseUp(event) {
+        if (event.button == 2) {
+            rotateRoll = false;
+            pointerLockControls.enabled = true;
+        }
+    }
+
+    function onMouseMove(event) {
+        if (!rotateRoll) return;
+        var movementX = 
+            event.movementX || event.mozMovementX || event.webkitMovementX || 0;
+        rollObject.rotation.z -= movementX * params.rollRadPerPixel;
+    }
+}
+
+KeyboardMovementControls = function(element, params) {
+
+    var moveForward = false;
+    var moveBackward = false;
+    var moveLeft = false;
+    var moveRight = false;
+    var moveUp = false;
+    var moveDown = false;
+    var moveFast = false;
+
+    this.start = function() {
+        document.addEventListener("keydown", onKeyDown, false);
+        document.addEventListener("keyup", onKeyUp, false);
+    }
+
+    this.stop = function() {
+        document.removeEventListener("keydown", onKeyDown, false);
+        document.removeEventListener("keyup", onKeyUp, false);
+        moveForward = false;
+        moveBackward = false;
+        moveLeft = false;
+        moveRight = false;
+        moveUp = false;
+        moveDown = false;
+        moveFast = false;
+    }
+
+    this.update = function(delta, position, quaternion) {
+        var velocity = new THREE.Vector3();
+        var speed = moveFast ? params.movementSpeed * 3 : params.movementSpeed;
+
+        if (moveForward) velocity.z -= speed;
+        if (moveBackward) velocity.z += speed;
+        if (moveLeft) velocity.x -= speed;
+        if (moveRight) velocity.x += speed;
+        if (moveUp) velocity.y += speed;
+        if (moveDown) velocity.y -= speed;
+
+        velocity
+            .multiplyScalar(delta)
+            .applyQuaternion(quaternion)
+            .multiply(params.velocityScaleFactor);
+        
+        position.add(velocity);
+    }
+
+    function onKeyDown(event) {
+        switch ( event.keyCode ) {
+            case 87: // w
+                moveForward = true;
+                break;
+            case 65: // a
+                moveLeft = true; break;
+            case 83: // s
+                moveBackward = true;
+                break;
+            case 68: // d
+                moveRight = true;
+                break;
+            case 82: // r
+                moveUp = true;
+                break;
+            case 70: // f
+                moveDown = true;
+                break;
+            case 16: // shift
+                moveFast = true;
+                break;
+        }
+    }
+
+    function onKeyUp(event) {
+        switch( event.keyCode ) {
+            case 87: // w
+                moveForward = false;
+                break;
+            case 65: // a
+                moveLeft = false;
+                break;
+            case 83: // s
+                moveBackward = false;
+                break;
+            case 68: // d
+                moveRight = false;
+                break;
+            case 82: // r
+                moveUp = false;
+                break;
+            case 70: // f
+                moveDown = false;
+                break;
+            case 16: // shift
+                moveFast = false;
+                break;
+        }
+    }
+}
+
+DeviceOrientationControls = function(element) {
+    var object = new THREE.Object3D();
+    var deviceOrientationControls = new THREE.DeviceOrientationControls(object);
+    deviceOrientationControls.disconnect();
     
-    // Mouse handlers
-    element.addEventListener("mousedown", this.onMouseDown.bind(this), false);
-    element.addEventListener("mousemove", this.onMouseMove.bind(this), false);
-    element.addEventListener("mouseup", this.onMouseUp.bind(this), false);
+    this.start = function() {
+        deviceOrientationControls.connect();
+    }
 
-    element.addEventListener("wheel", this.onScroll.bind(this), false);
-}
+    this.stop = function() {
+        deviceOrientationControls.disconnect();
+    }
 
-Controls3D.prototype.isEnabled = function() {
-    return this._enabled;
-}
-
-Controls3D.prototype.getObject = function() {
-    return this._rollObject;
-}
-
-Controls3D.prototype.resetPosition = function() {
-    this._rollObject.position.set(0, 0, 1.5);
-    this._rollObject.rotation.set(0, 0, 0);
-    this._rollObject.children[0].rotation.set(0, 0, 0);
-    this._rollObject.children[0].children[0].rotation.set(0, 0, 0);
-    this._camera.position.set(0, 0, 0);
-    this._camera.rotation.set(0, 0, 0);
-}
-
-/** 
- * Set the limits of the camera position. boundingBox is an object with fields
- * { min: THREE.Vector3, max: THREE.Vector3 }.
- */
-Controls3D.prototype.setBoundingBox = function(boundingBox) {
-    this.boundingBox.min.copy(boundingBox.min);
-    this.boundingBox.max.copy(boundingBox.max);
-}
-
-Controls3D.prototype.start = function() {
-    if (this._enabled) return;
-
-    this._pointerLockControls.enabled = true;
-    this._enabled = true;
-}
-
-Controls3D.prototype.stop = function() {
-    if (this._enabled !== undefined && !this._enabled) return;
-
-    this._pointerLockControls.enabled = false;
-    this._enabled = false;
-    this._moveForward = false;
-    this._moveBackward = false;
-    this._moveLeft = false;
-    this._moveRight = false;
-    this._moveUp = false;
-    this._moveDown = false;
-    this._rotateRoll = false;
-    this._moveFast = false;
-    this._scrollTarget = 0;
-    this._scrollValue = 0;
-}
-
-Controls3D.prototype.onMouseDown = function(event) {
-    if (!this._enabled) return;
-    if (event.button == 2) {
-        this._rotateRoll = true;
-        this._pointerLockControls.enabled = false;
+    this.update = function(delta, position, quaternion) {
+        deviceOrientationControls.update();
+        quaternion.copy(object.quaternion);
     }
 }
 
-Controls3D.prototype.onMouseUp = function(event) {
-    if (!this._enabled) return;
-    if (event.button == 2) {
-        this._rotateRoll = false;
-        this._pointerLockControls.enabled = true;
+ClickMovementControls = function(element, params) {
+    var moveForward = false;
+    var onClick = function() {
+        moveForward = !moveForward;
     }
-}
 
-Controls3D.prototype.onKeyDown = function(event) {
-    if (!this._enabled) return;
-    switch ( event.keyCode ) {
-        case 87: // w
-            this._moveForward = true;
-            break;
-        case 65: // a
-            this._moveLeft = true; break;
-        case 83: // s
-            this._moveBackward = true;
-            break;
-        case 68: // d
-            this._moveRight = true;
-            break;
-        case 82: // r
-            this._moveUp = true;
-            break;
-        case 70: // f
-            this._moveDown = true;
-            break;
-        case 16: // shift
-            this._moveFast = true;
-            break;
+    this.start = function() {
+        document.addEventListener('touchstart', onClick, false);
     }
-}
 
-Controls3D.prototype.onKeyUp = function() {
-    if (!this._enabled) return;
-    switch( event.keyCode ) {
-        case 87: // w
-            this._moveForward = false;
-            break;
-        case 65: // a
-            this._moveLeft = false;
-            break;
-        case 83: // s
-            this._moveBackward = false;
-            break;
-        case 68: // d
-            this._moveRight = false;
-            break;
-        case 82: // r
-            this._moveUp = false;
-            break;
-        case 70: // f
-            this._moveDown = false;
-            break;
-        case 16: // shift
-            this._moveFast = false;
-            break;
+    this.stop = function() {
+        moveForward = false;
+        document.removeEventListener('touchstart', onClick, false);
     }
-}
 
-Controls3D.prototype.onMouseMove = function(event) {
-    if (!this._enabled || !this._rotateRoll) return;
-    var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
-    this._rollObject.rotation.z -= movementX * this.rollRadPerPixel;
-}
-
-Controls3D.prototype.onScroll = function(event) {
-    if (!this._enabled) return;
-    switch (event.deltaMode) {
-        case 0: // DOM_DELTA_PIXEL
-            this._scrollTarget += event.deltaY;
-            break;
-        case 1: // DOM_DELTA_LINE
-            this._scrollTarget += this.scrollSettings.pixelsPerLine * event.deltaY;
-            break;
-        case 2: // DOM_DELTA_PAGE
-            this._scrollTarget += this.scrollSettings.pixelsPerPage * event.deltaY;
-            break;
+    this.update = function(delta, position, quaternion) {
+        var velocity = new THREE.Vector3();
+        if (moveForward) {
+            velocity.z -= params.movementSpeed;
+        }
+        velocity.multiplyScalar(delta).applyQuaternion(quaternion);
+        position.add(velocity);
     }
-}
-
-Controls3D.prototype.update = function(delta /* seconds */) {
-    var velocity = new THREE.Vector3();
-    var speed = this._moveFast ? this.movementSpeed * 3 : this.movementSpeed;
-
-    if (this._moveForward) velocity.z -= speed;
-    if (this._moveBackward) velocity.z += speed;
-    if (this._moveLeft) velocity.x -= speed;
-    if (this._moveRight) velocity.x += speed;
-    if (this._moveUp) velocity.y += speed;
-    if (this._moveDown) velocity.y -= speed;
-
-    velocity
-        .multiplyScalar(delta)
-        .applyQuaternion(this._camera.getWorldQuaternion())
-        .multiply(this.velocityScaleFactor);
-
-    this._rollObject.position.add(velocity);
-    this._rollObject.position.clamp(this.boundingBox.min, this.boundingBox.max);
-    this._rollObject.updateMatrixWorld(true);
-
-    var dScroll = this._scrollTarget - this._scrollValue;
-    if (this.scrollCallback) {
-        this.scrollCallback(dScroll);
-    }
-    this._scrollValue = this._scrollTarget = 0;
 }
 
 PointerLockHelper = function(element, callback) {
@@ -238,7 +241,7 @@ PointerLockHelper = function(element, callback) {
     document.addEventListener( 'mozpointerlockerror', pointerlockerror, false );
     document.addEventListener( 'webkitpointerlockerror', pointerlockerror, false );
 
-    this.requestPointerLock = function(callback) {
+    this.requestPointerLock = function() {
         element.requestPointerLock = 
             element.requestPointerLock 
             || element.mozRequestPointerLock 
@@ -246,7 +249,7 @@ PointerLockHelper = function(element, callback) {
         element.requestPointerLock();
     }
 
-    this.exitPointerLock = function(callback) {
+    this.exitPointerLock = function() {
         document.exitPointerLock = 
             document.exitPointerLock 
             || document.mozexitPointerLock
@@ -259,44 +262,150 @@ PointerLockHelper = function(element, callback) {
  * element is the element to attach mouse/wheel events to.
  * camera is the camera that will be managed by this object. The camera is 
  * added to a scene, and its world matrix is updated by this object.
- * scrollCallback is a function that is called from #update with a 
- * number indicating the accumulated scroll amount since the last update.
- * The number is nominally in pixels and may be smoothed. A negative value
- * corresponds to scrolling up the page, consistent with the DOM's convention.
  */
-Controls3DController = function(element, camera, scrollCallback) {
+CameraUpdater = function(element, camera) {
+   
+    var running = false;
+    var orientationControl;
+    var movementControl;
+
+    this.boundingBox = { 
+            min: new THREE.Vector3(-Infinity, -Infinity, -Infinity), 
+            max: new THREE.Vector3(Infinity, Infinity, Infinity) 
+    },
+
+    this.getOrientationControl = function() {
+        return orientationControl;
+    }
+
+    this.setOrientationControl = function(control) {
+        if (this.isRunning()) {
+            console.error('Controls are running, cannot set control when running');
+        } else {
+            orientationControl = control;
+        }
+    }
+
+    this.getMovementControl = function() {
+        return movementControl;
+    }
+
+    this.setMovementControl = function(control) {
+        if (this.isRunning()) {
+            console.error('Controls are running, cannot set control when running');
+            return;
+        } else {
+            movementControl = control;
+        }
+    }
+
+    /**
+     * two orthogonal control domains: movement and orientation of the camera. 
+     * 
+     * Movement can either be keyboard-based or click-to-toggle-forward-movement.
+     * 
+     * Orientation can either be via pointer lock or device orientation.
+     * 
+     */
+    this.start = function() {
+        if (this.isRunning()) return;
+        if (!movementControl || !orientationControl) {
+            console.error('movement or orientation control unset');
+            return;
+        }
+        running = true;
+        movementControl.start();
+        orientationControl.start();
+    }
+
+    this.stop = function() {
+        if (!this.isRunning()) return;
+        running = false;
+        movementControl.stop();
+        orientationControl.stop();
+    }
+
+    /**
+     * Update the camera's position.
+     * 
+     * Each control is given the position and quaternion of the camera from
+     * the previous update. The orientation control is responsible for updating
+     * the quaternion and the movement control is responsible for updating the 
+     * position.
+     */
+    this.update = function(delta /* seconds */) {
+        if (!this.isRunning()) return;
+        var quaternion = (new THREE.Quaternion()).copy(camera.quaternion);
+        var position = (new THREE.Vector3()).copy(camera.position);
+        orientationControl.update(
+            delta, (new THREE.Vector3()).copy(camera.position), quaternion);
+        movementControl.update(
+            delta, position, (new THREE.Quaternion()).copy(camera.quaternion));
+        camera.quaternion.copy(quaternion);
+        camera.position.copy(
+            position.clamp(this.boundingBox.min, this.boundingBox.max));
+        camera.updateMatrixWorld(true);
+    }
+
+    this.getPosition = function() {
+        return camera.getWorldPosition();
+    }
+
+    this.isRunning = function() {
+        return running;
+    }
+}
+
+CameraManager = function(element) {
+    var camera = new THREE.PerspectiveCamera();
+    camera.position.set(0, 0, 1.5);
+    CameraUpdater.call(this, element, camera);
+
     this.onPointerLockLostCallback = null;
-    this.controls = new Controls3D(element, camera, scrollCallback);
-    this.pointerLockHelper = new PointerLockHelper(element, this);
-}
+    this.onPointerLockLost = (function() {
+        if (this.isRunning()) {
+            this.stop();
+        }
+        if (this.onPointerLockLostCallback) {
+            this.onPointerLockLostCallback();
+        }
+    }).bind(this);
+    this.rollRadPerPixel = 0.002;
+    this.movementSpeed = .3; // world units per second
+    this.velocityScaleFactor = new THREE.Vector3(1, 1, 1);
 
-Controls3DController.prototype.start = function(callback) {
-    if (this.pointerLockHelper.isInitialized) {
-        this.pointerLockHelper.requestPointerLock();
-    } else {
-        console.warn("Browser doesn't support Pointer Lock API");
+    var pointerLockOrientationControls = 
+        new PointerLockOrientationControls(element, this);
+    var keyboardMovementControls = 
+        new KeyboardMovementControls(element, this);
+    var deviceOrientationControls = 
+        new DeviceOrientationControls(element, this);
+    var clickMovementControls = 
+        new ClickMovementControls(element, this);
+
+    this.resetPosition = function() {
+        camera.position.set(0, 0, 1.5);
+        camera.rotation.set(0, 0, 0);
     }
-}
 
-Controls3DController.prototype.stop = function() {
-    if (this.pointerLockHelper.isInitialized) {
-        this.pointerLockHelper.exitPointerLock();
-    } else {
-        console.warn("Browser doesn't support Pointer Lock API");
+    this.setCameraAspect = function(aspect) {
+        camera.aspect = aspect;
     }
-}
 
-Controls3DController.prototype.onPointerLockGained = function() {
-    this.controls.start()
-}
-
-Controls3DController.prototype.onPointerLockLost = function() {
-    this.controls.stop();
-    if (this.onPointerLockLostCallback) {
-        this.onPointerLockLostCallback();
+    this.getCamera = function() {
+        return camera;
     }
-}
 
-Controls3DController.prototype.onPointerLockError = function() {
-    console.warn("onPointerLockError")
+    this.setMode = function(usePointerLock, useKeyboard) {
+        if (usePointerLock) {
+            this.setOrientationControl(pointerLockOrientationControls);
+        } else {
+            this.setOrientationControl(deviceOrientationControls);
+        }
+        if (useKeyboard) {
+            this.setMovementControl(keyboardMovementControls);
+        } else {
+            this.setMovementControl(clickMovementControls);
+        }
+    }
 }

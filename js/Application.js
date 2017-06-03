@@ -82,19 +82,13 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
                 new THREE.ShaderMaterial(RayTracingShader)));
         scene.updateMatrixWorld();
 
-        var viewCamera = new THREE.PerspectiveCamera();
-
         var layerController = new UnreachableLayers(RayTracingShader.defines.MAX_DEPTH, 0.2, 3);
-        var controlsController = new Controls3DController(
-            canvasElement, 
-            viewCamera, 
-            function(scrollAmount) {});
-        controlsController.controls.boundingBox.max.z = 3;
-
+        var controlsController = new CameraManager(canvasElement);
+    
         return {
             colorIncrementPass : new THREE.ShaderPass(ColorIncrementShader),
             rayTracingUniforms : RayTracingShader.uniforms,
-            viewCamera : viewCamera,
+            viewCamera : controlsController.getCamera(),
             quadScene : scene,
             quadCamera : new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, -1, 1),
             topColor : new THREE.Color(0, 0, 0),
@@ -102,17 +96,23 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             controlsController : controlsController,
             colorController : new ColorPaletteController(),
             layerController : layerController,
-            clampPosition : true,
-            enabled : false
+            clampPosition : false,
+            viewMode : '2d', // type of view to be rendered. One of '2d', '3d', or 'vr'
+            renderer3d : new RayTracingRenderer(renderer),
         }
     })();
 
     this.setViewMode3d = (function() {
         var cachedPasses, cachedBackground, cachedBorderScale;
-        return function(enable) {
-            if (this.state3d.enabled == enable) return;
-            this.state3d.enabled = !!enable;
-            if (enable) {
+        return function(mode) {
+            if (this.state3d.viewMode == mode) return;
+            if (mode != '3d' && mode != '2d' && mode != 'vr') {
+                console.error(mode + "is not a valid view mode, must be '2d', '3d', or 'vr'");
+                return;
+            }
+
+            var currentMode = this.state3d.viewMode;
+            if (currentMode == '2d') {
                 cachedPasses = portal.passes;
                 cachedBackground = this.background.color.get();
                 cachedBorderScale = this.border.scale.get();
@@ -120,11 +120,16 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
                 portal.passes = [symPass, this.state3d.colorIncrementPass];
                 this.background.color.set(0x000000);
                 this.border.scale.set([1, 1, 1]);
-            } else {
+            }
+            
+            if (mode == '2d') {
+                // Restore cached values.
                 portal.passes = cachedPasses;
                 this.background.color.set(cachedBackground);
                 this.border.scale.set(cachedBorderScale);
             }
+
+            this.state3d.viewMode = mode;
         }
     })();
 
@@ -163,8 +168,8 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
     }
     
     this.resetPosition = function() {
-        if (this.state3d.controlsController.controls.isEnabled()) {
-            this.state3d.controlsController.controls.resetPosition()
+        if (this.state3d.controlsController.isRunning()) {
+            this.state3d.controlsController.resetPosition()
         } else {
             var fresh = new VF.Spacemap();
             fresh.scale.set(1.3, 1.3, 1);
@@ -176,7 +181,7 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
         // Render the view, either to the screen (if target is undefined)
         // or to the specified render target.
         
-        if (this.state3d.enabled) {
+        if (this.state3d.viewMode == '3d' || this.state3d.viewMode == 'vr') {
             this.render3dView(target);
         } else {
             this.render2dView(target);
@@ -197,19 +202,19 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
             var delta = Math.min(5, time - prevTime);
             prevTime = time;
             if (this.state3d.clampPosition) {
-                this.state3d.controlsController.controls.setBoundingBox({
+                this.state3d.controlsController.boundingBox = {
                     min : new THREE.Vector3(-portalSize.w, -portalSize.h, -Infinity),
                     max : new THREE.Vector3(portalSize.w, portalSize.h, 3)
-                });
+                };
             } else {
-                this.state3d.controlsController.controls.setBoundingBox({
+                this.state3d.controlsController.boundingBox = {
                     min: new THREE.Vector3(-Infinity, -Infinity, -Infinity),
                     max: new THREE.Vector3(Infinity, Infinity, Infinity),
-                })
+                };
             }
-            this.state3d.controlsController.controls.velocityScaleFactor.set(
+            this.state3d.controlsController.velocityScaleFactor.set(
                 velocityScaleFactor, velocityScaleFactor, 1)
-            this.state3d.controlsController.controls.update(delta);
+            this.state3d.controlsController.update(delta);
 
             this.state3d.colorController.baseColors = 
                 ColorPaletteController.createHSLGradientPalette(
@@ -218,25 +223,31 @@ var VFApp = function(canvasElement, viewWidth, viewHeight) {
                     RayTracingShader.defines.MAX_DEPTH + 1);
             this.state3d.colorController.update();
 
-            this.state3d.layerController.update(this.state3d.controlsController.controls.getObject().position);
+            this.state3d.layerController.update(this.state3d.controlsController.getPosition());
             velocityScaleFactor = this.state3d.layerController.getVelocityScaleFactor();
 
-            var res = target === undefined ? this.view.resolution.get() : [target.width, target.height];
-            var camera = this.state3d.viewCamera;
-            camera.updateMatrixWorld(true);
-            camera.updateProjectionMatrix();
-            camera.aspect = res[0] / res[1];
             var uniforms = this.state3d.rayTracingUniforms;
             uniforms.tDiffuse.value = portal.getStorage();
-            uniforms.inverseViewMatrix.value.copy(camera.matrixWorld);
-            uniforms.inverseProjectionMatrix.value.getInverse(camera.projectionMatrix);
             uniforms.portalWidthHeight.value.fromArray([portalSize.w, portalSize.h]);
             uniforms.layerColors.value = this.state3d.colorController.texture;
             uniforms.layerColorsSize.value = this.state3d.colorController.baseColors.length;
             uniforms.layerZ.value = this.state3d.layerController.texture;
             uniforms.layerZSize.value = this.state3d.layerController.getTextureSize();
             uniforms.layerTop.value = this.state3d.layerController.getLayerTop();
-            renderer.render(this.state3d.quadScene, this.state3d.quadCamera, target);
+
+            if (this.state3d.viewMode == '3d') {
+                this.state3d.renderer3d.render3d(
+                    this.state3d.quadScene,
+                    this.state3d.quadCamera,
+                    target,
+                    this.state3d.viewCamera);
+            } else if (this.state3d.viewMode == 'vr') {
+                this.state3d.renderer3d.renderVr(
+                    this.state3d.quadScene,
+                    this.state3d.quadCamera,
+                    target,
+                    this.state3d.viewCamera);
+            }
         }
     })();
 

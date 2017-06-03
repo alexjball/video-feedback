@@ -25,7 +25,9 @@
         <script src="js/libs/canvas-toBlob.js"></script>
 		<script src="js/libs/stats.min.js"></script>
 		<script src="js/libs/PointerLockControls.js"></script>
-		
+        <script src="js/libs/DeviceOrientationControls.js"></script>
+        <script src="js/libs/StereoEffect.js"></script>     
+
 		<script src="js/postprocessing/EffectComposer.js"></script>
 		<script src="js/postprocessing/RenderPass.js"></script>
 		<script src="js/postprocessing/ShaderPass.js"></script>
@@ -39,7 +41,8 @@
 		<script src="js/shaders/SymmetryShader.js"></script>
 		<script src="js/shaders/RGBShiftShader.js"></script>
         
-        <script src="js/LayerZ.js"></script>        
+        <script src="js/LayerZ.js"></script>
+        <script src="js/RayTracingRenderer.js"></script>
         <script src="js/ColorPaletteTexture.js"></script>
         <script src="js/ColorPaletteController.js"></script>
         <script src="js/Controls3D.js"></script>
@@ -343,6 +346,7 @@
             nonUserInputKeyHandler.init();
 			init();
             RayTracingShader.defines.WRAP_PORTAL = 1;
+            app.state3d.controlsController.setMode(true, true);
             vfr.play();
 			render();
 		</script>

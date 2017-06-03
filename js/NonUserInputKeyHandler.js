@@ -15,8 +15,8 @@ nonUserInputKeyHandler.keyboardHandler = function(event) {
             break;
         case "Y":
             // Toggle 3D controls
-            if (app.state3d.enabled) {
-                if (app.state3d.controlsController.controls.isEnabled()) {
+            if (app.state3d.viewMode != '2d') {
+                if (app.state3d.controlsController.isRunning()) {
                     app.state3d.controlsController.onPointerLockLostCallback = null
                     app.state3d.controlsController.stop();
                     userInputOn = true;
@@ -39,7 +39,7 @@ nonUserInputKeyHandler.keyboardHandler = function(event) {
             }
             break;
         case " ":
-            if (app.state3d.enabled) {
+            if (app.state3d.viewMode != '2d') {
                 app.state3d.colorController.addAnimation(
                     ColorPulse.createBasic(
                         new THREE.Color(Math.random(), Math.random(), Math.random()), 

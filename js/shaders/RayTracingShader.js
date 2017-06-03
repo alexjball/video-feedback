@@ -6,16 +6,12 @@
 
 RayTracingShader = (function() {
 
-	var maxDepth = 30;
-	var maxIterations = 30;
-	var fogFactor = .05;
-
 	return {
 
 		defines: {
-			MAX_DEPTH : maxDepth,
-			MAX_ITERATIONS : maxIterations,
-			FOG_FACTOR : fogFactor,
+			MAX_DEPTH : 30,
+			MAX_ITERATIONS : 30,
+			FOG_FACTOR : .05,
 			WRAP_PORTAL : 0,
 		},
 
@@ -29,6 +25,7 @@ RayTracingShader = (function() {
 			layerZ : { type: "t", value: null },
 			layerZSize : { type: "1f", value: 1 },
 			layerTop : { type: "1i", value: -1 },
+			fogColor : { type: "v3", value: new THREE.Vector3(0.5, 0.6, 0.7) },
 		},
 
 		vertexShader: `
@@ -55,6 +52,7 @@ uniform vec2 portalWidthHeight;
 
 uniform sampler2D layerColors;
 uniform float layerColorsSize;
+uniform vec3 fogColor;
 
 uniform sampler2D layerZ;
 uniform float layerZSize;
@@ -177,8 +175,7 @@ void intersectFeedback(
 
 vec4 applyFog(vec4 color, float distance) {
 	float fogAmount = 1.0 - exp(-distance * FOG_FACTOR);
-    vec4 fogColor = vec4(0.5, 0.6, 0.7, 1.0);
-    return mix(color, fogColor, fogAmount);
+    return mix(color, vec4(fogColor, 1.0), fogAmount);
 }
 
 void main() {

@@ -1,10 +1,9 @@
-var demo3d = {};
+var demoVr = {};
 
-demo3d.init = function() {
-    this.inputController = new Demo3dInputController();
+demoVr.init = function() {
 
     // Enable 3d view mode
-    app.setViewMode3d('3d');
+    app.setViewMode3d('vr');
     
     // Enable wrapped/tiled portal
     RayTracingShader.defines.WRAP_PORTAL = 1;
@@ -19,8 +18,9 @@ demo3d.init = function() {
     // Enable XY symmetry (X is already enabled)
     app.effects.symmetry.mirrorY.set(true);
 
-    app.state3d.controlsController.setMode(true, true);
-    
+    app.state3d.controlsController.setMode(false, false);
+    userInputOn = false;
+
     // Override states with our custom ones. 
     // They should not be added to localStorage.
     stateManager.states = getDemo3DStates();
@@ -37,4 +37,8 @@ demo3d.init = function() {
 
     // Set the portal geometry to a square
     geo.set(geo.rectangle, 1);
+}
+
+demoVr.startControls = function() {
+    app.state3d.controlsController.start();
 }

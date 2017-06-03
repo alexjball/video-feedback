@@ -15,7 +15,7 @@ var Demo3dInputController = function() {
     this.helpContainer.onclick = this.toggleHelp.bind(this);
     this.helpButton.onclick = this.toggleHelp.bind(this);
     this.resetButton.onclick = function() {
-        app.state3d.controlsController.controls.resetPosition();
+        app.state3d.controlsController.resetPosition();
     }
     this.pauseButton.onclick = this.toggleCycleState.bind(this);
     this.controlsButton.onclick = this.toggleControlsState.bind(this);
@@ -29,8 +29,8 @@ var Demo3dInputController = function() {
 }
 
 Demo3dInputController.prototype.mouseDownHandler = function(event) {
-    if (app.state3d.enabled
-            && !app.state3d.controlsController.controls.isEnabled()
+    if (app.state3d.viewMode != '2d'
+            && !app.state3d.controlsController.isRunning()
             && vfr.isCycling()) {
         this.toggleCycleState();
     }
@@ -42,7 +42,7 @@ Demo3dInputController.prototype.keyDownHandler = function(event) {
 
     switch(charStr) {
         case "U":
-            app.state3d.controlsController.controls.resetPosition();
+            app.state3d.controlsController.resetPosition();
             break;
         case "Z":
             // Toggle 3D controls
@@ -53,7 +53,7 @@ Demo3dInputController.prototype.keyDownHandler = function(event) {
             this.toggleCycleState();
             break;
         case "C":
-            if (app.state3d.enabled) {
+            if (app.state3d.viewMode != '2d') {
                 app.state3d.colorController.addAnimation(
                     ColorPulse.createBasic(
                         new THREE.Color(1, .1, 0), 
@@ -113,8 +113,8 @@ Demo3dInputController.prototype.toggleCycleState = function() {
 }
 
 Demo3dInputController.prototype.toggleControlsState = function() {
-    if (app.state3d.enabled) {
-        if (app.state3d.controlsController.controls.isEnabled()) {
+    if (app.state3d.viewMode != '2d') {
+        if (app.state3d.controlsController.isRunning()) {
             this.setControlsState("2d");
         } else {
             this.setControlsState("3d");

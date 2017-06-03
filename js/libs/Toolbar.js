@@ -286,8 +286,8 @@ function initializeToolbar(toolbarInstance) {
     toolbarInstance.addDivider();
     toolbarInstance.addCheckbox("3D Mode", { 
         set : function(enable) {
-            app.setViewMode3d(enable);
-            if (!enable && app.state3d.controlsController.controls.isEnabled()) {
+            app.setViewMode3d(enable ? '3d' : '2d');
+            if (!enable && app.state3d.controlsController.isRunning()) {
                 app.state3d.controlsController.onPointerLockLostCallback = null
                 app.state3d.controlsController.stop();
                 userInputOn = true;

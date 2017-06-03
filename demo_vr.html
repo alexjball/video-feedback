@@ -1,0 +1,102 @@
+<html>
+	<head>
+		<title>Video Feedback</title>
+		<style>
+			html, body { width: 100%; height: 100%; margin: 0; font-family: arial; }
+			canvas { width: 100%; height: 100%; display: block }
+
+            /*body {
+                margin: 0px;
+                overflow: hidden;
+            }
+            #simulation {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+            }*/
+
+		</style>
+
+        <!-- Safari full screen tag -->
+        <!--<meta name="apple-mobile-web-app-capable" content="yes">-->
+
+        <!-- Chrome (Android) full screen tag -->
+        <!--<meta name="mobile-web-app-capable" content="yes">
+        <link rel="icon" sizes="192x192" href="app/icon.png">
+        <link rel="manifest" href="app/manifest.json">-->
+
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+	</head>
+	<body>
+		<script src="js/libs/three.js"></script>
+		<script src="js/libs/jscolor.min.js"></script>
+        <script src="js/libs/FileSaver.min.js"></script>
+        <script src="js/libs/jszip.min.js"></script>
+        <script src="js/libs/canvas-toBlob.js"></script>
+		<script src="js/libs/stats.min.js"></script>
+		<script src="js/libs/PointerLockControls.js"></script>
+        <script src="js/libs/DeviceOrientationControls.js"></script>
+        <script src="js/libs/StereoEffect.js"></script>     
+
+		<script src="js/postprocessing/EffectComposer.js"></script>
+		<script src="js/postprocessing/RenderPass.js"></script>
+		<script src="js/postprocessing/ShaderPass.js"></script>
+		<script src="js/postprocessing/ClearPass.js"></script>
+		<script src="js/postprocessing/MaskPass.js"></script> 
+
+		<script src="js/shaders/CopyShader.js"></script>
+		<script src="js/shaders/ColorShader.js"></script>
+		<script src="js/shaders/ColorIncrementShader.js"></script>
+		<script src="js/shaders/RayTracingShader.js"></script>
+		<script src="js/shaders/SymmetryShader.js"></script>
+		<script src="js/shaders/RGBShiftShader.js"></script>
+
+        <script src="js/LayerZ.js"></script>        
+        <script src="js/RayTracingRenderer.js"></script>        
+        <script src="js/ColorPaletteTexture.js"></script>
+        <script src="js/ColorPaletteController.js"></script>
+        <script src="js/Controls3D.js"></script>
+        <script src="js/LNextra.js"></script>
+        <script src="js/libs/UserInput.js"></script>
+        <script src="js/video-feedback.js"></script>
+		<script src="js/StateNugget.js"></script>
+		<script src="js/Application.js"></script>
+		<script src="js/ImageUtilities.js"></script>
+		<script src="js/DefaultAppStates.js"></script>
+		<script src="main.js"></script>
+        <script src="js/demo_3d_states.js"></script>   
+        <script src="js/demo_vr.js"></script>
+
+        <div id="simulation">
+            <canvas id="simulation-canvas"></canvas>
+        </div>
+
+		<script>
+            initializeEventListeners();
+			init();
+            demoVr.init();
+            vfr.play();
+			render();
+
+            var element = document.getElementById("simulation");
+            var fullscreen = function(event) {
+                if (element.requestFullscreen) {
+                    element.requestFullscreen();
+                } else if (element.msRequestFullscreen) {
+                    element.msRequestFullscreen();
+                } else if (element.mozRequestFullScreen) {
+                    element.mozRequestFullScreen();
+                } else if (element.webkitRequestFullscreen) {
+                    element.webkitRequestFullscreen();
+                }
+                event.stopPropagation();
+                element.removeEventListener("touchend", fullscreen, true);
+                demoVr.startControls();
+            }
+            element.addEventListener("touchend", fullscreen, true);
+		</script>
+	</body>
+</html>
