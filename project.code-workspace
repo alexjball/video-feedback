@@ -1,0 +1,24 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll": true
+    },
+    "editor.wordWrap": "on",
+    "editor.formatOnSave": true,
+    "files.autoSave": "off",
+    "files.associations": {
+      "*.cu": "cpp",
+      "Matchfile": "ruby",
+      "gl.h": "c",
+      "glut.h": "c",
+      "freeglut_std.h": "c"
+    },
+  },
+  "extensions": {
+  }
+}

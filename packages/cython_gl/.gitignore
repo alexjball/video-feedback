@@ -1,0 +1,3 @@
+*.so
+draw_triangle.c
+build/
