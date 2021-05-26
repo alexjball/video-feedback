@@ -1,0 +1,5 @@
+UseTab: false
+IndentWidth: 2
+BreakBeforeBraces: Attach
+AllowShortIfStatementsOnASingleLine: false
+ColumnLimit: 80
