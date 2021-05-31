@@ -15,3 +15,6 @@ test: VulkanTest
 
 clean:
 		rm -f VulkanTest
+
+info:
+		vulkaninfo
