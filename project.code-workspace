@@ -66,8 +66,14 @@
       "streambuf": "cpp",
       "cinttypes": "cpp",
       "typeinfo": "cpp",
-      "iostream": "cpp"
+      "iostream": "cpp",
+      "stdio.h": "c"
     },
+    "files.exclude": {
+      "packages/cython/feedback/**.c": false,
+      "packages/cython/feedback/**.so": false
+    },
+    "python.analysis.extraPaths": ["./packages/cython"]
   },
   "extensions": {
   }

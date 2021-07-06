@@ -1,0 +1,6 @@
+*.so
+*.c
+*.cpp
+
+# Retain hand-rolled cpp files
+!core.cpp
