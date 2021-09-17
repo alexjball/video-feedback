@@ -73,8 +73,41 @@
       "packages/cython/feedback/**.c": false,
       "packages/cython/feedback/**.so": false
     },
-    "python.analysis.extraPaths": ["./packages/cython"]
+    "python.analysis.extraPaths": ["./packages/cython"],
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "[python]": {
+      "editor.defaultFormatter": "ms-python.python"
+    },
+    "python.formatting.provider": "black",
+    "eslint.workingDirectories": ["./studio"]
   },
   "extensions": {
+    "recommendations": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "stkb.rewrap",
+      "GitHub.vscode-pull-request-github",
+      "eamodio.gitlens",
+      "ms-python.python",
+      "ms-python.vscode-pylance"
+    ]
+  },
+  "launch": {
+    "configurations": [
+      {
+        "name": "Launch Frontend",
+        "request": "launch",
+        "type": "pwa-chrome",
+        "url": "http://localhost:3000/",
+        "webRoot": "${workspaceFolder}/studio",
+        "sourceMapPathOverrides": {
+          "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+          "webpack://?:*/*": "${workspaceFolder}/*"
+        },
+        // Name of debug profile, created in Chrome browser
+        "userDataDir": "Profile 1"
+      }
+    ],
+    "compounds": []
   }
 }
