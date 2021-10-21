@@ -1,35 +1,41 @@
-import { useEffect, useRef } from "react"
-import {
-  Scene,
-  BoxGeometry,
-  PerspectiveCamera,
-  WebGLRenderer,
-  MeshBasicMaterial,
-  Mesh
-} from "three"
-import styles from "./three.module.css"
-import useResizeObserver from "use-resize-observer"
 import classNames from "classnames"
+import { useEffect, useRef } from "react"
+import { WebGLRenderer } from "three"
+import useResizeObserver from "use-resize-observer"
+import styles from "./three.module.css"
 
-export function Three({ className }: { className?: string }) {
-  const demo = useRef<ThreeDemo>()
+export interface RendererConstructor {
+  new (canvas: HTMLCanvasElement): Renderer
+}
+
+export function Three<T extends Renderer>({
+  className,
+  renderer
+}: {
+  className?: string
+  renderer: RendererConstructor
+}) {
+  const impl = useRef<Renderer>()
   const frame = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const { width = 0, height = 0 } = useResizeObserver<HTMLDivElement>({ ref: frame })
 
   useEffect(() => {
-    if (!demo.current) {
-      demo.current = new ThreeDemo({ canvas: canvas.current! })
-    }
-    if (width && height) {
-      console.log(width, height)
-      demo.current.setSize(width, height)
-      demo.current.startAnimation()
+    if (canvas.current) {
+      impl.current = new renderer(canvas.current)
     }
     return () => {
-      demo.current?.stopAnimation()
+      impl.current?.stopAnimating()
+      impl.current = undefined
     }
-  }, [width, height])
+  }, [renderer])
+
+  useEffect(() => {
+    if (width && height && impl.current) {
+      impl.current.resize({ width, height })
+      impl.current.startAnimating()
+    }
+  }, [height, width])
 
   return (
     <div className={classNames(styles.frame, className)} ref={frame}>
@@ -38,12 +44,12 @@ export function Three({ className }: { className?: string }) {
   )
 }
 
-class ThreeDemo {
+export abstract class Renderer {
   private animationRequest: number | null = null
-  private renderer: WebGLRenderer
-  private scene
 
-  get canvasElement(): HTMLCanvasElement {
+  protected readonly renderer: WebGLRenderer
+
+  get canvas(): HTMLCanvasElement {
     return this.renderer.domElement
   }
 
@@ -52,56 +58,38 @@ class ThreeDemo {
     return { width: canvas.width, height: canvas.height }
   }
 
-  constructor({ canvas }: { canvas: HTMLCanvasElement }) {
-    this.renderer = new WebGLRenderer({ canvas })
-    this.scene = this.createScene()
+  constructor(canvas: HTMLCanvasElement) {
+    this.renderer = new WebGLRenderer({ canvas, antialias: true })
   }
 
-  setSize(width: number, height: number) {
+  resize({ width, height }: { width: number; height: number }) {
     this.renderer.setSize(width, height)
-    this.scene.camera.aspect = width / height
-    this.scene.camera.updateProjectionMatrix()
   }
 
-  private createScene() {
-    const { width, height } = this.size
-    const camera = new PerspectiveCamera(75, width / height, 0.1, 1000)
-    const scene = new Scene()
-    const geometry = new BoxGeometry()
-    const material = new MeshBasicMaterial({ color: 0x00ff00 })
-    const cube = new Mesh(geometry, material)
-    scene.add(cube)
+  abstract renderFrame(): void
 
-    camera.position.z = 5
-
-    return {
-      scene,
-      geometry,
-      material,
-      cube,
-      camera
-    }
+  startAnimating = () => {
+    this.stopAnimating()
+    this.loop()
   }
 
-  private animate = () => {
-    this.startAnimation()
-
-    const { scene, cube, camera } = this.scene
-
-    cube.rotation.x += 0.01
-    cube.rotation.y += 0.01
-
-    this.renderer.render(scene, camera)
+  private loop() {
+    this.animationRequest = requestAnimationFrame(() => {
+      this.renderFrame()
+      this.loop()
+    })
   }
 
-  startAnimation = () => {
-    this.animationRequest = requestAnimationFrame(this.animate)
-  }
-
-  stopAnimation = () => {
+  stopAnimating = () => {
     if (this.animationRequest !== null) {
       cancelAnimationFrame(this.animationRequest)
       this.animationRequest = null
     }
+  }
+}
+
+export function withThree(Renderer: RendererConstructor) {
+  return function ThreeRenderer(props: Omit<Parameters<typeof Three>[0], "renderer">) {
+    return <Three {...props} renderer={Renderer} />
   }
 }
