@@ -1,10 +1,13 @@
-import { Studio, Three } from "../components"
+import { createModel, Studio } from "../components"
 import styles from "./index.module.css"
+import { Provider } from "react-redux"
 
 export default function Page() {
   return (
-    <div className={styles.layoutContainer}>
-      <Studio className={styles.three} />
-    </div>
+    <Provider store={createModel()}>
+      <div className={styles.layoutContainer}>
+        <Studio className={styles.three} />
+      </div>
+    </Provider>
   )
 }

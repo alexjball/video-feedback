@@ -1,7 +1,7 @@
 import { BoxGeometry, Mesh, MeshBasicMaterial, PerspectiveCamera, Scene } from "three"
-import { Renderer, withThree } from "./three"
+import * as three from "./three"
 
-class Demo extends Renderer {
+class Renderer extends three.BaseRenderer {
   private scene
 
   constructor(canvas: HTMLCanvasElement) {
@@ -9,8 +9,8 @@ class Demo extends Renderer {
     this.scene = this.createScene()
   }
 
-  override resize({ width, height }: { width: number; height: number }) {
-    super.resize({ width, height })
+  override setSize(width: number, height: number) {
+    super.setSize(width, height)
     this.scene.camera.aspect = width / height
     this.scene.camera.updateProjectionMatrix()
   }
@@ -20,7 +20,7 @@ class Demo extends Renderer {
     const camera = new PerspectiveCamera(75, width / height, 0.1, 1000)
     const scene = new Scene()
     const geometry = new BoxGeometry()
-    const material = new MeshBasicMaterial({ color: 0x00ff00 })
+    const material = new MeshBasicMaterial({ color: 0x00ffff })
     const cube = new Mesh(geometry, material)
     scene.add(cube)
 
@@ -52,8 +52,8 @@ class Demo extends Renderer {
     cube.rotation.x += 0.01
     cube.rotation.y += 0.01
 
-    this.renderer.render(scene, camera)
+    this.renderScene(scene, camera, null)
   }
 }
 
-export default withThree(Demo)
+export const Demo = three.asComponent(Renderer)
