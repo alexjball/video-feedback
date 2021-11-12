@@ -1,4 +1,4 @@
-import { createModel, Studio } from "../components"
+import { createModel, Studio } from "../src"
 import styles from "./index.module.css"
 import { Provider } from "react-redux"
 

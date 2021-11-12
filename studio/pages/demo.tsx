@@ -1,5 +1,5 @@
 import styles from "./index.module.css"
-import { Demo } from "../components"
+import { Demo } from "../src"
 
 export default function Home() {
   return (
