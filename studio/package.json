@@ -15,7 +15,7 @@
     "next": "11.1.2",
     "react": "17.0.2",
     "react-dom": "17.0.2",
-    "three": "^0.132.2",
+    "three": "file:../packages/three.js",
     "react-redux": "^7.2.6",
     "use-resize-observer": "^8.0.0"
   },
