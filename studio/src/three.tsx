@@ -125,6 +125,8 @@ export class BaseRenderer implements Renderer {
 type CreateRenderer = (canvas: HTMLCanvasElement) => BaseRenderer
 
 /** Bridges the functional react and class-based renderer patterns */
+// TODO: How much of this could be a hook or a react component? Is is it
+// performant to render at 60 fps?
 export function useRenderer(createRenderer: CreateRenderer, deps: DependencyList = []): Renderer {
   return useMemo(() => {
     let renderer: BaseRenderer

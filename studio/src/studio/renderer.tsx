@@ -75,8 +75,7 @@ class StudioView {
     scene.add(border)
 
     const feedback = new Feedback()
-    const { portal, spacemap } = feedback
-    // spacemap.scale.set(2, 2, 1)
+    const { portal } = feedback
     portal.scale.set(2, 2, 1)
     portal.position.set(0, 0, 0)
     scene.add(portal)

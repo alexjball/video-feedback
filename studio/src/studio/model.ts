@@ -20,6 +20,7 @@ export type State = {
     scale: Vector3
     pixelsPerUnit: Vector2
     pixelsPerDegree: number
+    pixelsPerScale: number
   }
 }
 
@@ -32,6 +33,8 @@ const initialState: State = {
     pixelsPerUnit: new Vector2(-5e2, 5e2),
     /** Screen pixels per degree rotation (right-handed about z) */
     pixelsPerDegree: -50,
+    /** Scroll wheel pixels per unit scaling */
+    pixelsPerScale: 1e3,
     quaternion: new Quaternion()
   }
 }
@@ -75,13 +78,17 @@ const slice = createSlice({
       o.from(spacemap)
         .rotateZ(((distance / spacemap.pixelsPerDegree) * Math.PI) / 180.0)
         .to(spacemap)
+    },
+    zoom({ spacemap }, { payload: distance }) {
+      const pps = spacemap.pixelsPerScale
+      spacemap.scale.x += distance / pps
+      spacemap.scale.y += distance / pps
     }
   }
 })
 
-export const { setBorderWidth, rotate, translate } = slice.actions
+export const { setBorderWidth, rotate, translate, zoom } = slice.actions
 const reducer = slice.reducer
-export default reducer
 export const createModel = () =>
   configureStore({
     middleware: getDefaultMiddleware =>
@@ -99,6 +106,7 @@ type Bind<T> = (value: T) => void
 type IsEqual<T> = (a: T, b: T) => boolean
 const byReference: IsEqual<any> = (a, b) => a === b
 
+/** Simple handlers for parts of the state tree */
 export class Binder<S> {
   private readonly binders: Bind<S>[] = []
 

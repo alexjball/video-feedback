@@ -1,6 +1,6 @@
 import { HTMLProps, useMemo } from "react"
 import { useDispatch } from "react-redux"
-import { rotate, translate } from "./model"
+import { rotate, translate, zoom } from "./model"
 
 type Callbacks = Required<
   Pick<
@@ -13,13 +13,11 @@ export function useInteractions(): Callbacks {
   const dispatch = useDispatch()
   return useMemo(() => {
     let rotating = false,
-      translating = false,
-      zooming = false
+      translating = false
 
     const stopInteractions = () => {
         translating = false
         rotating = false
-        zooming = false
       },
       ignore = (e: any) => e.preventDefault()
 
@@ -44,14 +42,7 @@ export function useInteractions(): Callbacks {
       },
       onContextMenu: ignore,
       onMouseOut: stopInteractions,
-      onWheel(e) {
-        // const { deltaY: dZ } = e,
-        //   pixelsPerScale = 1e3,
-        //   spacemap = this.renderer.system.feedback.spacemap
-        // spacemap.scale.x += dZ / pixelsPerScale
-        // spacemap.scale.y += dZ / pixelsPerScale
-        // console.log(dZ, pixelsPerScale, spacemap.scale)
-      }
+      onWheel: e => void dispatch(zoom(e.deltaY))
     }
   }, [dispatch])
 }
