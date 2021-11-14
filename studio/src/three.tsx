@@ -116,7 +116,7 @@ export class BaseRenderer implements Renderer {
     return { width: size.x, height: size.y }
   }
 
-  renderScene(scene: Scene, camera: Camera, target: WebGLRenderTarget | null) {
+  renderScene = (scene: Scene, camera: Camera, target: WebGLRenderTarget | null) => {
     this.renderer.setRenderTarget(target)
     this.renderer.render(scene, camera)
   }
