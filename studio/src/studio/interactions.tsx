@@ -1,16 +1,24 @@
 import { HTMLProps, useMemo } from "react"
-import { useDispatch } from "react-redux"
+import { useAppDispatch } from "../hooks"
+import { toggleShow } from "../stats"
 import { rotate, translate, zoom } from "./model"
 
 type Callbacks = Required<
   Pick<
     HTMLProps<HTMLDivElement>,
-    "onMouseDown" | "onMouseUp" | "onMouseMove" | "onMouseOut" | "onWheel" | "onContextMenu"
+    | "onMouseDown"
+    | "onMouseUp"
+    | "onMouseMove"
+    | "onMouseOut"
+    | "onWheel"
+    | "onContextMenu"
+    | "onKeyDown"
+    | "tabIndex"
   >
 >
 
 export function useInteractions(): Callbacks {
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
   return useMemo(() => {
     let rotating = false,
       translating = false
@@ -42,7 +50,11 @@ export function useInteractions(): Callbacks {
       },
       onContextMenu: ignore,
       onMouseOut: stopInteractions,
-      onWheel: e => void dispatch(zoom(e.deltaY))
+      onWheel: e => void dispatch(zoom(e.deltaY)),
+      onKeyDown: e => {
+        if (e.key === "t") dispatch(toggleShow())
+      },
+      tabIndex: 0
     }
   }, [dispatch])
 }

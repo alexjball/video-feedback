@@ -1,6 +1,4 @@
-import { useCallback, useEffect } from "react"
-import { useStore } from "react-redux"
-import { Store } from "redux"
+import { useCallback } from "react"
 import {
   Mesh,
   MeshBasicMaterial,
@@ -11,30 +9,41 @@ import {
   Texture,
   WebGLRenderTarget
 } from "three"
+import { StatsLib, useStatsLib } from "../stats"
 import * as three from "../three"
-import { Binder, State } from "./model"
+import { Binder, State, useModelAccessor } from "./model"
 
 export function useRenderer() {
-  const store = useStore()
-  const createRenderer = useCallback(canvas => new Renderer(canvas, store), [store])
+  const stats = useStatsLib()
+  const getState = useModelAccessor()
+  const createRenderer = useCallback(
+    canvas => new Renderer(canvas, getState, stats),
+    [stats, getState]
+  )
   const renderer = three.useRenderer(createRenderer)
   return renderer
 }
 
 type Render = (scene: Scene, camera: OrthographicCamera, target: WebGLRenderTarget | null) => void
 type RenderScene = (camera: OrthographicCamera, target: WebGLRenderTarget) => void
+type GetState = () => State
 
 class Renderer extends three.BaseRenderer {
   private view: StudioView
-  private store: Store<State>
-  constructor(canvas: HTMLCanvasElement, store: Store) {
+  private getState: GetState
+  private stats: StatsLib
+
+  constructor(canvas: HTMLCanvasElement, getState: GetState, stats: StatsLib) {
     super(canvas)
-    this.store = store
+    this.getState = getState
+    this.stats = stats
     this.view = new StudioView()
   }
 
   override renderFrame() {
-    this.view.draw(this.store.getState(), this.renderScene)
+    this.stats.begin()
+    this.view.draw(this.getState(), this.renderScene)
+    this.stats.end()
   }
 
   override setSize(width: number, height: number) {
@@ -70,19 +79,19 @@ class StudioView {
     scene.add(background)
 
     const border = new Mesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({ color: "#ffffff" }))
-    border.scale.set(2.5, 2.5, 1)
+    border.scale.set(1.1, 1.1, 1)
     border.position.set(0, 0, -1)
     scene.add(border)
 
     const feedback = new Feedback()
     const { portal } = feedback
-    portal.scale.set(2, 2, 1)
+    portal.scale.set(1, 1, 1)
     portal.position.set(0, 0, 0)
     scene.add(portal)
 
     const viewer = unitOrthoCamera()
     viewer.position.set(0, 0, 10)
-    viewer.scale.set(2, 2, 1)
+    viewer.scale.set(1, 1, 1)
     scene.add(viewer)
 
     return { scene, feedback, viewer }
