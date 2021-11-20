@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 import { immerable } from "immer"
 import { useCallback } from "react"
-import { Object3D, Quaternion, Vector2, Vector3, Vector4 } from "three"
+import { Matrix4, Object3D, Quaternion, Vector2, Vector3, Vector4 } from "three"
 import { useAppSelector, useAppStore } from "../hooks"
 
 /**
@@ -17,48 +17,103 @@ markImmerable()
 export type State = {
   borderWidth: number
   spacemap: {
-    position: Vector3
-    quaternion: Quaternion
-    scale: Vector3
+    coords: Coords
     pixelsPerUnit: Vector2
     pixelsPerDegree: number
     pixelsPerScale: number
   }
-}
-
-const initialState: State = {
-  borderWidth: 0.5,
-  spacemap: {
-    position: new Vector3(0, 0.1, 0),
-    scale: new Vector3(2, 2, 1),
-    /** Screen pixels per unit movement in position */
-    pixelsPerUnit: new Vector2(-2e2, 2e2),
-    /** Screen pixels per degree rotation (right-handed about z) */
-    pixelsPerDegree: -5,
-    /** Scroll wheel pixels per unit scaling */
-    pixelsPerScale: 5e2,
-    quaternion: new Quaternion()
+  portal: {
+    coords: Coords
+    // geometry: Rect
+  }
+  viewer: {
+    coords: Coords
+    // geometry: Rect
+  }
+  viewport: {
+    width: number
+    height: number
+  }
+  drag: {
+    start: {
+      coords: Coords
+      x: number
+      y: number
+    } | null
   }
 }
 
-interface Coords {
+/** Axis-aligned 2-d rectangle! */
+export interface Rect {
+  min: Vector2
+  max: Vector2
+}
+
+export interface Coords {
   position: Vector3
   quaternion: Quaternion
   scale: Vector3
 }
 
+/**
+ * The portal, viewer, and feedback geometries are 1x1 squares centered on the
+ * origin. Therefore width and height are equal to scale!
+ */
+const initialState: State = {
+  borderWidth: 0.5,
+  spacemap: {
+    coords: {
+      position: new Vector3(0, 0.1, 0),
+      scale: new Vector3(2, 2, 1),
+      quaternion: new Quaternion()
+    },
+    /** Screen pixels per unit movement in position */
+    pixelsPerUnit: new Vector2(-2e2, 2e2),
+    /** Screen pixels per degree rotation (right-handed about z) */
+    pixelsPerDegree: -5,
+    /** Scroll wheel pixels per unit scaling */
+    pixelsPerScale: 5e2
+  },
+  portal: {
+    coords: {
+      position: new Vector3(0, 0, 0),
+      scale: new Vector3(1, 1, 1),
+      quaternion: new Quaternion()
+    }
+  },
+  viewer: {
+    coords: {
+      position: new Vector3(0, 0, 10),
+      scale: new Vector3(1.2, 1.2, 1),
+      quaternion: new Quaternion()
+    }
+  },
+  viewport: {
+    width: 0,
+    height: 0
+  },
+  drag: { start: null }
+}
+
+export function createCoords(): Coords {
+  return { position: new Vector3(), scale: new Vector3(), quaternion: new Quaternion() }
+}
+export function copyCoords(from: Coords, to: Coords = createCoords()): Coords {
+  to.position.copy(from.position)
+  to.quaternion.copy(from.quaternion)
+  to.scale.copy(from.scale)
+  return to
+}
+
 class Object3DCoords extends Object3D {
   from(coords: Coords) {
-    this.position.copy(coords.position)
-    this.quaternion.copy(coords.quaternion)
-    this.scale.copy(coords.scale)
+    copyCoords(coords, this)
+    this.updateMatrixWorld()
     return this
   }
 
   to(coords: Coords) {
-    coords.position.copy(this.position)
-    coords.quaternion.copy(this.quaternion)
-    coords.scale.copy(this.scale)
+    copyCoords(this, coords)
   }
 }
 
@@ -71,64 +126,60 @@ const slice = createSlice({
     setBorderWidth(state, { payload: borderWidth }: PayloadAction<number>) {
       state.borderWidth = borderWidth
     },
-    translate({ spacemap }, { payload: { dx, dy } }: PayloadAction<{ dx: number; dy: number }>) {
-      // Translate the spacemap the opposite direction but same magnitude as
-      // your finger's movement, transformed through the portal. The feedback
-      // should move with the finger.
-      const ppu = spacemap.pixelsPerUnit
-      spacemap.position.x += dx / ppu.x
-      spacemap.position.y += dy / ppu.y
+    drag(
+      { spacemap: { coords: spacemap }, viewport, viewer, drag },
+      {
+        payload: { x, y, end = false, start = false }
+      }: PayloadAction<{ x: number; y: number; end?: boolean; start?: boolean }>
+    ) {
+      if (start || !drag.start) {
+        drag.start = {
+          coords: copyCoords(spacemap),
+          x,
+          y
+        }
+      }
+
+      const dx = x - drag.start.x,
+        dy = y - drag.start.y,
+        dragStart = drag.start.coords
+
+      const v = new Vector3(dx / viewport.width, -dy / viewport.height)
+      o.from(viewer.coords).localToWorld(v)
+
+      const s = o.from(dragStart)
+      s.position.set(0, 0, 0)
+      s.updateMatrixWorld()
+      s.localToWorld(v)
+
+      spacemap.position.x = dragStart.position.x - v.x
+      spacemap.position.y = dragStart.position.y - v.y
+
+      if (end) {
+        drag.start = null
+      }
     },
-    rotate({ spacemap }, { payload: distance }: PayloadAction<number>) {
-      o.from(spacemap)
-        .rotateZ(((distance / spacemap.pixelsPerDegree) * Math.PI) / 180.0)
-        .to(spacemap)
+    rotate({ spacemap, viewport }, { payload: dx }: PayloadAction<number>) {
+      o.from(spacemap.coords)
+        .rotateZ((dx / viewport.width) * 2 * Math.PI)
+        .to(spacemap.coords)
     },
     zoom({ spacemap }, { payload: distance }: PayloadAction<number>) {
       const pps = spacemap.pixelsPerScale
-      spacemap.scale.x += distance / pps
-      spacemap.scale.y += distance / pps
+      spacemap.coords.scale.x += distance / pps
+      spacemap.coords.scale.y += distance / pps
+    },
+    setSize(
+      { viewport },
+      { payload: { width, height } }: PayloadAction<{ width: number; height: number }>
+    ) {
+      viewport.width = width
+      viewport.height = height
     }
   }
 })
 
 export const {
   reducer,
-  actions: { setBorderWidth, rotate, translate, zoom }
+  actions: { setBorderWidth, rotate, zoom, setSize, drag }
 } = slice
-
-/**
- * Returns a callback to access the current model state.
- *
- * This is imperative and used by the three.js render loop.
- */
-export function useModelAccessor() {
-  const store = useAppStore()
-  return useCallback(() => store.getState().studio, [store])
-}
-
-type Selector<S, T> = (state: S) => T
-type Bind<T> = (value: T) => void
-type IsEqual<T> = (a: T, b: T) => boolean
-const byReference: IsEqual<any> = (a, b) => a === b
-
-/** Simple handlers for parts of the state tree */
-export class Binder<S> {
-  private readonly binders: Bind<S>[] = []
-
-  apply(state: S) {
-    this.binders.forEach(bind => bind(state))
-  }
-
-  add<T>(selector: Selector<S, T>, bind: Bind<T>, isEqual: IsEqual<T> = byReference) {
-    let prev: { value: T }
-    this.binders.push(state => {
-      const curr = selector(state)
-      if (!prev || !isEqual(prev.value, curr)) {
-        bind(curr)
-        prev = { value: curr }
-      }
-    })
-    return this
-  }
-}

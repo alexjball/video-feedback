@@ -9,46 +9,49 @@ import {
   Texture,
   WebGLRenderTarget
 } from "three"
+import { useAppStore } from "../hooks"
 import { StatsLib, useStatsLib } from "../stats"
+import { AppStore } from "../store"
 import * as three from "../three"
-import { Binder, State, useModelAccessor } from "./model"
+import Binder from "./binder"
+import { copyCoords, setSize, State } from "./model"
 
 export function useRenderer() {
   const stats = useStatsLib()
-  const getState = useModelAccessor()
-  const createRenderer = useCallback(
-    canvas => new Renderer(canvas, getState, stats),
-    [stats, getState]
-  )
+  const store = useAppStore()
+  const createRenderer = useCallback(canvas => new Renderer(canvas, store, stats), [stats, store])
   const renderer = three.useRenderer(createRenderer)
   return renderer
 }
 
 type Render = (scene: Scene, camera: OrthographicCamera, target: WebGLRenderTarget | null) => void
 type RenderScene = (camera: OrthographicCamera, target: WebGLRenderTarget) => void
-type GetState = () => State
 
 class Renderer extends three.BaseRenderer {
   private view: StudioView
-  private getState: GetState
+  private store: AppStore
   private stats: StatsLib
 
-  constructor(canvas: HTMLCanvasElement, getState: GetState, stats: StatsLib) {
+  constructor(canvas: HTMLCanvasElement, store: AppStore, stats: StatsLib) {
     super(canvas)
-    this.getState = getState
+    this.store = store
     this.stats = stats
     this.view = new StudioView()
   }
 
+  get state(): State {
+    return this.store.getState().studio
+  }
+
   override renderFrame() {
     this.stats.begin()
-    this.view.draw(this.getState(), this.renderScene)
+    this.view.draw(this.state, this.renderScene)
     this.stats.end()
   }
 
   override setSize(width: number, height: number) {
     super.setSize(width, height)
-    this.view.setSize(width, height)
+    this.store.dispatch(setSize({ width, height }))
   }
 
   override dispose() {
@@ -103,26 +106,29 @@ class StudioView {
       borderWidth => {}
     )
     .add(
-      s => s.spacemap.position,
-      v => this.feedback.spacemap.position.copy(v)
+      s => s.spacemap.coords,
+      v => copyCoords(v, this.feedback.spacemap)
     )
     .add(
-      s => s.spacemap.scale,
-      v => this.feedback.spacemap.scale.copy(v)
+      s => s.portal.coords,
+      v => copyCoords(v, this.feedback.portal)
     )
     .add(
-      s => s.spacemap.quaternion,
-      v => this.feedback.spacemap.quaternion.copy(v)
+      s => s.viewer.coords,
+      v => copyCoords(v, this.viewer)
+    )
+    .add(
+      s => s.viewport,
+      v => {
+        this.feedback.setSize(v.width, v.height)
+      }
     )
 
   draw(state: State, render: Render) {
     this.binder.apply(state)
     this.feedback.iterate((camera, target) => render(this.scene, camera, target))
     render(this.scene, this.viewer, null)
-  }
-
-  setSize(width: number, height: number) {
-    this.feedback.setSize(width, height)
+    // TODO: Render debug scene
   }
 
   dispose() {
@@ -151,9 +157,6 @@ class Feedback {
 
   constructor() {
     this.camera = unitOrthoCamera()
-    // this.camera.position.set(0, 0, 10)
-    // this.camera.scale.set(2, 2, 1)
-
     this.spacemap.add(this.camera)
     this.portal.add(this.spacemap)
   }

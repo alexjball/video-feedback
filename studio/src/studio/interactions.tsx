@@ -1,7 +1,7 @@
 import { HTMLProps, useMemo } from "react"
 import { useAppDispatch } from "../hooks"
 import { toggleShow } from "../stats"
-import { rotate, translate, zoom } from "./model"
+import { drag, rotate, zoom } from "./model"
 
 type Callbacks = Required<
   Pick<
@@ -21,27 +21,33 @@ export function useInteractions(): Callbacks {
   const dispatch = useAppDispatch()
   return useMemo(() => {
     let rotating = false,
-      translating = false
+      dragging = false
 
     const stopInteractions = () => {
-        translating = false
+        dragging = false
         rotating = false
       },
       ignore = (e: any) => e.preventDefault()
 
     return {
       onMouseDown(e) {
-        if (e.button === 0) translating = true
+        if (e.button === 0) {
+          dragging = true
+          dispatch(drag({ x: e.clientX, y: e.clientY, start: true }))
+        }
         if (e.button === 2) rotating = true
       },
       onMouseUp(e) {
-        if (e.button === 0) translating = false
+        if (e.button === 0) {
+          dispatch(drag({ x: e.clientX, y: e.clientY, end: true }))
+          dragging = false
+        }
         if (e.button === 2) rotating = false
       },
       onMouseMove(e) {
-        if (translating) {
-          const { movementX: dx, movementY: dy } = e
-          dispatch(translate({ dx, dy }))
+        if (dragging) {
+          const { clientX: x, clientY: y } = e
+          dispatch(drag({ x, y }))
         }
         if (rotating) {
           const { movementX: dx } = e
