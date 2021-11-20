@@ -63,12 +63,14 @@ class StudioView {
   readonly scene: Scene
   readonly feedback: Feedback
   readonly viewer: OrthographicCamera
+  readonly border: Mesh
 
   constructor() {
     const o = this.initObjects()
     this.scene = o.scene
     this.feedback = o.feedback
     this.viewer = o.viewer
+    this.border = o.border
   }
 
   private initObjects() {
@@ -82,29 +84,19 @@ class StudioView {
     scene.add(background)
 
     const border = new Mesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({ color: "#ffffff" }))
-    border.scale.set(1.1, 1.1, 1)
-    border.position.set(0, 0, -1)
     scene.add(border)
 
     const feedback = new Feedback()
     const { portal } = feedback
-    portal.scale.set(1, 1, 1)
-    portal.position.set(0, 0, 0)
     scene.add(portal)
 
     const viewer = unitOrthoCamera()
-    viewer.position.set(0, 0, 10)
-    viewer.scale.set(1, 1, 1)
     scene.add(viewer)
 
-    return { scene, feedback, viewer }
+    return { scene, feedback, viewer, border }
   }
 
   private binder = new Binder<State>()
-    .add(
-      s => s.borderWidth,
-      borderWidth => {}
-    )
     .add(
       s => s.spacemap.coords,
       v => copyCoords(v, this.feedback.spacemap)
@@ -116,6 +108,10 @@ class StudioView {
     .add(
       s => s.viewer.coords,
       v => copyCoords(v, this.viewer)
+    )
+    .add(
+      s => s.border.coords,
+      v => copyCoords(v, this.border)
     )
     .add(
       s => s.viewport,
@@ -141,7 +137,7 @@ class StudioView {
  * not have position or anything.
  */
 class Feedback {
-  /** Maps source regions to destination regions.  */
+  /** Maps destination regions to source regions.  */
   readonly spacemap = new Object3D()
 
   /**

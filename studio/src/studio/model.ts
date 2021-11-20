@@ -4,6 +4,8 @@ import { useCallback } from "react"
 import { Matrix4, Object3D, Quaternion, Vector2, Vector3, Vector4 } from "three"
 import { useAppSelector, useAppStore } from "../hooks"
 
+const pi2 = 2 * Math.PI
+
 /**
  * Mark classes as copyable by immer, which also make the middleware treat them
  * as serializable.
@@ -16,6 +18,9 @@ markImmerable()
 
 export type State = {
   borderWidth: number
+  border: {
+    coords: Coords
+  }
   spacemap: {
     coords: Coords
     pixelsPerUnit: Vector2
@@ -61,6 +66,13 @@ export interface Coords {
  */
 const initialState: State = {
   borderWidth: 0.5,
+  border: {
+    coords: {
+      position: new Vector3(0, 0, -1),
+      scale: new Vector3(1.1, 1.1, 1),
+      quaternion: new Quaternion()
+    }
+  },
   spacemap: {
     coords: {
       position: new Vector3(0, 0.1, 0),
@@ -84,7 +96,7 @@ const initialState: State = {
   viewer: {
     coords: {
       position: new Vector3(0, 0, 10),
-      scale: new Vector3(1.2, 1.2, 1),
+      scale: new Vector3(1, 1, 1),
       quaternion: new Quaternion()
     }
   },
@@ -118,13 +130,14 @@ class Object3DCoords extends Object3D {
 }
 
 const o = new Object3DCoords()
+const m = new Matrix4()
 
 const slice = createSlice({
   name: "studio",
   initialState,
   reducers: {
     setBorderWidth(state, { payload: borderWidth }: PayloadAction<number>) {
-      state.borderWidth = borderWidth
+      // Set border scale based on current portal size
     },
     drag(
       { spacemap: { coords: spacemap }, viewport, viewer, drag },
@@ -159,10 +172,16 @@ const slice = createSlice({
         drag.start = null
       }
     },
-    rotate({ spacemap, viewport }, { payload: dx }: PayloadAction<number>) {
-      o.from(spacemap.coords)
-        .rotateZ((dx / viewport.width) * 2 * Math.PI)
-        .to(spacemap.coords)
+    rotate(
+      { spacemap: { coords: spacemap }, viewport },
+      { payload: { dx, dy } }: PayloadAction<{ dx: number; dy: number }>
+    ) {
+      const feedbackAngle = (dy / viewport.height) * pi2,
+        portalAngle = (dx / viewport.width) * pi2
+      o.from(spacemap)
+        .rotateZ(portalAngle + feedbackAngle)
+        .to(spacemap)
+      spacemap.position.applyMatrix4(m.makeRotationZ(portalAngle))
     },
     zoom({ spacemap }, { payload: distance }: PayloadAction<number>) {
       const pps = spacemap.pixelsPerScale

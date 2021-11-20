@@ -50,8 +50,8 @@ export function useInteractions(): Callbacks {
           dispatch(drag({ x, y }))
         }
         if (rotating) {
-          const { movementX: dx } = e
-          dispatch(rotate(dx))
+          const { movementX: dx, movementY: dy } = e
+          dispatch(rotate({ dx, dy }))
         }
       },
       onContextMenu: ignore,

@@ -1,10 +1,13 @@
 import { Quaternion, Vector3 } from "three"
 import { toggleShow } from "./stats"
 import { AppStore, createStore } from "./store"
-import { rotate, setBorderWidth, drag } from "./studio/model"
+import { rotate, setBorderWidth, drag, setSize } from "./studio/model"
 
 let store: AppStore
-beforeEach(() => (store = createStore()))
+beforeEach(() => {
+  store = createStore()
+  store.dispatch(setSize({ width: 10, height: 10 }))
+})
 
 describe("model", () => {
   const getState = () => store.getState().studio
@@ -42,7 +45,7 @@ describe("model", () => {
     const distance = 100
     const s1 = getState(),
       q1 = s1.spacemap.coords.quaternion.clone()
-    store.dispatch(rotate(distance))
+    store.dispatch(rotate({ dx: 0, dy: distance }))
     const s2 = getState()
 
     expect(s2.spacemap.coords.quaternion).toBeInstanceOf(Quaternion)
