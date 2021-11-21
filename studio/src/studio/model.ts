@@ -17,8 +17,8 @@ function markImmerable() {
 markImmerable()
 
 export type State = {
-  borderWidth: number
   border: {
+    width: number
     coords: Coords
   }
   spacemap: {
@@ -65,11 +65,11 @@ export interface Coords {
  * origin. Therefore width and height are equal to scale!
  */
 const initialState: State = {
-  borderWidth: 0.5,
   border: {
+    width: 0.1,
     coords: {
       position: new Vector3(0, 0, -1),
-      scale: new Vector3(1.1, 1.1, 1),
+      scale: new Vector3(1.2, 1.2, 1),
       quaternion: new Quaternion()
     }
   },
@@ -136,7 +136,7 @@ const slice = createSlice({
   name: "studio",
   initialState,
   reducers: {
-    setBorderWidth(state, { payload: borderWidth }: PayloadAction<number>) {
+    setBorderWidth({ border, portal }, { payload: borderWidth }: PayloadAction<number>) {
       // Set border scale based on current portal size
     },
     drag(
@@ -189,11 +189,18 @@ const slice = createSlice({
       spacemap.coords.scale.y += distance / pps
     },
     setSize(
-      { viewport },
+      { viewport, portal, viewer, border },
       { payload: { width, height } }: PayloadAction<{ width: number; height: number }>
     ) {
+      const aspect = width / height,
+        unitWidth = Math.sqrt(aspect),
+        unitHeight = 1 / unitWidth
+
       viewport.width = width
       viewport.height = height
+      portal.coords.scale.set(unitWidth, unitHeight, 1)
+      border.coords.scale.set(unitWidth + 2 * border.width, unitHeight + 2 * border.width, 1)
+      viewer.coords.scale.copy(portal.coords.scale)
     }
   }
 })
