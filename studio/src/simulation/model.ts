@@ -133,7 +133,7 @@ const o = new Object3DCoords()
 const m = new Matrix4()
 
 const slice = createSlice({
-  name: "studio",
+  name: "simulation",
   initialState,
   reducers: {
     setBorderWidth({ border, portal }, { payload: borderWidth }: PayloadAction<number>) {

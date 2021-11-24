@@ -28,7 +28,7 @@ type Render = (scene: Scene, camera: OrthographicCamera, target: WebGLRenderTarg
 type RenderScene = (camera: OrthographicCamera, target: WebGLRenderTarget) => void
 
 class Renderer extends three.BaseRenderer {
-  private view: StudioView
+  private view: SimulationView
   private store: AppStore
   private stats: StatsLib
 
@@ -36,11 +36,11 @@ class Renderer extends three.BaseRenderer {
     super(canvas)
     this.store = store
     this.stats = stats
-    this.view = new StudioView()
+    this.view = new SimulationView()
   }
 
   get state(): State {
-    return this.store.getState().studio
+    return this.store.getState().simulation
   }
 
   override renderFrame() {
@@ -59,9 +59,9 @@ class Renderer extends three.BaseRenderer {
   }
 }
 
-class StudioView {
+class SimulationView {
   readonly scene: Scene
-  readonly feedback: Feedback
+  readonly feedback: FeedbackView
   readonly viewer: OrthographicCamera
   readonly border: Mesh
 
@@ -86,7 +86,7 @@ class StudioView {
     const border = new Mesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({ color: "#ffffff" }))
     scene.add(border)
 
-    const feedback = new Feedback(scene)
+    const feedback = new FeedbackView(scene)
 
     const viewer = unitOrthoCamera()
     scene.add(viewer)
@@ -127,7 +127,7 @@ class StudioView {
  * Renders visual feedback. Callers handle rendering and scenes. Scene should
  * not have position or anything.
  */
-class Feedback {
+class FeedbackView {
   /** Maps destination regions to source regions.  */
   private spacemap = new Object3D()
 

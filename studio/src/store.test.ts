@@ -1,7 +1,7 @@
 import { Quaternion, Vector3 } from "three"
 import { toggleShow } from "./stats"
 import { AppStore, createStore } from "./store"
-import { rotate, setBorderWidth, drag, setSize } from "./studio/model"
+import { rotate, setBorderWidth, drag, setSize } from "./simulation/model"
 
 let store: AppStore
 beforeEach(() => {
@@ -10,14 +10,14 @@ beforeEach(() => {
 })
 
 describe("model", () => {
-  const getState = () => store.getState().studio
+  const getState = () => store.getState().simulation
 
   it("Updates Border Width", () => {
     const s1 = getState()
     store.dispatch(setBorderWidth(3))
     const s2 = getState()
 
-    expect(s1.borderWidth).not.toEqual(s2.borderWidth)
+    expect(s1.border.width).not.toEqual(s2.border.width)
     expect(s1.spacemap).toBe(s2.spacemap)
   })
 

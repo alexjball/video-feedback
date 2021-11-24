@@ -1,6 +1,6 @@
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import { isDraftable } from "immer"
-import { reducer as studio } from "./studio/model"
+import { reducer as simulation } from "./simulation"
 import { reducer as stats } from "./stats"
 
 export const createStore = () =>
@@ -13,7 +13,7 @@ export const createStore = () =>
         } as any
       }),
     reducer: {
-      studio,
+      simulation,
       stats
     }
   })
