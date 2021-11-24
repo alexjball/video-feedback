@@ -137,7 +137,12 @@ const slice = createSlice({
   initialState,
   reducers: {
     setBorderWidth({ border, portal }, { payload: borderWidth }: PayloadAction<number>) {
-      // Set border scale based on current portal size
+      border.width = borderWidth
+      border.coords.scale.set(
+        portal.coords.scale.x + 2 * borderWidth,
+        portal.coords.scale.y + 2 * borderWidth,
+        1
+      )
     },
     drag(
       { spacemap: { coords: spacemap }, viewport, viewer, drag },
