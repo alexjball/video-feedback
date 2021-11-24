@@ -86,9 +86,7 @@ class StudioView {
     const border = new Mesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({ color: "#ffffff" }))
     scene.add(border)
 
-    const feedback = new Feedback()
-    const { portal } = feedback
-    scene.add(portal)
+    const feedback = new Feedback(scene)
 
     const viewer = unitOrthoCamera()
     scene.add(viewer)
@@ -97,14 +95,6 @@ class StudioView {
   }
 
   private binder = new Binder<State>()
-    .add(
-      s => s.spacemap.coords,
-      v => copyCoords(v, this.feedback.spacemap)
-    )
-    .add(
-      s => s.portal.coords,
-      v => copyCoords(v, this.feedback.portal)
-    )
     .add(
       s => s.viewer.coords,
       v => copyCoords(v, this.viewer)
@@ -122,6 +112,7 @@ class StudioView {
 
   draw(state: State, render: Render) {
     this.binder.apply(state)
+    this.feedback.binder.apply(state)
     this.feedback.iterate((camera, target) => render(this.scene, camera, target))
     render(this.scene, this.viewer, null)
     // TODO: Render debug scene
@@ -138,12 +129,12 @@ class StudioView {
  */
 class Feedback {
   /** Maps destination regions to source regions.  */
-  readonly spacemap = new Object3D()
+  private spacemap = new Object3D()
 
   /**
    * The current view of the feedback. It is updated at the end of `iterate`.
    */
-  readonly portal = new Mesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({ map: new Texture() }))
+  private portal = new Mesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({ map: new Texture() }))
 
   private frames = Array(2)
     .fill(undefined)
@@ -151,11 +142,26 @@ class Feedback {
   private currentFrame = 0
   private camera
 
-  constructor() {
+  constructor(scene: Scene) {
     this.camera = unitOrthoCamera()
     this.spacemap.add(this.camera)
-    this.portal.add(this.spacemap)
+
+    scene.add(this.portal)
+    scene.add(this.spacemap)
   }
+
+  readonly binder = new Binder<State>()
+    .add(
+      s => s.spacemap.coords,
+      v => copyCoords(v, this.spacemap)
+    )
+    .add(
+      s => s.portal.coords,
+      v => {
+        copyCoords(v, this.camera)
+        copyCoords(v, this.portal)
+      }
+    )
 
   dispose() {
     this.frames.forEach(frame => frame.dispose())
@@ -176,8 +182,6 @@ class Feedback {
     this.camera.right = bb.max.x
     this.camera.top = bb.max.y
     this.camera.bottom = bb.min.y
-
-    // this.portal.updateMatrixWorld()
 
     // Pop LRU frame, render the source region of the feedback scene to the
     // frame using a render callback, which may cause the feedback to render its
