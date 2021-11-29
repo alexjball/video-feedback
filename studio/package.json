@@ -17,6 +17,7 @@
     "react-dom": "17.0.2",
     "react-redux": "^7.2.6",
     "stats.js": "^0.17.0",
+    "styled-components": "^5.3.3",
     "three": "file:../packages/three.js",
     "use-resize-observer": "^8.0.0"
   },
@@ -24,7 +25,9 @@
     "@types/jest": "^27.0.2",
     "@types/react": "17.0.21",
     "@types/stats.js": "^0.17.0",
+    "@types/styled-components": "^5.1.15",
     "@types/three": "^0.131.1",
+    "babel-plugin-styled-components": "^1.13.3",
     "eslint": "7.32.0",
     "eslint-config-next": "11.1.2",
     "eslint-config-prettier": "^8.3.0",

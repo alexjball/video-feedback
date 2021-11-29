@@ -9,17 +9,18 @@ import {
   Texture,
   WebGLRenderTarget
 } from "three"
+import { unitOrthoCamera } from "../camera"
 import { useAppStore } from "../hooks"
-import { StatsLib, useStatsLib } from "../stats"
+import { useStats, StatsJs } from "../stats"
 import { AppStore } from "../store"
 import * as three from "../three"
-import Binder from "./binder"
+import Binder from "../binder"
 import { copyCoords, setSize, State } from "./model"
 
 export function useRenderer() {
-  const stats = useStatsLib()
+  const { stats } = useStats()
   const store = useAppStore()
-  const createRenderer = useCallback(canvas => new Renderer(canvas, store, stats), [stats, store])
+  const createRenderer = useCallback(() => new Renderer(store, stats), [stats, store])
   const renderer = three.useRenderer(createRenderer)
   return renderer
 }
@@ -27,14 +28,12 @@ export function useRenderer() {
 type Render = (scene: Scene, camera: OrthographicCamera, target: WebGLRenderTarget | null) => void
 type RenderScene = (camera: OrthographicCamera, target: WebGLRenderTarget) => void
 
-class Renderer extends three.BaseRenderer {
+class Renderer extends three.WebGlRenderer {
   private view: SimulationView
-  private store: AppStore
-  private stats: StatsLib
+  private stats?: StatsJs
 
-  constructor(canvas: HTMLCanvasElement, store: AppStore, stats: StatsLib) {
-    super(canvas)
-    this.store = store
+  constructor(store: AppStore, stats?: StatsJs) {
+    super(store)
     this.stats = stats
     this.view = new SimulationView()
   }
@@ -44,9 +43,9 @@ class Renderer extends three.BaseRenderer {
   }
 
   override renderFrame() {
-    this.stats.begin()
+    this.stats?.begin()
     this.view.draw(this.state, this.renderScene)
-    this.stats.end()
+    this.stats?.end()
   }
 
   override setSize(width: number, height: number) {
@@ -55,6 +54,7 @@ class Renderer extends three.BaseRenderer {
   }
 
   override dispose() {
+    super.dispose()
     this.view.dispose()
   }
 }
@@ -194,12 +194,4 @@ class FeedbackView {
     this.portal.material.map = target.texture
     this.currentFrame = lruFrame
   }
-}
-
-/**
- * Creates a 1x1 orthographic camera in the xy plane, centered on the origin,
- * looking at -z, and viewing +/- 100z
- */
-function unitOrthoCamera() {
-  return new OrthographicCamera(-0.5, 0.5, 0.5, -0.5, -100, 100)
 }

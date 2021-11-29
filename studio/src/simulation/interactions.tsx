@@ -31,14 +31,14 @@ export function useInteractions(): Callbacks {
 
     return {
       onMouseDown(e) {
-        if (e.button === 0) {
+        if (e.button === 0 && !dragging) {
           dragging = true
           dispatch(drag({ x: e.clientX, y: e.clientY, start: true }))
         }
         if (e.button === 2) rotating = true
       },
       onMouseUp(e) {
-        if (e.button === 0) {
+        if (e.button === 0 && dragging) {
           dispatch(drag({ x: e.clientX, y: e.clientY, end: true }))
           dragging = false
         }

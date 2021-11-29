@@ -1,11 +1,12 @@
 import { BoxGeometry, Mesh, MeshBasicMaterial, PerspectiveCamera, Scene } from "three"
+import { AppStore } from "./store"
 import * as three from "./three"
 
-class Renderer extends three.BaseRenderer {
+class Renderer extends three.WebGlRenderer {
   private scene
 
-  constructor(canvas: HTMLCanvasElement) {
-    super(canvas)
+  constructor(store: AppStore) {
+    super(store)
     this.scene = this.createScene()
   }
 

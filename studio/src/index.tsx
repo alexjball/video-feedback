@@ -1,4 +1,2 @@
-export { Simulation } from "./simulation"
+export { Studio } from "./studio"
 export { Demo } from "./demo"
-export { Stats } from "./stats"
-export { store } from "./store"

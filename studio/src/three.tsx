@@ -1,9 +1,23 @@
-import { DependencyList, HTMLAttributes, RefObject, useEffect, useMemo, useRef } from "react"
+import {
+  DependencyList,
+  HTMLAttributes,
+  RefObject,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef
+} from "react"
 import { Camera, Scene, Vector2, WebGLRenderer, WebGLRenderTarget } from "three"
+import { SVGRenderer } from "three/examples/jsm/renderers/SVGRenderer"
 import useResizeObserver from "use-resize-observer"
+import { useAppStore } from "./hooks"
+import { State } from "./simulation/model"
+import { StatsJs } from "./stats"
+import { AppStore } from "./store"
 
 export interface Renderer {
-  init(canvas: HTMLCanvasElement): void
+  init(): LibContainerElement
   setSize(width: number, height: number): void
   renderFrame(): void
   dispose(): void
@@ -16,34 +30,34 @@ export interface Props extends HTMLAttributes<HTMLDivElement> {
 type FrameRef = RefObject<HTMLDivElement>
 type CanvasRef = RefObject<HTMLCanvasElement>
 
-export function Three({ renderer, ...divProps }: Props) {
-  const canvas: CanvasRef = useRef(null)
+export function Three({ renderer, style, ...divProps }: Props) {
+  const frame: FrameRef = useRef(null)
 
   // Order matters here! Effects run in the order they're called
-  useInit(renderer, canvas)
-  const { frame, hasSize } = useResize(renderer)
-  useRenderLoop(renderer, canvas, hasSize)
+  useInit(renderer, frame)
+  const { hasSize } = useResize(renderer, frame)
+  useRenderLoop(renderer, hasSize)
   useDispose(renderer)
 
-  return (
-    <div style={{ backgroundColor: "grey", position: "relative" }} ref={frame} {...divProps}>
-      <canvas style={{ position: "absolute" }} ref={canvas} />
-    </div>
-  )
+  return <div style={{ position: "relative", ...style }} ref={frame} {...divProps} />
 }
 
 function useDispose(renderer: Renderer) {
   useEffect(() => () => renderer.dispose(), [renderer])
 }
 
-function useInit(renderer: Renderer, canvas: CanvasRef) {
+function useInit(renderer: Renderer, frame: FrameRef) {
   useEffect(() => {
-    if (canvas.current) renderer.init(canvas.current)
-  }, [canvas, renderer])
+    const container = frame.current!,
+      element = renderer.init()
+    element.style.cssText = ""
+    element.style.position = "absolute"
+    container.appendChild(element)
+    return () => void container.removeChild(element)
+  }, [frame, renderer])
 }
 
-function useResize(renderer: Renderer) {
-  const frame: FrameRef = useRef(null)
+function useResize(renderer: Renderer, frame: FrameRef) {
   const { width = 0, height = 0 } = useResizeObserver<HTMLDivElement>({ ref: frame }),
     hasSize = Boolean(width && height)
   useEffect(() => {
@@ -52,7 +66,7 @@ function useResize(renderer: Renderer) {
   return { frame, hasSize }
 }
 
-function useRenderLoop(renderer: Renderer, canvas: CanvasRef, hasSize: boolean) {
+function useRenderLoop(renderer: Renderer, hasSize: boolean) {
   const loop = useMemo(() => {
     let animationRequest: null | number = null
 
@@ -79,60 +93,93 @@ function useRenderLoop(renderer: Renderer, canvas: CanvasRef, hasSize: boolean) 
   }, [renderer])
 
   useEffect(() => {
-    if (canvas.current && hasSize) loop.startAnimating()
+    if (hasSize) loop.startAnimating()
     return () => loop.stopAnimating()
-  }, [canvas, hasSize, loop, renderer])
+  }, [hasSize, loop, renderer])
 }
+
+class SVGRendererCompat extends SVGRenderer {
+  dispose() {}
+}
+
+type RendererMethods = "domElement" | "getSize" | "setSize" | "dispose"
+type LibRenderer = Pick<SVGRendererCompat, RendererMethods> | Pick<WebGLRenderer, RendererMethods>
+type LibContainerElement = Node & Pick<HTMLElement, "style">
 
 /**
  * Class-based Renderer pattern that uses the constructor and inheritance to
  * provide common rendering support. The React components work better with
  * functional interfaces, and `useRenderer` adapts between the two patterns.
  */
-export class BaseRenderer implements Renderer {
-  readonly renderer
+class BaseRenderer<T extends LibRenderer> implements Renderer {
+  readonly store: AppStore
+  readonly renderer: T
 
-  constructor(canvas: HTMLCanvasElement) {
-    this.renderer = new WebGLRenderer({ canvas, antialias: true })
+  constructor(renderer: T, store: AppStore) {
+    this.renderer = renderer
+    this.store = store
   }
 
-  init(): void {
-    throw Error("Canvas is initialized in the constructor")
+  get state() {
+    return this.store.getState()
   }
 
-  renderFrame(): void {}
+  init() {
+    return this.renderer.domElement
+  }
 
   dispose(): void {
     this.renderer.dispose()
   }
 
+  renderFrame() {}
+
   setSize(width: number, height: number) {
     this.renderer.setSize(width, height)
   }
+}
 
-  get size() {
-    const size = new Vector2()
-    this.renderer.getSize(size)
-    return { width: size.x, height: size.y }
+export class WebGlRenderer extends BaseRenderer<WebGLRenderer> {
+  constructor(store: AppStore) {
+    super(new WebGLRenderer({ antialias: true }), store)
   }
 
   renderScene = (scene: Scene, camera: Camera, target: WebGLRenderTarget | null) => {
     this.renderer.setRenderTarget(target)
     this.renderer.render(scene, camera)
   }
+  get size() {
+    const size = new Vector2()
+    this.renderer.getSize(size)
+    return { width: size.x, height: size.y }
+  }
 }
 
-type CreateRenderer = (canvas: HTMLCanvasElement) => BaseRenderer
+export class SvgRenderer extends BaseRenderer<SVGRendererCompat> {
+  constructor(store: AppStore) {
+    super(new SVGRendererCompat(), store)
+  }
+
+  renderScene = (scene: Scene, camera: Camera) => {
+    this.renderer.render(scene, camera)
+  }
+  get size() {
+    return this.renderer.getSize()
+  }
+}
+
+type CreateRenderer = () => Renderer
 
 /** Bridges the functional react and class-based renderer patterns */
 // TODO: How much of this could be a hook or a react component? Is is it
 // performant to render at 60 fps?
 export function useRenderer(createRenderer: CreateRenderer, deps: DependencyList = []): Renderer {
   return useMemo(() => {
-    let renderer: BaseRenderer
+    let renderer: Renderer
     return {
-      init(canvas: HTMLCanvasElement) {
-        renderer = createRenderer(canvas)
+      init() {
+        renderer = createRenderer()
+        return renderer.init()
       },
       setSize(width: number, height: number) {
         renderer.setSize(width, height)
@@ -149,8 +196,9 @@ export function useRenderer(createRenderer: CreateRenderer, deps: DependencyList
 }
 
 export type WrapperProps = Omit<Props, "renderer">
-export const asComponent = <T extends typeof BaseRenderer>(MyRenderer: T) =>
+export const asComponent = <T extends { new (store: AppStore): Renderer }>(MyRenderer: T) =>
   function ThreeWrapper(props: WrapperProps) {
-    const renderer = useRenderer(canvas => new MyRenderer(canvas))
+    const store = useAppStore()
+    const renderer = useRenderer(() => new MyRenderer(store))
     return <Three {...props} renderer={renderer} />
   }
