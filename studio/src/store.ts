@@ -21,6 +21,8 @@ export const createStore = () =>
 export const store = createStore()
 
 // https://redux-toolkit.js.org/tutorials/typescript
+//
+// Import these with import type to ensure that the store dependency is erased.
 export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch
 export type AppStore = typeof store

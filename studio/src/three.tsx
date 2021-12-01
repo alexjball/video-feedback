@@ -1,20 +1,9 @@
-import {
-  DependencyList,
-  HTMLAttributes,
-  RefObject,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef
-} from "react"
+import { DependencyList, HTMLAttributes, RefObject, useEffect, useMemo, useRef } from "react"
 import { Camera, Scene, Vector2, WebGLRenderer, WebGLRenderTarget } from "three"
 import { SVGRenderer } from "three/examples/jsm/renderers/SVGRenderer"
 import useResizeObserver from "use-resize-observer"
 import { useAppStore } from "./hooks"
-import { State } from "./simulation/model"
-import { StatsJs } from "./stats"
-import { AppStore } from "./store"
+import type { AppStore } from "./store"
 
 export interface Renderer {
   init(): LibContainerElement

@@ -206,11 +206,17 @@ const slice = createSlice({
       portal.coords.scale.set(unitWidth, unitHeight, 1)
       border.coords.scale.set(unitWidth + 2 * border.width, unitHeight + 2 * border.width, 1)
       viewer.coords.scale.copy(portal.coords.scale)
+    },
+    reset(state) {
+      state.portal = initialState.portal
+      state.border = initialState.border
+      state.spacemap = initialState.spacemap
+      state.viewer = initialState.viewer
     }
   }
 })
 
 export const {
   reducer,
-  actions: { setBorderWidth, rotate, zoom, setSize, drag }
+  actions: { setBorderWidth, rotate, zoom, setSize, drag, reset }
 } = slice

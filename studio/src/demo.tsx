@@ -1,5 +1,5 @@
 import { BoxGeometry, Mesh, MeshBasicMaterial, PerspectiveCamera, Scene } from "three"
-import { AppStore } from "./store"
+import type { AppStore } from "./store"
 import * as three from "./three"
 
 class Renderer extends three.WebGlRenderer {

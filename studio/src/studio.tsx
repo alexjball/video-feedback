@@ -21,12 +21,12 @@ const Panel = styled.div`
 
 const Io = styled(Panel)`
   grid-column: 2;
-  grid-row: 1;
+  grid-row: 3;
 `
 
 const Nav = styled(Panel)`
   grid-column: 2;
-  grid-row: 3;
+  grid-row: 1;
 `
 
 const Controls = styled(Panel)`

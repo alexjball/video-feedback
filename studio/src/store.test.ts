@@ -1,7 +1,7 @@
 import { Quaternion, Vector3 } from "three"
 import { toggleShow } from "./stats"
 import { AppStore, createStore } from "./store"
-import { rotate, setBorderWidth, drag, setSize } from "./simulation/model"
+import { rotate, setBorderWidth, drag, setSize, reset } from "./simulation/model"
 
 let store: AppStore
 beforeEach(() => {
@@ -55,6 +55,20 @@ describe("model", () => {
     expect(s2.spacemap.coords.scale).toBe(s1.spacemap.coords.scale)
     expect(s2.spacemap.coords.position).toBe(s1.spacemap.coords.position)
     expect(s1.spacemap).not.toBe(s2.spacemap)
+  })
+
+  it("Resets", () => {
+    const distance = 100
+    const s1 = getState(),
+      q1 = s1.spacemap.coords.quaternion.clone()
+
+    store.dispatch(rotate({ dx: 0, dy: distance }))
+    const s2 = getState()
+    expect(s2.spacemap.coords.quaternion.equals(q1)).toBeFalsy()
+
+    store.dispatch(reset())
+    const s3 = getState()
+    expect(s3.spacemap.coords.quaternion.equals(q1)).toBeTruthy()
   })
 })
 

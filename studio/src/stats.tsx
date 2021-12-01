@@ -16,7 +16,7 @@ import Binder from "./binder"
 import { contain, unitOrthoCamera } from "./camera"
 import { useAppSelector } from "./hooks"
 import { copyCoords, State as SimState } from "./simulation/model"
-import { AppStore } from "./store"
+import type { AppStore } from "./store"
 import * as three from "./three"
 
 const ssr = typeof window === "undefined"

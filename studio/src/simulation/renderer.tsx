@@ -12,7 +12,7 @@ import {
 import { unitOrthoCamera } from "../camera"
 import { useAppStore } from "../hooks"
 import { useStats, StatsJs } from "../stats"
-import { AppStore } from "../store"
+import type { AppStore } from "../store"
 import * as three from "../three"
 import Binder from "../binder"
 import { copyCoords, setSize, State } from "./model"
