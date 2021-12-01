@@ -1,9 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { createContext, useCallback, useContext, useMemo, useState } from "react"
+import { createContext, HTMLProps, useCallback, useContext, useMemo, useState } from "react"
 import Lib from "stats.js"
-import styled from "styled-components"
 import {
-  ArrowHelper,
   Box3,
   BufferGeometry,
   Color,
@@ -11,11 +9,8 @@ import {
   Line,
   LineBasicMaterial,
   LineBasicMaterialParameters,
-  LineLoop,
   Object3D,
-  PlaneGeometry,
-  Scene,
-  Vector3
+  Scene
 } from "three"
 import Binder from "./binder"
 import { contain, unitOrthoCamera } from "./camera"
@@ -102,24 +97,14 @@ export const {
   actions: { toggleShow }
 } = slice
 
-const Panel = styled.div`
-  position: fixed;
-  z-index: 1000;
-  pointer-events: none;
-`
-
-export const StatsPanel: React.FC = () => {
+export const StatsPanel: React.FC<HTMLProps<HTMLDivElement>> = props => {
   const { init } = useStats()
   const show = useAppSelector(state => state.stats.show)
   return show ? (
-    <>
-      <Panel>
-        <div ref={init} />
-      </Panel>
-      <Panel>
-        <DebugView style={{ width: "100vw", height: "100vh" }} />
-      </Panel>
-    </>
+    <div style={{ display: "flex", flexDirection: "column", maxHeight: "500px" }} {...props}>
+      <div ref={init} />
+      <DebugView style={{ flex: "auto", backgroundColor: "white", opacity: 0.8 }} />
+    </div>
   ) : null
 }
 
