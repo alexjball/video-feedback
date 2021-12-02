@@ -38,13 +38,9 @@ class Renderer extends three.WebGlRenderer {
     this.view = new SimulationView()
   }
 
-  get state(): State {
-    return this.store.getState().simulation
-  }
-
   override renderFrame() {
     this.stats?.begin()
-    this.view.draw(this.state, this.renderScene)
+    this.view.draw(this.state.simulation, this.renderScene)
     this.stats?.end()
   }
 
@@ -63,7 +59,8 @@ class SimulationView {
   readonly scene: Scene
   readonly feedback: FeedbackView
   readonly viewer: OrthographicCamera
-  readonly border: Mesh
+  readonly border: Mesh<PlaneGeometry, MeshBasicMaterial>
+  readonly background: Mesh<PlaneGeometry, MeshBasicMaterial>
 
   constructor() {
     const o = this.initObjects()
@@ -71,6 +68,7 @@ class SimulationView {
     this.feedback = o.feedback
     this.viewer = o.viewer
     this.border = o.border
+    this.background = o.background
   }
 
   private initObjects() {
@@ -91,7 +89,7 @@ class SimulationView {
     const viewer = unitOrthoCamera()
     scene.add(viewer)
 
-    return { scene, feedback, viewer, border }
+    return { scene, background, feedback, viewer, border }
   }
 
   private binder = new Binder<State>()
@@ -108,6 +106,14 @@ class SimulationView {
       v => {
         this.feedback.setSize(v.width, v.height)
       }
+    )
+    .add(
+      s => s.border.color,
+      v => this.border.material.color.set(v)
+    )
+    .add(
+      s => s.background.color,
+      v => this.background.material.color.set(v)
     )
 
   draw(state: State, render: Render) {

@@ -1,8 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 import { immerable } from "immer"
-import { useCallback } from "react"
-import { Matrix4, Object3D, Quaternion, Vector2, Vector3, Vector4 } from "three"
-import { useAppSelector, useAppStore } from "../hooks"
+import { Color, Matrix4, Object3D, Quaternion, Vector2, Vector3, Vector4 } from "three"
 
 const pi2 = 2 * Math.PI
 
@@ -20,11 +18,13 @@ export type State = {
   border: {
     width: number
     coords: Coords
+    color: string
+  }
+  background: {
+    color: string
   }
   spacemap: {
     coords: Coords
-    pixelsPerUnit: Vector2
-    pixelsPerDegree: number
     pixelsPerScale: number
   }
   portal: {
@@ -71,7 +71,11 @@ const initialState: State = {
       position: new Vector3(0, 0, -1),
       scale: new Vector3(1.2, 1.2, 1),
       quaternion: new Quaternion()
-    }
+    },
+    color: "#f5f5ff"
+  },
+  background: {
+    color: "#97a197"
   },
   spacemap: {
     coords: {
@@ -79,10 +83,6 @@ const initialState: State = {
       scale: new Vector3(2, 2, 1),
       quaternion: new Quaternion()
     },
-    /** Screen pixels per unit movement in position */
-    pixelsPerUnit: new Vector2(-2e2, 2e2),
-    /** Screen pixels per degree rotation (right-handed about z) */
-    pixelsPerDegree: -5,
     /** Scroll wheel pixels per unit scaling */
     pixelsPerScale: 5e2
   },
@@ -207,16 +207,39 @@ const slice = createSlice({
       border.coords.scale.set(unitWidth + 2 * border.width, unitHeight + 2 * border.width, 1)
       viewer.coords.scale.copy(portal.coords.scale)
     },
-    reset(state) {
-      state.portal = initialState.portal
-      state.border = initialState.border
+    center(state) {
+      state.portal.coords.position.copy(initialState.portal.coords.position)
+      state.portal.coords.quaternion.copy(initialState.portal.coords.quaternion)
+      state.border.coords.position.copy(initialState.border.coords.position)
+      state.border.coords.quaternion.copy(initialState.border.coords.quaternion)
+      state.viewer.coords.position.copy(initialState.viewer.coords.position)
+      state.viewer.coords.quaternion.copy(initialState.viewer.coords.quaternion)
       state.spacemap = initialState.spacemap
-      state.viewer = initialState.viewer
+      state.background = initialState.background
+    },
+    setBackgroundColor(state, { payload: color }: PayloadAction<string>) {
+      state.background.color = cleanColor(color)
+    },
+    setBorderColor(state, { payload: color }: PayloadAction<string>) {
+      state.border.color = cleanColor(color)
     }
   }
 })
 
 export const {
   reducer,
-  actions: { setBorderWidth, rotate, zoom, setSize, drag, reset }
+  actions: {
+    setBorderWidth,
+    setBackgroundColor,
+    setBorderColor,
+    rotate,
+    zoom,
+    setSize,
+    drag,
+    center
+  }
 } = slice
+
+function cleanColor(color: string): string {
+  return `#${new Color(color).getHexString()}`
+}

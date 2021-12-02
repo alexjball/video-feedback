@@ -1,2 +1,2 @@
-export { Simulation } from "./simulation"
+export { Simulation as SimulationPanel } from "./simulation"
 export { reducer } from "./model"

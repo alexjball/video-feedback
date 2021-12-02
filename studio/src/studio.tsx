@@ -1,13 +1,15 @@
 import styled from "styled-components"
 import { Providers } from "./providers"
-import { Simulation } from "./simulation"
+import { SimulationPanel } from "./simulation"
 import { StatsPanel } from "./stats"
+import { ControlsPanel } from "./controls"
+import { NavigationPanel } from "./navigation"
 
 const Layout = styled.div`
   width: 100vw;
   height: 100vh;
   display: grid;
-  grid-template-columns: 1fr 2fr 2fr;
+  grid-template-columns: 1fr 2fr 1fr;
   grid-template-rows: 3rem 1fr 3rem;
   /* Panels can set to all */
   pointer-events: none;
@@ -24,14 +26,16 @@ const Io = styled(Panel)`
   grid-row: 3;
 `
 
-const Nav = styled(Panel)`
+const Navigation = styled(NavigationPanel)`
   grid-column: 2;
   grid-row: 1;
+  z-index: 5;
 `
 
-const Controls = styled(Panel)`
+const Controls = styled(ControlsPanel)`
   grid-column: 3;
   grid-row: 1 / span 3;
+  z-index: 10;
 `
 
 const Stats = styled(StatsPanel)`
@@ -40,7 +44,7 @@ const Stats = styled(StatsPanel)`
   z-index: 10;
 `
 
-const StyledSimulation = styled(Simulation)`
+const Simulation = styled(SimulationPanel)`
   grid-column: 1 / span 3;
   grid-row: 1 / span 3;
   z-index: 0;
@@ -53,9 +57,9 @@ export function Studio() {
       <Layout>
         <Controls />
         <Io />
-        <Nav />
+        <Navigation />
         <Stats />
-        <StyledSimulation />
+        <Simulation />
       </Layout>
     </Providers>
   )
