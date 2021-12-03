@@ -80,7 +80,7 @@ function ColorInput({
     <Control>
       <fieldset>
         <legend>{legend}</legend>
-        <input placeholder="asdfs" type="color" value={value} onInput={update} />
+        <input type="color" value={value} onInput={update} />
       </fieldset>
     </Control>
   )

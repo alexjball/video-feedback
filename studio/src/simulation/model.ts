@@ -215,7 +215,6 @@ const slice = createSlice({
       state.viewer.coords.position.copy(initialState.viewer.coords.position)
       state.viewer.coords.quaternion.copy(initialState.viewer.coords.quaternion)
       state.spacemap = initialState.spacemap
-      state.background = initialState.background
     },
     setBackgroundColor(state, { payload: color }: PayloadAction<string>) {
       state.background.color = cleanColor(color)
