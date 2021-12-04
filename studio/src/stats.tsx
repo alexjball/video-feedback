@@ -6,10 +6,15 @@ import {
   BufferGeometry,
   Color,
   Float32BufferAttribute,
+  GridHelper,
+  Group,
   Line,
   LineBasicMaterial,
   LineBasicMaterialParameters,
+  Mesh,
+  MeshBasicMaterial,
   Object3D,
+  PlaneGeometry,
   Scene
 } from "three"
 import Binder from "./binder"
@@ -103,7 +108,7 @@ export const StatsPanel: React.FC<HTMLProps<HTMLDivElement>> = props => {
   return show ? (
     <div style={{ display: "flex", flexDirection: "column", maxHeight: "500px" }} {...props}>
       <div ref={init} />
-      <DebugView style={{ flex: "auto", backgroundColor: "white", opacity: 0.8 }} />
+      <DebugView style={{ flex: "auto", opacity: 0.8 }} />
     </div>
   ) : null
 }
@@ -138,8 +143,10 @@ class Renderer extends three.SvgRenderer {
   }
 
   private fitScene() {
+    this.scene.scene.updateMatrixWorld()
     const bb = new Box3()
-    bb.setFromObject(this.scene.scene)
+    bb.expandByObject(this.scene.feedbackDestination)
+    bb.expandByObject(this.scene.feedbackSource)
     const { width, height } = this.size
     contain({ camera: this.scene.camera, aspect: width / height, bb, maxPadding: 1 })
   }
@@ -155,6 +162,7 @@ class Renderer extends three.SvgRenderer {
 
     spacemap.add(feedbackSource)
     scene.add(feedbackDestination, spacemap)
+    scene.add(this.createGrid())
 
     return {
       scene,
@@ -165,7 +173,17 @@ class Renderer extends three.SvgRenderer {
     }
   }
 
+  private createGrid() {
+    const size = 20
+    const divisions = 50
+
+    const gridHelper = new GridHelper(size, divisions)
+    gridHelper.rotateX((90 * Math.PI) / 180)
+    return gridHelper
+  }
+
   private createBorder(parameters?: Partial<LineBasicMaterialParameters>) {
+    const border = new Group()
     const geometry = new BufferGeometry()
     geometry.setAttribute(
       "position",
@@ -175,7 +193,11 @@ class Renderer extends three.SvgRenderer {
         3
       )
     )
-    return new Line(geometry, new LineBasicMaterial({ linewidth: 5, ...parameters }))
+    border.add(new Line(geometry, new LineBasicMaterial({ linewidth: 5, ...parameters })))
+    border.add(
+      new Mesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({ opacity: 0.2, ...parameters }))
+    )
+    return border
   }
 
   override renderFrame = () => {
