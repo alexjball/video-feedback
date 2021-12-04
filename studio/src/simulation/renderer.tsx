@@ -5,8 +5,10 @@ import {
   Object3D,
   OrthographicCamera,
   PlaneGeometry,
+  RGBFormat,
   Scene,
   Texture,
+  WebGLRenderer,
   WebGLRenderTarget
 } from "three"
 import { unitOrthoCamera } from "../camera"
@@ -16,6 +18,8 @@ import type { AppStore } from "../store"
 import * as three from "../three"
 import Binder from "../binder"
 import { copyCoords, setSize, State } from "./model"
+import { shallowEqual } from "react-redux"
+import Destination from "./destination"
 
 export function useRenderer() {
   const { stats } = useStats()
@@ -24,9 +28,6 @@ export function useRenderer() {
   const renderer = three.useRenderer(createRenderer)
   return renderer
 }
-
-type Render = (scene: Scene, camera: OrthographicCamera, target: WebGLRenderTarget | null) => void
-type RenderScene = (camera: OrthographicCamera, target: WebGLRenderTarget) => void
 
 class Renderer extends three.WebGlRenderer {
   private view: SimulationView
@@ -40,7 +41,7 @@ class Renderer extends three.WebGlRenderer {
 
   override renderFrame() {
     this.stats?.begin()
-    this.view.draw(this.state.simulation, this.renderScene)
+    this.view.draw(this.state.simulation, this.renderer)
     this.stats?.end()
   }
 
@@ -116,11 +117,13 @@ class SimulationView {
       v => this.background.material.color.set(v)
     )
 
-  draw(state: State, render: Render) {
+  draw(state: State, renderer: WebGLRenderer) {
     this.binder.apply(state)
     this.feedback.binder.apply(state)
-    this.feedback.iterate((camera, target) => render(this.scene, camera, target))
-    render(this.scene, this.viewer, null)
+    this.feedback.iterate(renderer, this.scene)
+
+    renderer.setRenderTarget(null)
+    renderer.render(this.scene, this.viewer)
     // TODO: Render debug scene
   }
 
@@ -142,9 +145,17 @@ class FeedbackView {
    */
   private portal = new Mesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({ map: new Texture() }))
 
-  private frames = Array(2)
-    .fill(undefined)
-    .map(() => new WebGLRenderTarget(0, 0))
+  /**
+   * The source region. In general, the source resolution is different than the destination.
+   */
+  private sourceFrame = this.createTarget()
+
+  /**
+   * The destination region frames for the delay line.
+   */
+  private destinationFrames = [this.createTarget()]
+  private destination = new Destination()
+
   private currentFrame = 0
   private camera
 
@@ -168,16 +179,42 @@ class FeedbackView {
         copyCoords(v, this.portal)
       }
     )
+    .add(
+      s => ({ mirrorX: s.spacemap.mirrorX, mirrorY: s.spacemap.mirrorY }),
+      v => this.destination.updateUniforms(v),
+      shallowEqual
+    )
+    .add(
+      s => s.feedback.nFrames,
+      v => this.setNumberFeedbackFrames(v)
+    )
 
   dispose() {
-    this.frames.forEach(frame => frame.dispose())
+    this.sourceFrame.dispose()
+    this.destinationFrames.forEach(frame => frame.dispose())
+  }
+
+  setNumberFeedbackFrames(n: number) {
+    const keep = this.destinationFrames.slice(0, n),
+      dispose = this.destinationFrames.slice(n),
+      { width, height } = this.destinationFrames[0]
+    dispose.forEach(f => f.dispose())
+
+    this.destinationFrames = [
+      ...keep,
+      ...Array(n - keep.length)
+        .fill(undefined)
+        .map(() => this.createTarget(width, height))
+    ]
+    if (this.currentFrame >= n) this.currentFrame = 1
   }
 
   setSize(width: number, height: number) {
-    this.frames.forEach(frame => frame.setSize(width, height))
+    this.sourceFrame.setSize(width, height)
+    this.destinationFrames.forEach(frame => frame.setSize(width, height))
   }
 
-  iterate(renderScene: RenderScene) {
+  iterate(renderer: WebGLRenderer, scene: Scene) {
     // Set up the camera to cover the feedback source region. Align the camera
     // with the bounding box of the portal geometry, then transform the camera
     // through the portal and spacemap.
@@ -189,15 +226,20 @@ class FeedbackView {
     this.camera.top = bb.max.y
     this.camera.bottom = bb.min.y
 
-    // Pop LRU frame, render the source region of the feedback scene to the
-    // frame using a render callback, which may cause the feedback to render its
-    // portal
-    const lruFrame = (this.currentFrame + 1) % this.frames.length
-    const target = this.frames[lruFrame]
-    renderScene(this.camera, target)
+    // Move to the next frame in the delay line
+    this.currentFrame = (this.currentFrame + 1) % this.destinationFrames.length
+    const destinationFrame = this.destinationFrames[this.currentFrame]
+    this.portal.material.map = destinationFrame.texture
 
-    // Update the portal to render the updated feedback frame
-    this.portal.material.map = target.texture
-    this.currentFrame = lruFrame
+    // Render the source frame
+    renderer.setRenderTarget(this.sourceFrame)
+    renderer.render(scene, this.camera)
+
+    // Render the destination frame
+    this.destination.render(renderer, destinationFrame, this.sourceFrame)
+  }
+
+  private createTarget(width = 0, height = 0) {
+    return new WebGLRenderTarget(width, height, { format: RGBFormat })
   }
 }

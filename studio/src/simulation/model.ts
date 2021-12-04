@@ -26,6 +26,11 @@ export type State = {
   spacemap: {
     coords: Coords
     pixelsPerScale: number
+    mirrorX: boolean
+    mirrorY: boolean
+  }
+  feedback: {
+    nFrames: number
   }
   portal: {
     coords: Coords
@@ -79,12 +84,17 @@ const initialState: State = {
   },
   spacemap: {
     coords: {
-      position: new Vector3(0, 0.1, 0),
+      position: new Vector3(0.3, 0.1, 0),
       scale: new Vector3(2, 2, 1),
       quaternion: new Quaternion()
     },
+    mirrorX: true,
+    mirrorY: false,
     /** Scroll wheel pixels per unit scaling */
     pixelsPerScale: 5e2
+  },
+  feedback: {
+    nFrames: 5
   },
   portal: {
     coords: {
@@ -136,6 +146,15 @@ const slice = createSlice({
   name: "simulation",
   initialState,
   reducers: {
+    setMirrorX({ spacemap }, { payload: mirrorX }: PayloadAction<boolean>) {
+      spacemap.mirrorX = mirrorX
+    },
+    setMirrorY({ spacemap }, { payload: mirrorY }: PayloadAction<boolean>) {
+      spacemap.mirrorY = mirrorY
+    },
+    setNumberFeedbackFrames({ feedback }, { payload: nFrames }: PayloadAction<number>) {
+      feedback.nFrames = nFrames
+    },
     setBorderWidth({ border, portal }, { payload: borderWidth }: PayloadAction<number>) {
       border.width = borderWidth
       border.coords.scale.set(
@@ -228,6 +247,9 @@ const slice = createSlice({
 export const {
   reducer,
   actions: {
+    setMirrorX,
+    setMirrorY,
+    setNumberFeedbackFrames,
     setBorderWidth,
     setBackgroundColor,
     setBorderColor,
