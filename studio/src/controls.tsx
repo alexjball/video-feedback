@@ -1,20 +1,28 @@
-import { ChangeEventHandler, useCallback } from "react"
+import React, { ChangeEventHandler, useCallback } from "react"
 import styled from "styled-components"
 import { useAppDispatch, useAppSelector } from "./hooks"
 import {
   setBackgroundColor,
   setBorderColor,
   setBorderWidth,
+  setColorCycle,
+  setColorGain,
+  setInvertColor,
   setMirrorX,
   setMirrorY,
   setNumberFeedbackFrames
 } from "./simulation/model"
+import { RootState } from "./store"
 
 const Form = styled.form`
     display: flex;
     flex-direction: column;
     align-items: end;
     user-select: none;
+
+    /* TODO: remove/improve these scroll props */
+    overflow-y: auto;
+    pointer-events: auto;
   `,
   Control = styled.div`
     position: relative;
@@ -116,64 +124,111 @@ function ToggleInput({
   )
 }
 
+const config: ControlConfig[] = [
+  {
+    Component: ColorInput,
+    selector: s => s.simulation.background.color,
+    actionCreator: v => setBackgroundColor(v),
+    props: {
+      legend: "background color"
+    }
+  },
+  {
+    Component: ColorInput,
+    selector: s => s.simulation.border.color,
+    actionCreator: v => setBorderColor(v),
+    props: {
+      legend: "border color"
+    }
+  },
+  {
+    Component: RangeInput,
+    selector: s => s.simulation.border.width,
+    actionCreator: v => setBorderWidth(v),
+    props: {
+      legend: "border width"
+    }
+  },
+  {
+    Component: RangeInput,
+    selector: s => s.simulation.feedback.colorGain,
+    actionCreator: v => setColorGain(v),
+    props: {
+      legend: "color gain",
+      min: 0,
+      max: 1,
+      step: 0.01
+    }
+  },
+  {
+    Component: RangeInput,
+    selector: s => s.simulation.feedback.colorCycle,
+    actionCreator: v => setColorCycle(v),
+    props: {
+      legend: "color cycle",
+      min: 0,
+      max: 1,
+      step: 0.01
+    }
+  },
+  {
+    Component: ToggleInput,
+    selector: s => s.simulation.feedback.invertColor,
+    actionCreator: v => setInvertColor(v),
+    props: {
+      legend: "invert color"
+    }
+  },
+  {
+    Component: ToggleInput,
+    selector: s => s.simulation.spacemap.mirrorY,
+    actionCreator: v => setMirrorY(v),
+    props: {
+      legend: "mirror Y"
+    }
+  },
+  {
+    Component: ToggleInput,
+    selector: s => s.simulation.spacemap.mirrorX,
+    actionCreator: v => setMirrorX(v),
+    props: {
+      legend: "mirror X"
+    }
+  },
+  {
+    Component: RangeInput,
+    selector: s => s.simulation.feedback.nFrames,
+    actionCreator: v => setNumberFeedbackFrames(v),
+    props: {
+      legend: "num. feedback frames",
+      min: 1,
+      max: 30,
+      step: 1
+    }
+  }
+]
+
+const controls = config.map(createControl)
+interface ControlConfig {
+  selector: (s: RootState) => any
+  actionCreator: (v: any) => any
+  Component: React.FC<any>
+  props: any
+}
+
+function createControl({ selector, actionCreator, Component, props }: ControlConfig) {
+  return function Control() {
+    const dispatch = useAppDispatch()
+    const v = useAppSelector(selector)
+    const onChange = useCallback(v => dispatch(actionCreator(v)), [dispatch])
+    return <Component value={v} onChange={onChange} {...props} />
+  }
+}
+
 export const ControlsPanel = (props: any) => (
   <Form onSubmit={e => void console.log(e)} {...props}>
-    <BackgroundColor />
-    <BorderColor />
-    <BorderWidth />
-    <FeedbackFrames />
-    <MirrorX />
-    <MirrorY />
+    {controls.map((C, i) => (
+      <C key={i} />
+    ))}
   </Form>
 )
-
-function BorderWidth() {
-  const dispatch = useAppDispatch()
-  const onChange = useCallback(width => dispatch(setBorderWidth(width)), [dispatch])
-  const width = useAppSelector(state => state.simulation.border.width)
-  return <RangeInput legend="border width" value={width} onChange={onChange} />
-}
-
-function FeedbackFrames() {
-  const dispatch = useAppDispatch()
-  const onChange = useCallback(width => dispatch(setNumberFeedbackFrames(width)), [dispatch])
-  const v = useAppSelector(state => state.simulation.feedback.nFrames)
-  return (
-    <RangeInput
-      legend="num. feedback frames"
-      value={v}
-      min={1}
-      max={30}
-      step={1}
-      onChange={onChange}
-    />
-  )
-}
-
-function BackgroundColor() {
-  const dispatch = useAppDispatch()
-  const onChange = useCallback(color => dispatch(setBackgroundColor(color)), [dispatch])
-  const v = useAppSelector(state => state.simulation.background.color)
-  return <ColorInput legend="background color" value={v} onChange={onChange} />
-}
-
-function BorderColor() {
-  const dispatch = useAppDispatch()
-  const onChange = useCallback(color => dispatch(setBorderColor(color)), [dispatch])
-  const v = useAppSelector(state => state.simulation.border.color)
-  return <ColorInput legend="border color" value={v} onChange={onChange} />
-}
-
-function MirrorX() {
-  const dispatch = useAppDispatch()
-  const v = useAppSelector(state => state.simulation.spacemap.mirrorX)
-  const onChange = useCallback(v => dispatch(setMirrorX(v)), [dispatch])
-  return <ToggleInput legend="mirror X" value={v} onChange={onChange} />
-}
-
-function MirrorY() {
-  const dispatch = useAppDispatch()
-  const v = useAppSelector(state => state.simulation.spacemap.mirrorY)
-  const onChange = useCallback(v => dispatch(setMirrorY(v)), [dispatch])
-  return <ToggleInput legend="mirror Y" value={v} onChange={onChange} />
-}

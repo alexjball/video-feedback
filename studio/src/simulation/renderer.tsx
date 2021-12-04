@@ -180,7 +180,13 @@ class FeedbackView {
       }
     )
     .add(
-      s => ({ mirrorX: s.spacemap.mirrorX, mirrorY: s.spacemap.mirrorY }),
+      s => ({
+        mirrorX: s.spacemap.mirrorX,
+        mirrorY: s.spacemap.mirrorY,
+        colorGain: s.feedback.colorGain,
+        colorCycle: s.feedback.colorCycle,
+        invertColor: s.feedback.invertColor
+      }),
       v => this.destination.updateUniforms(v),
       shallowEqual
     )

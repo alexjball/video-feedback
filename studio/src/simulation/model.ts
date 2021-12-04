@@ -31,6 +31,9 @@ export type State = {
   }
   feedback: {
     nFrames: number
+    invertColor: boolean
+    colorCycle: number
+    colorGain: number
   }
   portal: {
     coords: Coords
@@ -80,7 +83,7 @@ const initialState: State = {
     color: "#f5f5ff"
   },
   background: {
-    color: "#97a197"
+    color: "#4d518f"
   },
   spacemap: {
     coords: {
@@ -94,7 +97,10 @@ const initialState: State = {
     pixelsPerScale: 5e2
   },
   feedback: {
-    nFrames: 5
+    nFrames: 5,
+    colorCycle: 0.3,
+    colorGain: 0.3,
+    invertColor: false
   },
   portal: {
     coords: {
@@ -154,6 +160,15 @@ const slice = createSlice({
     },
     setNumberFeedbackFrames({ feedback }, { payload: nFrames }: PayloadAction<number>) {
       feedback.nFrames = nFrames
+    },
+    setColorCycle({ feedback }, { payload }: PayloadAction<number>) {
+      feedback.colorCycle = payload
+    },
+    setColorGain({ feedback }, { payload }: PayloadAction<number>) {
+      feedback.colorGain = payload
+    },
+    setInvertColor({ feedback }, { payload }: PayloadAction<boolean>) {
+      feedback.invertColor = payload
     },
     setBorderWidth({ border, portal }, { payload: borderWidth }: PayloadAction<number>) {
       border.width = borderWidth
@@ -250,6 +265,9 @@ export const {
     setMirrorX,
     setMirrorY,
     setNumberFeedbackFrames,
+    setColorCycle,
+    setColorGain,
+    setInvertColor,
     setBorderWidth,
     setBackgroundColor,
     setBorderColor,
