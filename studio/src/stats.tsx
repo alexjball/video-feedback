@@ -15,7 +15,10 @@ import {
   MeshBasicMaterial,
   Object3D,
   PlaneGeometry,
-  Scene
+  Scene,
+  SpriteMaterial,
+  TextureLoader,
+  Vector3
 } from "three"
 import Binder from "./binder"
 import { contain, unitOrthoCamera } from "./camera"
@@ -122,7 +125,6 @@ class Renderer extends three.SvgRenderer {
   constructor(store: AppStore) {
     super(store)
     this.scene = this.createScene()
-    this.renderer.setClearColor(new Color("white"), 1)
   }
 
   private binder = new Binder<SimState>()
@@ -135,6 +137,20 @@ class Renderer extends three.SvgRenderer {
       v => {
         copyCoords(v, this.scene.feedbackDestination)
         copyCoords(v, this.scene.feedbackSource)
+      }
+    )
+    .add(
+      s => s.spacemap.mirrorX,
+      mirrorX => {
+        this.scene.feedbackDestination.updateMirroring({ mirrorX })
+        this.scene.feedbackSource.updateMirroring({ mirrorX })
+      }
+    )
+    .add(
+      s => s.spacemap.mirrorY,
+      mirrorY => {
+        this.scene.feedbackDestination.updateMirroring({ mirrorY })
+        this.scene.feedbackSource.updateMirroring({ mirrorY })
       }
     )
 
@@ -156,13 +172,13 @@ class Renderer extends three.SvgRenderer {
     const scene = new Scene()
 
     scene.background = new RGBA(0, 0, 0, 0)
-    const feedbackDestination = this.createBorder({ color: "#ff0000" })
-    const feedbackSource = this.createBorder({ color: "#00ff00" })
+    const feedbackDestination = new Destination("#ff0000")
+    const feedbackSource = new Source("#00ff00")
     const spacemap = new Object3D()
 
+    scene.add(this.createGrid())
     spacemap.add(feedbackSource)
     scene.add(feedbackDestination, spacemap)
-    scene.add(this.createGrid())
 
     return {
       scene,
@@ -182,24 +198,6 @@ class Renderer extends three.SvgRenderer {
     return gridHelper
   }
 
-  private createBorder(parameters?: Partial<LineBasicMaterialParameters>) {
-    const border = new Group()
-    const geometry = new BufferGeometry()
-    geometry.setAttribute(
-      "position",
-      // Matches PlaneGeometry(1, 1)
-      new Float32BufferAttribute(
-        [-0.5, 0.5, 0, 0.5, 0.5, 0, 0.5, -0.5, 0, -0.5, -0.5, 0, -0.5, 0.5, 0],
-        3
-      )
-    )
-    border.add(new Line(geometry, new LineBasicMaterial({ linewidth: 5, ...parameters })))
-    border.add(
-      new Mesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({ opacity: 0.2, ...parameters }))
-    )
-    return border
-  }
-
   override renderFrame = () => {
     if (!this.binder.apply(this.state.simulation)) return
     this.fitScene()
@@ -209,3 +207,114 @@ class Renderer extends three.SvgRenderer {
 }
 
 export const DebugView = three.asComponent(Renderer)
+
+class Region extends Object3D {
+  mirrorX = false
+  mirrorY = false
+
+  constructor(color: string) {
+    super()
+
+    const border = new Line(
+      new BufferGeometry().setAttribute(
+        "position",
+        // Matches PlaneGeometry(1, 1)
+        new Float32BufferAttribute(
+          [-0.5, 0.5, 0, 0.5, 0.5, 0, 0.5, -0.5, 0, -0.5, -0.5, 0, -0.5, 0.5, 0],
+          3
+        )
+      ),
+      new LineBasicMaterial({ linewidth: 5, color })
+    )
+    this.add(border)
+  }
+
+  updateMirroring({ mirrorX, mirrorY }: { mirrorX?: boolean; mirrorY?: boolean }) {
+    if (mirrorX !== undefined) this.mirrorX = mirrorX
+    if (mirrorY !== undefined) this.mirrorY = mirrorY
+  }
+}
+
+type Quadrant = "nw" | "ne" | "se" | "sw"
+
+class Source extends Region {
+  quadrants
+
+  constructor(color: string) {
+    super(color)
+
+    this.quadrants = (["ne", "se", "nw", "sw"] as const).map(q => this.createQuadrant(q, color))
+  }
+
+  private createQuadrant(q: Quadrant, color: string) {
+    // const textureLoader = new TextureLoader()
+    // const map = textureLoader.load("sprite1.png")
+
+    const fill = new Mesh(
+      new PlaneGeometry(0.5, 0.5),
+      new MeshBasicMaterial({ opacity: 0.4, color })
+      // new SpriteMaterial({
+      //   map,
+      //   opacity: 0.4,
+      //   color
+      // })
+    )
+    fill.position.x = q === "ne" || q === "se" ? 0.25 : -0.25
+    fill.position.y = q === "ne" || q === "nw" ? 0.25 : -0.25
+
+    return {
+      name: q,
+      fill,
+      sourceIfMirrorX: q === "nw" || q === "sw",
+      sourceIfMirrorY: q === "se" || q === "sw"
+    }
+  }
+
+  override updateMirroring(mirroring: any) {
+    super.updateMirroring(mirroring)
+
+    this.quadrants.forEach(q => {
+      const includeY = !this.mirrorY || q.sourceIfMirrorY
+      const includeX = !this.mirrorX || q.sourceIfMirrorX
+      if (includeX && includeY) {
+        this.add(q.fill)
+      } else {
+        this.remove(q.fill)
+      }
+    })
+  }
+}
+
+class Destination extends Region {
+  private xSymmetry
+  private ySymmetry
+
+  constructor(color: string) {
+    super(color)
+
+    this.xSymmetry = new Line(
+      new BufferGeometry().setFromPoints([new Vector3(0, -0.5, 0), new Vector3(0, 0.5, 0)]),
+      new LineBasicMaterial({ linewidth: 5, color: "#0000ff" })
+    )
+    this.ySymmetry = new Line(
+      new BufferGeometry().setFromPoints([new Vector3(-0.5, 0, 0), new Vector3(0.5, 0, 0)]),
+      new LineBasicMaterial({ linewidth: 5, color: "#0000ff" })
+    )
+  }
+
+  override updateMirroring(mirroring: any) {
+    super.updateMirroring(mirroring)
+
+    if (this.mirrorX) {
+      this.add(this.xSymmetry)
+    } else {
+      this.remove(this.xSymmetry)
+    }
+
+    if (this.mirrorY) {
+      this.add(this.ySymmetry)
+    } else {
+      this.remove(this.ySymmetry)
+    }
+  }
+}
