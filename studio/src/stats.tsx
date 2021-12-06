@@ -111,7 +111,7 @@ export const StatsPanel: React.FC<HTMLProps<HTMLDivElement>> = props => {
   return show ? (
     <div style={{ display: "flex", flexDirection: "column", maxHeight: "500px" }} {...props}>
       <div ref={init} />
-      <DebugView style={{ flex: "auto", opacity: 0.8 }} />
+      {/* <DebugView style={{ flex: "auto", opacity: 0.8 }} /> */}
     </div>
   ) : null
 }

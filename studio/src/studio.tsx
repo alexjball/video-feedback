@@ -4,6 +4,7 @@ import { SimulationPanel } from "./simulation"
 import { StatsPanel } from "./stats"
 import { ControlsPanel } from "./controls"
 import { NavigationPanel } from "./navigation"
+import { LegendPanel } from "./legend"
 
 const Layout = styled.div`
   width: 100vw;
@@ -40,7 +41,13 @@ const Controls = styled(ControlsPanel)`
 
 const Stats = styled(StatsPanel)`
   grid-column: 1;
-  grid-row: 1 / span 3;
+  grid-row: 1;
+  z-index: 20;
+`
+
+const Legend = styled(LegendPanel)`
+  grid-row: 2;
+  grid-column: 1;
   z-index: 10;
 `
 
@@ -59,6 +66,7 @@ export function Studio() {
         <Io />
         <Navigation />
         <Stats />
+        <Legend />
         <Simulation />
       </Layout>
     </Providers>
