@@ -14,6 +14,11 @@ function markImmerable() {
 }
 markImmerable()
 
+export type Resolution = {
+  width: number
+  height: number
+}
+
 export type State = {
   border: {
     width: number
@@ -34,6 +39,7 @@ export type State = {
     invertColor: boolean
     colorCycle: number
     colorGain: number
+    resolution: Resolution
   }
   portal: {
     coords: Coords
@@ -43,10 +49,7 @@ export type State = {
     coords: Coords
     // geometry: Rect
   }
-  viewport: {
-    width: number
-    height: number
-  }
+  viewport: Resolution
   drag: {
     start: {
       coords: Coords
@@ -100,7 +103,11 @@ const initialState: State = {
     nFrames: 5,
     colorCycle: 0.3,
     colorGain: 0.3,
-    invertColor: false
+    invertColor: false,
+    resolution: {
+      width: 0,
+      height: 0
+    }
   },
   portal: {
     coords: {
@@ -227,19 +234,32 @@ const slice = createSlice({
       spacemap.coords.scale.x += distance / pps
       spacemap.coords.scale.y += distance / pps
     },
-    setSize(
-      { viewport, portal, viewer, border },
+    // setPortalPixelDensity? set resolution as 1080p/1440p/4k from the UI?
+    setPortalResolution(
+      { portal, viewer, viewport, border, feedback },
+      { payload }: PayloadAction<PortalResolution>
+    ) {
+      const res = resolveResolution(payload),
+        unit = unitAspect(res.aspect),
+        viewAspect = viewport.width / viewport.height,
+        container = contain(unit.width, unit.height, viewAspect)
+
+      feedback.resolution.height = res.height
+      feedback.resolution.width = res.width
+      portal.coords.scale.set(unit.width, unit.height, 1)
+      border.coords.scale.set(unit.width + 2 * border.width, unit.height + 2 * border.width, 1)
+      viewer.coords.scale.set(container.width, container.height, 1)
+    },
+    setViewportSize(
+      { viewport, portal, viewer },
       { payload: { width, height } }: PayloadAction<{ width: number; height: number }>
     ) {
-      const aspect = width / height,
-        unitWidth = Math.sqrt(aspect),
-        unitHeight = 1 / unitWidth
+      const viewAspect = width / height,
+        container = contain(portal.coords.scale.x, portal.coords.scale.y, viewAspect)
 
       viewport.width = width
       viewport.height = height
-      portal.coords.scale.set(unitWidth, unitHeight, 1)
-      border.coords.scale.set(unitWidth + 2 * border.width, unitHeight + 2 * border.width, 1)
-      viewer.coords.scale.copy(portal.coords.scale)
+      viewer.coords.scale.set(container.width, container.height, 1)
     },
     center(state) {
       state.portal.coords.position.copy(initialState.portal.coords.position)
@@ -273,7 +293,8 @@ export const {
     setBorderColor,
     rotate,
     zoom,
-    setSize,
+    setViewportSize,
+    setPortalResolution,
     drag,
     center
   }
@@ -281,4 +302,38 @@ export const {
 
 function cleanColor(color: string): string {
   return `#${new Color(color).getHexString()}`
+}
+
+/** Returns a box of unit area with the specified aspect ratio. */
+function unitAspect(aspect: number) {
+  const width = Math.sqrt(aspect),
+    height = 1 / width
+  return { width, height }
+}
+
+/** Returns the smallest box with the given aspect ratio that is at least as
+ * large as the requested dimensions.*/
+function contain(width: number, height: number, aspect: number) {
+  const contentAspect = width / height
+  if (contentAspect < aspect) return { width, height: width / aspect }
+  else return { height, width: aspect * height }
+}
+
+type PortalResolution = { aspect?: number; width?: number; height?: number }
+function resolveResolution({
+  width,
+  height,
+  aspect
+}: PortalResolution): Required<PortalResolution> {
+  if (aspect === undefined) {
+    aspect = width! / height!
+  } else if (height === undefined) {
+    height = width! / aspect
+  } else if (width === undefined) {
+    width = height * aspect
+  }
+  if (aspect === NaN || width === NaN || height === NaN) {
+    throw Error("Must specify at least 2 of aspect, width, and height")
+  }
+  return { width: width!, aspect, height: height! }
 }

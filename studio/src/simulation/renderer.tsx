@@ -17,7 +17,7 @@ import { useStats, StatsJs } from "../stats"
 import type { AppStore } from "../store"
 import * as three from "../three"
 import Binder from "../binder"
-import { copyCoords, setSize, State } from "./model"
+import { copyCoords, setPortalResolution, setViewportSize, State } from "./model"
 import { shallowEqual } from "react-redux"
 import Destination from "./destination"
 
@@ -47,7 +47,8 @@ class Renderer extends three.WebGlRenderer {
 
   override setSize(width: number, height: number) {
     super.setSize(width, height)
-    this.store.dispatch(setSize({ width, height }))
+    this.store.dispatch(setViewportSize({ width, height }))
+    this.store.dispatch(setPortalResolution({ width, height }))
   }
 
   override dispose() {
@@ -101,12 +102,6 @@ class SimulationView {
     .add(
       s => s.border.coords,
       v => copyCoords(v, this.border)
-    )
-    .add(
-      s => s.viewport,
-      v => {
-        this.feedback.setSize(v.width, v.height)
-      }
     )
     .add(
       s => s.border.color,
@@ -193,6 +188,10 @@ class FeedbackView {
     .add(
       s => s.feedback.nFrames,
       v => this.setNumberFeedbackFrames(v)
+    )
+    .add(
+      s => s.feedback.resolution,
+      v => this.setSize(v.width, v.height)
     )
 
   dispose() {
