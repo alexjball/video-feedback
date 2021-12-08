@@ -17,7 +17,7 @@ import { useStats, StatsJs } from "../stats"
 import type { AppStore } from "../store"
 import * as three from "../three"
 import Binder from "../binder"
-import { copyCoords, setPortalResolution, setViewportSize, State } from "./model"
+import { copyCoords, setPortal, setViewer, State } from "./model"
 import { shallowEqual } from "react-redux"
 import Destination from "./destination"
 
@@ -47,8 +47,8 @@ class Renderer extends three.WebGlRenderer {
 
   override setSize(width: number, height: number) {
     super.setSize(width, height)
-    this.store.dispatch(setViewportSize({ width, height }))
-    this.store.dispatch(setPortalResolution({ width, height }))
+    this.store.dispatch(setViewer({ width, height }))
+    this.store.dispatch(setPortal({ height }))
   }
 
   override dispose() {

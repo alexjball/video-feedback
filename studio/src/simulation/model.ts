@@ -43,6 +43,9 @@ export type State = {
   }
   portal: {
     coords: Coords
+    // matchViewAspect: boolean
+    // matchViewHeight: boolean
+
     // geometry: Rect
   }
   viewer: {
@@ -115,6 +118,8 @@ const initialState: State = {
       scale: new Vector3(1, 1, 1),
       quaternion: new Quaternion()
     }
+    // matchViewAspect: true,
+    // matchViewHeight: true
   },
   viewer: {
     coords: {
@@ -138,6 +143,10 @@ export function copyCoords(from: Coords, to: Coords = createCoords()): Coords {
   to.quaternion.copy(from.quaternion)
   to.scale.copy(from.scale)
   return to
+}
+
+export function aspectRatio(coords: Coords) {
+  return coords.scale.x / coords.scale.y
 }
 
 class Object3DCoords extends Object3D {
@@ -234,32 +243,37 @@ const slice = createSlice({
       spacemap.coords.scale.x += distance / pps
       spacemap.coords.scale.y += distance / pps
     },
-    // setPortalPixelDensity? set resolution as 1080p/1440p/4k from the UI?
-    setPortalResolution(
-      { portal, viewer, viewport, border, feedback },
-      { payload }: PayloadAction<PortalResolution>
+    setPortal(
+      state, //{ portal, viewer, viewport, border, feedback, portalSizing },
+      { payload }: PayloadAction<Partial<SetPortal>>
     ) {
-      const res = resolveResolution(payload),
-        unit = unitAspect(res.aspect),
-        viewAspect = viewport.width / viewport.height,
-        container = contain(unit.width, unit.height, viewAspect)
+      // if (payload.matchViewAspect !== undefined)
+      //   state.portal.matchViewAspect = payload.matchViewAspect
+      // if (payload.matchViewHeight !== undefined)
+      //   state.portal.matchViewHeight = payload.matchViewHeight
 
-      feedback.resolution.height = res.height
-      feedback.resolution.width = res.width
-      portal.coords.scale.set(unit.width, unit.height, 1)
-      border.coords.scale.set(unit.width + 2 * border.width, unit.height + 2 * border.width, 1)
-      viewer.coords.scale.set(container.width, container.height, 1)
+      resizePortal(
+        {
+          aspect: payload.aspect ?? aspectRatio(state.portal.coords),
+          height: payload.height ?? state.feedback.resolution.height,
+          width: payload.width
+        },
+        state
+      )
+      setViewToContainPortal(state)
     },
-    setViewportSize(
-      { viewport, portal, viewer },
+    setViewer(
+      state,
       { payload: { width, height } }: PayloadAction<{ width: number; height: number }>
     ) {
-      const viewAspect = width / height,
-        container = contain(portal.coords.scale.x, portal.coords.scale.y, viewAspect)
+      state.viewport.width = width
+      state.viewport.height = height
 
-      viewport.width = width
-      viewport.height = height
-      viewer.coords.scale.set(container.width, container.height, 1)
+      // if (state.portal.matchViewAspect || state.portal.matchViewHeight) {
+      //   resolvePortalSize({ height: state.feedback.resolution.height }, state)
+      // }
+
+      setViewToContainPortal(state)
     },
     center(state) {
       state.portal.coords.position.copy(initialState.portal.coords.position)
@@ -293,8 +307,8 @@ export const {
     setBorderColor,
     rotate,
     zoom,
-    setViewportSize,
-    setPortalResolution,
+    setViewer,
+    setPortal,
     drag,
     center
   }
@@ -308,32 +322,60 @@ function cleanColor(color: string): string {
 function unitAspect(aspect: number) {
   const width = Math.sqrt(aspect),
     height = 1 / width
-  return { width, height }
+  return new Vector3(width, height, 1)
 }
 
 /** Returns the smallest box with the given aspect ratio that is at least as
  * large as the requested dimensions.*/
 function contain(width: number, height: number, aspect: number) {
   const contentAspect = width / height
-  if (contentAspect < aspect) return { width, height: width / aspect }
+  if (contentAspect > aspect) return { width, height: width / aspect }
   else return { height, width: aspect * height }
 }
 
-type PortalResolution = { aspect?: number; width?: number; height?: number }
-function resolveResolution({
-  width,
-  height,
-  aspect
-}: PortalResolution): Required<PortalResolution> {
-  if (aspect === undefined) {
-    aspect = width! / height!
-  } else if (height === undefined) {
-    height = width! / aspect
-  } else if (width === undefined) {
-    width = height * aspect
+type Box = { width: number; height: number; aspect: number }
+type SetPortal = {
+  aspect: number
+  height: number
+  width: number
+  // matchViewHeight: boolean
+  // matchViewAspect: boolean
+}
+function resizePortal(
+  { width, height, aspect }: Partial<Box>,
+  { feedback, portal, border }: State
+) {
+  // if (state.portal.matchViewAspect) {
+  //   aspect = state.viewport.width / state.viewport.height
+  // }
+  // if (state.portal.matchViewHeight) {
+  //   height = state.viewport.height
+  //   width = undefined
+  // }
+  if (height === undefined) {
+    height = Math.round(width! / aspect!)
   }
-  if (aspect === NaN || width === NaN || height === NaN) {
-    throw Error("Must specify at least 2 of aspect, width, and height")
+  if (width === undefined) {
+    width = Math.round(height * aspect!)
   }
-  return { width: width!, aspect, height: height! }
+  if (width === NaN || height === NaN) {
+    throw Error("Must specify at least 1 of width and height")
+  }
+
+  feedback.resolution.height = height
+  feedback.resolution.width = width
+  portal.coords.scale.copy(unitAspect(width / height))
+  border.coords.scale.set(
+    portal.coords.scale.x + 2 * border.width,
+    portal.coords.scale.y + 2 * border.width,
+    1
+  )
+}
+
+function setViewToContainPortal(state: State) {
+  const viewAspect = state.viewport.width / state.viewport.height,
+    scale = state.portal.coords.scale,
+    container = contain(scale.x, scale.y, viewAspect)
+
+  state.viewer.coords.scale.set(container.width, container.height, 1)
 }

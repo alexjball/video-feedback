@@ -10,7 +10,8 @@ import {
   setInvertColor,
   setMirrorX,
   setMirrorY,
-  setNumberFeedbackFrames
+  setNumberFeedbackFrames,
+  setPortal
 } from "./simulation/model"
 import { RootState } from "./store"
 
@@ -40,6 +41,15 @@ const Form = styled.form`
 
     input[type="color"] {
       width: 100%;
+    }
+
+    select {
+      margin-left: 0.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.2rem;
     }
 
     fieldset {
@@ -230,5 +240,52 @@ export const ControlsPanel = (props: any) => (
     {controls.map((C, i) => (
       <C key={i} />
     ))}
+    <ResolutionControls />
   </Form>
 )
+
+function ResolutionControls() {
+  const dispatch = useAppDispatch()
+  const setHeight: React.ChangeEventHandler<HTMLSelectElement> = useCallback(
+    e => {
+      const height = parseInt(e.target.value)
+      dispatch(setPortal({ height }))
+    },
+    [dispatch]
+  )
+  const setAspect: React.ChangeEventHandler<HTMLSelectElement> = useCallback(
+    e => {
+      const aspect = parseFloat(e.target.value)
+      dispatch(setPortal({ aspect }))
+    },
+    [dispatch]
+  )
+  return (
+    <Control>
+      <fieldset>
+        <legend>portal resolution</legend>
+
+        <label>
+          height
+          <select onChange={setHeight}>
+            {/* <option value={0}>screen</option> */}
+            <option value={720}>720p</option>
+            <option value={1080}>1080p</option>
+            <option value={1440}>1440p</option>
+            <option value={2160}>4K</option>
+          </select>
+        </label>
+
+        <label>
+          aspect ratio
+          <select onChange={setAspect}>
+            {/* <option value={0}>screen</option> */}
+            <option value={1}>1:1</option>
+            <option value={4 / 3}>4:3</option>
+            <option value={16 / 9}>16:9</option>
+          </select>
+        </label>
+      </fieldset>
+    </Control>
+  )
+}

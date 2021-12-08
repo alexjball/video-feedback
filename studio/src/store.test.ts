@@ -1,12 +1,12 @@
 import { Quaternion, Vector3 } from "three"
 import { toggleShow } from "./stats"
 import { AppStore, createStore } from "./store"
-import { rotate, setBorderWidth, drag, setViewportSize, center } from "./simulation/model"
+import { rotate, setBorderWidth, drag, setViewer, center } from "./simulation/model"
 
 let store: AppStore
 beforeEach(() => {
   store = createStore()
-  store.dispatch(setViewportSize({ width: 10, height: 10 }))
+  store.dispatch(setViewer({ width: 10, height: 10 }))
 })
 
 describe("model", () => {
