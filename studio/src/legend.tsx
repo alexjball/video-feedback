@@ -27,6 +27,7 @@ export function LegendPanel(props: any) {
         mirrorX={state.spacemap.mirrorX}
         mirrorY={state.spacemap.mirrorY}
       />
+      <Viewer coords={state.viewer.coords} />
     </Legend>
   )
 }
@@ -41,6 +42,7 @@ const Legend = styled.svg`
     margin: 20px;
     box-shadow: 0 0 10px 10px rgba(255, 255, 255, 0.3);
     transform: scaleY(-1);
+    user-select: none;
 
     text {
       transform: scaleY(-1);
@@ -89,6 +91,16 @@ const Legend = styled.svg`
       strokeDasharray="0.1 .05"
       strokeWidth={0.05}
       strokeOpacity={mirrorX ? 1 : 0.5}
+    />
+  ),
+  Viewer: React.FC<{ coords: Coords }> = ({ coords }) => (
+    <CenteredRect
+      width={coords.scale.x}
+      height={coords.scale.y}
+      stroke={"#81f89e"}
+      strokeDasharray="0.1 .05"
+      strokeWidth={0.02}
+      fill="none"
     />
   ),
   Quadrant: React.FC<{
