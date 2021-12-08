@@ -11,7 +11,7 @@ import {
   setMirrorX,
   setMirrorY,
   setNumberFeedbackFrames,
-  setPortal
+  updatePortal
 } from "./simulation/model"
 import { RootState } from "./store"
 
@@ -245,18 +245,31 @@ export const ControlsPanel = (props: any) => (
 )
 
 function ResolutionControls() {
-  const dispatch = useAppDispatch()
+  const dispatch = useAppDispatch(),
+    res = useAppSelector(s => s.simulation.feedback.resolution),
+    matchAspect = useAppSelector(s => s.simulation.portal.matchViewAspect),
+    matchHeight = useAppSelector(s => s.simulation.portal.matchViewHeight),
+    height = res.height,
+    aspect = res.width / res.height
   const setHeight: React.ChangeEventHandler<HTMLSelectElement> = useCallback(
     e => {
-      const height = parseInt(e.target.value)
-      dispatch(setPortal({ height }))
+      const v = e.target.value,
+        update =
+          v === "screen"
+            ? { matchViewHeight: true }
+            : { height: parseInt(v), matchViewHeight: false }
+      dispatch(updatePortal(update))
     },
     [dispatch]
   )
   const setAspect: React.ChangeEventHandler<HTMLSelectElement> = useCallback(
     e => {
-      const aspect = parseFloat(e.target.value)
-      dispatch(setPortal({ aspect }))
+      const v = e.target.value,
+        update =
+          v === "screen"
+            ? { matchViewAspect: true }
+            : { aspect: parseFloat(v), matchViewAspect: false }
+      dispatch(updatePortal(update))
     },
     [dispatch]
   )
@@ -267,8 +280,8 @@ function ResolutionControls() {
 
         <label>
           height
-          <select onChange={setHeight}>
-            {/* <option value={0}>screen</option> */}
+          <select value={matchHeight ? "screen" : height} onChange={setHeight}>
+            <option value="screen">screen</option>
             <option value={720}>720p</option>
             <option value={1080}>1080p</option>
             <option value={1440}>1440p</option>
@@ -278,8 +291,8 @@ function ResolutionControls() {
 
         <label>
           aspect ratio
-          <select onChange={setAspect}>
-            {/* <option value={0}>screen</option> */}
+          <select value={matchAspect ? "screen" : aspect} onChange={setAspect}>
+            <option value="screen">screen</option>
             <option value={1}>1:1</option>
             <option value={4 / 3}>4:3</option>
             <option value={16 / 9}>16:9</option>

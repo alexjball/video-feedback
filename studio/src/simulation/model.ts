@@ -43,8 +43,8 @@ export type State = {
   }
   portal: {
     coords: Coords
-    // matchViewAspect: boolean
-    // matchViewHeight: boolean
+    matchViewAspect: boolean
+    matchViewHeight: boolean
 
     // geometry: Rect
   }
@@ -117,9 +117,9 @@ const initialState: State = {
       position: new Vector3(0, 0, 0),
       scale: new Vector3(1, 1, 1),
       quaternion: new Quaternion()
-    }
-    // matchViewAspect: true,
-    // matchViewHeight: true
+    },
+    matchViewAspect: true,
+    matchViewHeight: true
   },
   viewer: {
     coords: {
@@ -243,23 +243,13 @@ const slice = createSlice({
       spacemap.coords.scale.x += distance / pps
       spacemap.coords.scale.y += distance / pps
     },
-    setPortal(
-      state, //{ portal, viewer, viewport, border, feedback, portalSizing },
-      { payload }: PayloadAction<Partial<SetPortal>>
-    ) {
-      // if (payload.matchViewAspect !== undefined)
-      //   state.portal.matchViewAspect = payload.matchViewAspect
-      // if (payload.matchViewHeight !== undefined)
-      //   state.portal.matchViewHeight = payload.matchViewHeight
+    updatePortal(state, { payload }: PayloadAction<SetPortal>) {
+      if (payload.matchViewAspect !== undefined)
+        state.portal.matchViewAspect = payload.matchViewAspect
+      if (payload.matchViewHeight !== undefined)
+        state.portal.matchViewHeight = payload.matchViewHeight
 
-      resizePortal(
-        {
-          aspect: payload.aspect ?? aspectRatio(state.portal.coords),
-          height: payload.height ?? state.feedback.resolution.height,
-          width: payload.width
-        },
-        state
-      )
+      resizePortal(payload, state)
       setViewToContainPortal(state)
     },
     setViewer(
@@ -269,10 +259,9 @@ const slice = createSlice({
       state.viewport.width = width
       state.viewport.height = height
 
-      // if (state.portal.matchViewAspect || state.portal.matchViewHeight) {
-      //   resolvePortalSize({ height: state.feedback.resolution.height }, state)
-      // }
-
+      if (state.portal.matchViewAspect || state.portal.matchViewHeight) {
+        resizePortal({}, state)
+      }
       setViewToContainPortal(state)
     },
     center(state) {
@@ -308,7 +297,7 @@ export const {
     rotate,
     zoom,
     setViewer,
-    setPortal,
+    updatePortal,
     drag,
     center
   }
@@ -335,23 +324,22 @@ function contain(width: number, height: number, aspect: number) {
 
 type Box = { width: number; height: number; aspect: number }
 type SetPortal = {
-  aspect: number
-  height: number
-  width: number
-  // matchViewHeight: boolean
-  // matchViewAspect: boolean
+  aspect?: number
+  height?: number
+  width?: number
+  matchViewHeight?: boolean
+  matchViewAspect?: boolean
 }
+
 function resizePortal(
   { width, height, aspect }: Partial<Box>,
-  { feedback, portal, border }: State
+  { feedback, portal, border, viewport, viewer }: State
 ) {
-  // if (state.portal.matchViewAspect) {
-  //   aspect = state.viewport.width / state.viewport.height
-  // }
-  // if (state.portal.matchViewHeight) {
-  //   height = state.viewport.height
-  //   width = undefined
-  // }
+  height = portal.matchViewHeight ? viewport.height : height ?? feedback.resolution.height
+  aspect = portal.matchViewAspect
+    ? viewer.coords.scale.x / viewer.coords.scale.y
+    : aspect ?? feedback.resolution.width / feedback.resolution.height
+
   if (height === undefined) {
     height = Math.round(width! / aspect!)
   }
@@ -359,7 +347,7 @@ function resizePortal(
     width = Math.round(height * aspect!)
   }
   if (width === NaN || height === NaN) {
-    throw Error("Must specify at least 1 of width and height")
+    throw Error("Must specify aspect and at least 1 of width and height")
   }
 
   feedback.resolution.height = height
