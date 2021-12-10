@@ -1,4 +1,5 @@
 import { useCallback } from "react"
+import { shallowEqual } from "react-redux"
 import {
   Mesh,
   MeshBasicMaterial,
@@ -11,15 +12,14 @@ import {
   WebGLRenderer,
   WebGLRenderTarget
 } from "three"
+import Binder from "../binder"
 import { unitOrthoCamera } from "../camera"
 import { useAppStore } from "../hooks"
-import { useStats, StatsJs } from "../stats"
+import { StatsJs, useStats } from "../stats"
 import type { AppStore } from "../store"
 import * as three from "../three"
-import Binder from "../binder"
-import { copyCoords, updatePortal, setViewer, State } from "./model"
-import { shallowEqual } from "react-redux"
 import Destination from "./destination"
+import { copyCoords, setViewer, State } from "./model"
 
 export function useRenderer() {
   const { stats } = useStats()

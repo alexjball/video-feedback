@@ -1,12 +1,11 @@
 import { DependencyList, HTMLAttributes, RefObject, useEffect, useMemo, useRef } from "react"
 import { Camera, Scene, Vector2, WebGLRenderer, WebGLRenderTarget } from "three"
-import { SVGRenderer } from "three/examples/jsm/renderers/SVGRenderer"
 import useResizeObserver from "use-resize-observer"
 import { useAppStore } from "./hooks"
 import type { AppStore } from "./store"
 
 export interface Renderer {
-  init(): LibContainerElement
+  init(): HTMLCanvasElement
   setSize(width: number, height: number): void
   renderFrame(): void
   dispose(): void
@@ -17,7 +16,6 @@ export interface Props extends HTMLAttributes<HTMLDivElement> {
 }
 
 type FrameRef = RefObject<HTMLDivElement>
-type CanvasRef = RefObject<HTMLCanvasElement>
 
 export function Three({ renderer, style, ...divProps }: Props) {
   const frame: FrameRef = useRef(null)
@@ -87,25 +85,17 @@ function useRenderLoop(renderer: Renderer, hasSize: boolean) {
   }, [hasSize, loop, renderer])
 }
 
-class SVGRendererCompat extends SVGRenderer {
-  dispose() {}
-}
-
-type RendererMethods = "domElement" | "getSize" | "setSize" | "dispose"
-type LibRenderer = Pick<SVGRendererCompat, RendererMethods> | Pick<WebGLRenderer, RendererMethods>
-type LibContainerElement = Node & Pick<HTMLElement, "style">
-
 /**
  * Class-based Renderer pattern that uses the constructor and inheritance to
  * provide common rendering support. The React components work better with
  * functional interfaces, and `useRenderer` adapts between the two patterns.
  */
-class BaseRenderer<T extends LibRenderer> implements Renderer {
+export class WebGlRenderer implements Renderer {
   readonly store: AppStore
-  readonly renderer: T
+  readonly renderer: WebGLRenderer
 
-  constructor(renderer: T, store: AppStore) {
-    this.renderer = renderer
+  constructor(store: AppStore) {
+    this.renderer = new WebGLRenderer({ antialias: true })
     this.store = store
   }
 
@@ -126,12 +116,6 @@ class BaseRenderer<T extends LibRenderer> implements Renderer {
   setSize(width: number, height: number) {
     this.renderer.setSize(width, height)
   }
-}
-
-export class WebGlRenderer extends BaseRenderer<WebGLRenderer> {
-  constructor(store: AppStore) {
-    super(new WebGLRenderer({ antialias: true }), store)
-  }
 
   renderScene = (scene: Scene, camera: Camera, target: WebGLRenderTarget | null) => {
     this.renderer.setRenderTarget(target)
@@ -141,19 +125,6 @@ export class WebGlRenderer extends BaseRenderer<WebGLRenderer> {
     const size = new Vector2()
     this.renderer.getSize(size)
     return { width: size.x, height: size.y }
-  }
-}
-
-export class SvgRenderer extends BaseRenderer<SVGRendererCompat> {
-  constructor(store: AppStore) {
-    super(new SVGRendererCompat(), store)
-  }
-
-  renderScene = (scene: Scene, camera: Camera) => {
-    this.renderer.render(scene, camera)
-  }
-  get size() {
-    return this.renderer.getSize()
   }
 }
 
