@@ -258,6 +258,10 @@ function ResolutionControls() {
           v === "screen"
             ? { matchViewHeight: true }
             : { height: parseInt(v), matchViewHeight: false }
+      if (update.height && update.height > 2160) {
+        // Minimize memory requirements for high resolutions
+        dispatch(setNumberFeedbackFrames(1))
+      }
       dispatch(updatePortal(update))
     },
     [dispatch]
@@ -286,12 +290,19 @@ function ResolutionControls() {
             <option value={1080}>1080p</option>
             <option value={1440}>1440p</option>
             <option value={2160}>4K</option>
+            <option value={4320}>8K</option>
+            <option value={6480}>12K</option>
+            <option value={8640}>16K</option>
           </select>
         </label>
 
         <label>
           aspect ratio
-          <select value={matchAspect ? "screen" : aspect} onChange={setAspect}>
+          <select
+            value={
+              matchAspect ? "screen" : [1, 4 / 3, 16 / 9].find(x => Math.abs(x - aspect) < 1e-2)
+            }
+            onChange={setAspect}>
             <option value="screen">screen</option>
             <option value={1}>1:1</option>
             <option value={4 / 3}>4:3</option>

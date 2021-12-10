@@ -243,7 +243,7 @@ const slice = createSlice({
       spacemap.coords.scale.x += distance / pps
       spacemap.coords.scale.y += distance / pps
     },
-    updatePortal(state, { payload }: PayloadAction<SetPortal>) {
+    updatePortal(state, { payload }: PayloadAction<UpdatePortal>) {
       if (payload.matchViewAspect !== undefined)
         state.portal.matchViewAspect = payload.matchViewAspect
       if (payload.matchViewHeight !== undefined)
@@ -278,9 +278,30 @@ const slice = createSlice({
     },
     setBorderColor(state, { payload: color }: PayloadAction<string>) {
       state.border.color = cleanColor(color)
+    },
+    restore(state, { payload }: PayloadAction<State>) {
+      assign(payload.portal, state.portal, ["matchViewAspect", "coords"])
+      assign(payload.border, state.border, ["color", "width", "coords"])
+      assign(payload.background, state.background, ["color"])
+      assign(payload.feedback, state.feedback, ["colorCycle", "colorGain", "invertColor"])
+      assign(payload.spacemap, state.spacemap, ["mirrorX", "mirrorY", "coords"])
+
+      const aspect = payload.feedback.resolution.width / payload.feedback.resolution.height
+      resizePortal({ aspect }, state)
+      setViewToContainPortal(state)
     }
   }
 })
+
+function assign<T>(from: T, to: T, k: (keyof T)[]) {
+  k.forEach(k => {
+    if (k === "coords") {
+      copyCoords(from[k] as any, to[k] as any)
+    } else {
+      to[k] = from[k]
+    }
+  })
+}
 
 export const {
   reducer,
@@ -294,6 +315,7 @@ export const {
     setBorderWidth,
     setBackgroundColor,
     setBorderColor,
+    restore,
     rotate,
     zoom,
     setViewer,
@@ -323,7 +345,7 @@ function contain(width: number, height: number, aspect: number) {
 }
 
 type Box = { width: number; height: number; aspect: number }
-type SetPortal = {
+type UpdatePortal = {
   aspect?: number
   height?: number
   width?: number
@@ -337,7 +359,7 @@ function resizePortal(
 ) {
   height = portal.matchViewHeight ? viewport.height : height ?? feedback.resolution.height
   aspect = portal.matchViewAspect
-    ? viewer.coords.scale.x / viewer.coords.scale.y
+    ? viewport.width / viewport.height
     : aspect ?? feedback.resolution.width / feedback.resolution.height
 
   if (height === undefined) {

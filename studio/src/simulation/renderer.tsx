@@ -48,7 +48,6 @@ class Renderer extends three.WebGlRenderer {
   override setSize(width: number, height: number) {
     super.setSize(width, height)
     this.store.dispatch(setViewer({ width, height }))
-    this.store.dispatch(updatePortal({ height }))
   }
 
   override dispose() {
