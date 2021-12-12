@@ -1,4 +1,4 @@
-import { useCallback } from "react"
+import { useMemo } from "react"
 import { shallowEqual } from "react-redux"
 import {
   Mesh,
@@ -12,48 +12,34 @@ import {
   WebGLRenderer,
   WebGLRenderTarget
 } from "three"
-import Binder from "../binder"
 import { unitOrthoCamera } from "../camera"
 import { useAppStore } from "../hooks"
-import { StatsJs, useStats } from "../stats"
-import type { AppStore } from "../store"
+import { useStats } from "../stats"
 import * as three from "../three"
+import { Binder } from "../utils"
 import Destination from "./destination"
 import { copyCoords, setViewer, State } from "./model"
 
 export function useRenderer() {
   const { stats } = useStats()
   const store = useAppStore()
-  const createRenderer = useCallback(() => new Renderer(store, stats), [stats, store])
-  const renderer = three.useRenderer(createRenderer)
+  const renderer: three.Renderer = useMemo(() => {
+    const view = new SimulationView()
+    return {
+      onRender(renderer: WebGLRenderer) {
+        stats?.begin()
+        view.draw(store.getState().simulation, renderer)
+        stats?.end()
+      },
+      onResize(width: number, height: number) {
+        store.dispatch(setViewer({ width, height }))
+      },
+      onDispose() {
+        view.dispose()
+      }
+    }
+  }, [stats, store])
   return renderer
-}
-
-class Renderer extends three.WebGlRenderer {
-  private view: SimulationView
-  private stats?: StatsJs
-
-  constructor(store: AppStore, stats?: StatsJs) {
-    super(store)
-    this.stats = stats
-    this.view = new SimulationView()
-  }
-
-  override renderFrame() {
-    this.stats?.begin()
-    this.view.draw(this.state.simulation, this.renderer)
-    this.stats?.end()
-  }
-
-  override setSize(width: number, height: number) {
-    super.setSize(width, height)
-    this.store.dispatch(setViewer({ width, height }))
-  }
-
-  override dispose() {
-    super.dispose()
-    this.view.dispose()
-  }
 }
 
 class SimulationView {

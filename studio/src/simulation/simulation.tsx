@@ -6,5 +6,5 @@ export function Simulation(props: three.WrapperProps) {
   const renderer = useRenderer()
   const interactions = useInteractions()
 
-  return <three.Three {...props} {...interactions} renderer={renderer} />
+  return <three.Three {...props} {...interactions} {...renderer} />
 }

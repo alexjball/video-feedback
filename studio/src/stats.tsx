@@ -1,55 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { createContext, HTMLProps, useCallback, useContext, useMemo, useState } from "react"
 import Lib from "stats.js"
-import {
-  Box3,
-  BufferGeometry,
-  Color,
-  Float32BufferAttribute,
-  GridHelper,
-  Group,
-  Line,
-  LineBasicMaterial,
-  LineBasicMaterialParameters,
-  Mesh,
-  MeshBasicMaterial,
-  Object3D,
-  PlaneGeometry,
-  Scene,
-  SpriteMaterial,
-  TextureLoader,
-  Vector3
-} from "three"
-import Binder from "./binder"
-import { contain, unitOrthoCamera } from "./camera"
 import { useAppSelector } from "./hooks"
-import { copyCoords, State as SimState } from "./simulation/model"
-import type { AppStore } from "./store"
-import * as three from "./three"
+import { createScope } from "./utils"
 
 const ssr = typeof window === "undefined"
-
-class RGBA extends Color {
-  private a
-  constructor(r: number, g: number, b: number, a: number) {
-    super(r, g, b)
-    this.a = a
-  }
-
-  override getStyle() {
-    return (
-      "rgb(" +
-      ((this.r * 255) | 0) +
-      "," +
-      ((this.g * 255) | 0) +
-      "," +
-      ((this.b * 255) | 0) +
-      "," +
-      this.a +
-      ")"
-    )
-  }
-}
 
 export class StatsJs extends Lib {
   constructor() {
@@ -67,8 +22,7 @@ export interface Stats {
   init: (container: HTMLDivElement) => void
 }
 
-const Context = createContext<Stats>(undefined!)
-function useInstance(): Stats {
+export const { Provider, useContext: useStats } = createScope<Stats>(() => {
   const [stats, setStats] = useState<StatsJs | undefined>(undefined)
   const init = useCallback((container: HTMLDivElement | null) => {
     if (ssr || container === null) return
@@ -77,12 +31,7 @@ function useInstance(): Stats {
     setStats(stats)
   }, [])
   return useMemo(() => ({ stats, init }), [init, stats])
-}
-
-export const useStats = () => useContext(Context)
-export const Provider: React.FC = ({ children }) => (
-  <Context.Provider value={useInstance()}>{children}</Context.Provider>
-)
+})
 
 interface State {
   show: boolean

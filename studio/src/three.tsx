@@ -1,24 +1,19 @@
-import { DependencyList, HTMLAttributes, RefObject, useEffect, useMemo, useRef } from "react"
-import { Camera, Scene, Vector2, WebGLRenderer, WebGLRenderTarget } from "three"
+import React, { HTMLAttributes, RefObject, useEffect, useMemo, useRef } from "react"
+import { WebGLRenderer } from "three"
 import useResizeObserver from "use-resize-observer"
-import { useAppStore } from "./hooks"
-import type { AppStore } from "./store"
 
 export interface Renderer {
-  init(): HTMLCanvasElement
-  setSize(width: number, height: number): void
-  renderFrame(): void
-  dispose(): void
+  onRender?: (renderer: WebGLRenderer) => void
+  onDispose?: () => void
+  onResize?: (width: number, height: number) => void
 }
+export type Props = HTMLAttributes<HTMLDivElement> & Renderer
+export type FrameRef = RefObject<HTMLDivElement>
+export type WrapperProps = Omit<Props, "renderer">
 
-export interface Props extends HTMLAttributes<HTMLDivElement> {
-  renderer: Renderer
-}
-
-type FrameRef = RefObject<HTMLDivElement>
-
-export function Three({ renderer, style, ...divProps }: Props) {
+export function Three({ onRender, onDispose, onResize, style, ...divProps }: Props) {
   const frame: FrameRef = useRef(null)
+  const renderer = useInternalRenderer({ onRender, onDispose, onResize })
 
   // Order matters here! Effects run in the order they're called
   useInit(renderer, frame)
@@ -29,11 +24,42 @@ export function Three({ renderer, style, ...divProps }: Props) {
   return <div style={{ position: "relative", ...style }} ref={frame} {...divProps} />
 }
 
-function useDispose(renderer: Renderer) {
+interface InternalRenderer {
+  init(): HTMLCanvasElement
+  setSize(width: number, height: number): void
+  renderFrame(): void
+  dispose(): void
+}
+
+function useInternalRenderer({ onDispose, onRender, onResize }: Renderer): InternalRenderer {
+  return useMemo(() => {
+    let renderer: WebGLRenderer
+    return {
+      init() {
+        renderer = new WebGLRenderer({ antialias: true })
+        return renderer.domElement
+      },
+      setSize(width: number, height: number) {
+        renderer.setSize(width, height)
+        onResize?.(width, height)
+      },
+      renderFrame() {
+        onRender?.(renderer)
+      },
+      dispose() {
+        onDispose?.()
+        renderer.dispose()
+        renderer = undefined!
+      }
+    }
+  }, [onDispose, onRender, onResize])
+}
+
+function useDispose(renderer: InternalRenderer) {
   useEffect(() => () => renderer.dispose(), [renderer])
 }
 
-function useInit(renderer: Renderer, frame: FrameRef) {
+function useInit(renderer: InternalRenderer, frame: FrameRef) {
   useEffect(() => {
     const container = frame.current!,
       element = renderer.init()
@@ -44,7 +70,7 @@ function useInit(renderer: Renderer, frame: FrameRef) {
   }, [frame, renderer])
 }
 
-function useResize(renderer: Renderer, frame: FrameRef) {
+function useResize(renderer: InternalRenderer, frame: FrameRef) {
   const { width = 0, height = 0 } = useResizeObserver<HTMLDivElement>({ ref: frame }),
     hasSize = Boolean(width && height)
   useEffect(() => {
@@ -53,7 +79,7 @@ function useResize(renderer: Renderer, frame: FrameRef) {
   return { frame, hasSize }
 }
 
-function useRenderLoop(renderer: Renderer, hasSize: boolean) {
+function useRenderLoop(renderer: InternalRenderer, hasSize: boolean) {
   const loop = useMemo(() => {
     let animationRequest: null | number = null
 
@@ -84,81 +110,3 @@ function useRenderLoop(renderer: Renderer, hasSize: boolean) {
     return () => loop.stopAnimating()
   }, [hasSize, loop, renderer])
 }
-
-/**
- * Class-based Renderer pattern that uses the constructor and inheritance to
- * provide common rendering support. The React components work better with
- * functional interfaces, and `useRenderer` adapts between the two patterns.
- */
-export class WebGlRenderer implements Renderer {
-  readonly store: AppStore
-  readonly renderer: WebGLRenderer
-
-  constructor(store: AppStore) {
-    this.renderer = new WebGLRenderer({ antialias: true })
-    this.store = store
-  }
-
-  get state() {
-    return this.store.getState()
-  }
-
-  init() {
-    return this.renderer.domElement
-  }
-
-  dispose(): void {
-    this.renderer.dispose()
-  }
-
-  renderFrame() {}
-
-  setSize(width: number, height: number) {
-    this.renderer.setSize(width, height)
-  }
-
-  renderScene = (scene: Scene, camera: Camera, target: WebGLRenderTarget | null) => {
-    this.renderer.setRenderTarget(target)
-    this.renderer.render(scene, camera)
-  }
-  get size() {
-    const size = new Vector2()
-    this.renderer.getSize(size)
-    return { width: size.x, height: size.y }
-  }
-}
-
-type CreateRenderer = () => Renderer
-
-/** Bridges the functional react and class-based renderer patterns */
-// TODO: How much of this could be a hook or a react component? Is is it
-// performant to render at 60 fps?
-export function useRenderer(createRenderer: CreateRenderer, deps: DependencyList = []): Renderer {
-  return useMemo(() => {
-    let renderer: Renderer
-    return {
-      init() {
-        renderer = createRenderer()
-        return renderer.init()
-      },
-      setSize(width: number, height: number) {
-        renderer.setSize(width, height)
-      },
-      renderFrame() {
-        renderer.renderFrame()
-      },
-      dispose() {
-        renderer.dispose()
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [createRenderer, ...deps])
-}
-
-export type WrapperProps = Omit<Props, "renderer">
-export const asComponent = <T extends { new (store: AppStore): Renderer }>(MyRenderer: T) =>
-  function ThreeWrapper(props: WrapperProps) {
-    const store = useAppStore()
-    const renderer = useRenderer(() => new MyRenderer(store))
-    return <Three {...props} renderer={renderer} />
-  }

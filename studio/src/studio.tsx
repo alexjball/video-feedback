@@ -63,7 +63,7 @@ export function Studio() {
         <Navigation />
         <Stats />
         <Legend />
-        <Simulation />
+        <Simulation /> {/* stats={stats}  */}
       </Layout>
     </Providers>
   )
