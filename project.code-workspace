@@ -79,7 +79,13 @@
       "editor.defaultFormatter": "ms-python.python"
     },
     "python.formatting.provider": "black",
-    "eslint.workingDirectories": ["./studio", "./packages/three.js"]
+    "eslint.workingDirectories": ["./studio", "./packages/three.js"],
+    "[c]": {
+      "editor.defaultFormatter": "ms-vscode.cpptools"
+    },
+    "[hlsl]": {
+      "editor.defaultFormatter": "slevesque.shader"
+    }
   },
   "extensions": {
     "recommendations": [
@@ -89,7 +95,8 @@
       "GitHub.vscode-pull-request-github",
       "eamodio.gitlens",
       "ms-python.python",
-      "ms-python.vscode-pylance"
+      "ms-python.vscode-pylance",
+      "toba.vsfire"
     ]
   },
   "launch": {
