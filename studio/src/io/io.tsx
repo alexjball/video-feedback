@@ -14,11 +14,12 @@
 // https://github.com/atlassian/react-beautiful-dnd/blob/master/stories/src/horizontal/author-app.jsx
 // https://github.com/atlassian/react-beautiful-dnd/blob/master/stories/src/primatives/author-list.jsx
 
+import { saveAs } from "file-saver"
 import { useCallback } from "react"
+import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautiful-dnd"
 import styled from "styled-components"
-import { DragDropContext, Droppable, DropResult, Draggable } from "react-beautiful-dnd"
 import { useAppDispatch, useAppSelector, useAppStore } from "../hooks"
-import * as sim from "../simulation/model"
+import * as simulation from "../simulation"
 import * as model from "./model"
 
 export const IoPanel = (props: any) => (
@@ -100,21 +101,35 @@ const Io = styled.div`
     )
   },
   Controls = () => {
-    const dispatch = useAppDispatch()
-    const store = useAppStore()
+    const dispatch = useAppDispatch(),
+      store = useAppStore(),
+      { convert } = simulation.useService()
     const save = useCallback(
-      () => dispatch(model.addToPlaylist(store.getState().simulation)),
-      [dispatch, store]
-    )
-    const restore = useCallback(() => {
-      const playlist = store.getState().io.playlist
-      if (playlist.length) dispatch(sim.restore(playlist[playlist.length - 1].state))
-    }, [dispatch, store])
-
+        () => dispatch(model.addToPlaylist(store.getState().simulation)),
+        [dispatch, store]
+      ),
+      restore = useCallback(() => {
+        const playlist = store.getState().io.playlist
+        if (playlist.length) dispatch(simulation.model.restore(playlist[playlist.length - 1].state))
+      }, [dispatch, store]),
+      download = useCallback(
+        () =>
+          convert()
+            .then(blob => {
+              console.log(blob)
+              saveAs(blob, "feedback")
+            })
+            .catch(e => {
+              console.error(e)
+              alert("Couldn't save feedback")
+            }),
+        [convert]
+      )
     return (
       <div style={{ display: "flex" }}>
         <Button onClick={save}>Save</Button>
         <Button onClick={restore}>Restore Last Save</Button>
+        <Button onClick={download}>Download</Button>
       </div>
     )
   }

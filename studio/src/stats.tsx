@@ -1,8 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { createContext, HTMLProps, useCallback, useContext, useMemo, useState } from "react"
+import { HTMLProps, useCallback, useMemo, useState } from "react"
 import Lib from "stats.js"
 import { useAppSelector } from "./hooks"
-import { createScope } from "./utils"
+import { createService } from "./utils"
 
 const ssr = typeof window === "undefined"
 
@@ -22,7 +22,7 @@ export interface Stats {
   init: (container: HTMLDivElement) => void
 }
 
-export const { Provider, useContext: useStats } = createScope<Stats>(() => {
+export const { Provider, useService: useStats } = createService<Stats>(() => {
   const [stats, setStats] = useState<StatsJs | undefined>(undefined)
   const init = useCallback((container: HTMLDivElement | null) => {
     if (ssr || container === null) return

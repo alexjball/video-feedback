@@ -7,9 +7,9 @@ export interface Renderer {
   onDispose?: () => void
   onResize?: (width: number, height: number) => void
 }
-export type Props = HTMLAttributes<HTMLDivElement> & Renderer
+export type BaseProps = HTMLAttributes<HTMLDivElement>
+export type Props = BaseProps & Renderer
 export type FrameRef = RefObject<HTMLDivElement>
-export type WrapperProps = Omit<Props, "renderer">
 
 export function Three({ onRender, onDispose, onResize, style, ...divProps }: Props) {
   const frame: FrameRef = useRef(null)

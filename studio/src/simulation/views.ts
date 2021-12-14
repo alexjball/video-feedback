@@ -1,4 +1,3 @@
-import { useMemo } from "react"
 import { shallowEqual } from "react-redux"
 import {
   Mesh,
@@ -6,43 +5,18 @@ import {
   Object3D,
   OrthographicCamera,
   PlaneGeometry,
-  RGBFormat,
+  RGBAFormat,
   Scene,
   Texture,
   WebGLRenderer,
   WebGLRenderTarget
 } from "three"
 import { unitOrthoCamera } from "../camera"
-import { useAppStore } from "../hooks"
-import { useStats } from "../stats"
-import * as three from "../three"
 import { Binder } from "../utils"
 import Destination from "./destination"
-import { copyCoords, setViewer, State } from "./model"
+import { copyCoords, State } from "./model"
 
-export function useRenderer() {
-  const { stats } = useStats()
-  const store = useAppStore()
-  const renderer: three.Renderer = useMemo(() => {
-    const view = new SimulationView()
-    return {
-      onRender(renderer: WebGLRenderer) {
-        stats?.begin()
-        view.draw(store.getState().simulation, renderer)
-        stats?.end()
-      },
-      onResize(width: number, height: number) {
-        store.dispatch(setViewer({ width, height }))
-      },
-      onDispose() {
-        view.dispose()
-      }
-    }
-  }, [stats, store])
-  return renderer
-}
-
-class SimulationView {
+export class SimulationView {
   readonly scene: Scene
   readonly feedback: FeedbackView
   readonly viewer: OrthographicCamera
@@ -116,7 +90,7 @@ class SimulationView {
  * Renders visual feedback. Callers handle rendering and scenes. Scene should
  * not have position or anything.
  */
-class FeedbackView {
+export class FeedbackView {
   /** Maps destination regions to source regions.  */
   private spacemap = new Object3D()
 
@@ -135,8 +109,12 @@ class FeedbackView {
    */
   private destinationFrames = [this.createTarget()]
   private destination = new Destination()
+  private currentFrameIndex = 0
 
-  private currentFrame = 0
+  get currentFrame() {
+    return this.destinationFrames[this.currentFrameIndex]
+  }
+
   private camera
 
   constructor(scene: Scene) {
@@ -196,7 +174,7 @@ class FeedbackView {
         .fill(undefined)
         .map(() => this.createTarget(width, height))
     ]
-    if (this.currentFrame >= n) this.currentFrame = 1
+    if (this.currentFrameIndex >= n) this.currentFrameIndex = 1
   }
 
   setSize(width: number, height: number) {
@@ -217,8 +195,8 @@ class FeedbackView {
     this.camera.bottom = bb.min.y
 
     // Move to the next frame in the delay line
-    this.currentFrame = (this.currentFrame + 1) % this.destinationFrames.length
-    const destinationFrame = this.destinationFrames[this.currentFrame]
+    this.currentFrameIndex = (this.currentFrameIndex + 1) % this.destinationFrames.length
+    const destinationFrame = this.currentFrame
     this.portal.material.map = destinationFrame.texture
 
     // Render the source frame
@@ -230,6 +208,6 @@ class FeedbackView {
   }
 
   private createTarget(width = 0, height = 0) {
-    return new WebGLRenderTarget(width, height, { format: RGBFormat })
+    return new WebGLRenderTarget(width, height, { format: RGBAFormat })
   }
 }

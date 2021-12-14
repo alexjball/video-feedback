@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react"
+import { createContext, useContext, useEffect, useMemo, useState } from "react"
 
 type Selector<S, T> = (state: S) => T
 type Bind<T> = (value: T) => void
@@ -32,19 +32,48 @@ export class Binder<S> {
 
 /** Type of an empty object literal `{}` */
 type Empty = Record<string, never>
+type Maybe<T> = T | Empty
+type Setter<T> = (s: T) => void
 
-/** Creates a context provider and access hook from a factory function. */
-export function createScope<Ctx>(factory: () => Ctx): {
+/** Creates a service context and access hooks. */
+export function createService<Service>(providerHook?: () => Service): {
   Provider: React.FC
-  useContext: () => Ctx | Empty
+  useService: () => Maybe<Service>
+  useBinding: (impl: Service) => void
 } {
-  const Context = createContext<Ctx | Empty>({})
+  const Context = createContext<{ value: Maybe<Service>; setValue: Setter<Maybe<Service>> }>({
+    value: {},
+    setValue() {
+      throw Error("No provider found")
+    }
+  })
+
   return {
     Provider({ children }) {
-      return <Context.Provider value={factory()}>{children}</Context.Provider>
+      const providerValue = providerHook?.()
+      const [value, setValue] = useState<Maybe<Service>>({})
+
+      return (
+        <Context.Provider
+          value={useMemo(
+            () => ({ value: providerValue ?? value, setValue }),
+            [providerValue, value]
+          )}>
+          {children}
+        </Context.Provider>
+      )
     },
-    useContext() {
-      return useContext(Context)
+
+    useBinding(impl: Service) {
+      const { setValue } = useContext(Context)
+      useEffect(() => {
+        setValue(impl)
+        return () => setValue({})
+      }, [impl, setValue])
+    },
+
+    useService() {
+      return useContext(Context).value
     }
   }
 }
