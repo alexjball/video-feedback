@@ -103,7 +103,8 @@ const Io = styled.div`
   Controls = () => {
     const dispatch = useAppDispatch(),
       store = useAppStore(),
-      { convert } = simulation.useService()
+      { convert } = simulation.useService(),
+      feedbackHeight = useAppSelector(s => s.simulation.feedback.resolution.height)
     const save = useCallback(
         () => dispatch(model.addToPlaylist(store.getState().simulation)),
         [dispatch, store]
@@ -112,24 +113,23 @@ const Io = styled.div`
         const playlist = store.getState().io.playlist
         if (playlist.length) dispatch(simulation.model.restore(playlist[playlist.length - 1].state))
       }, [dispatch, store]),
-      download = useCallback(
-        () =>
-          convert()
-            .then(blob => {
-              console.log(blob)
-              saveAs(blob, "feedback")
-            })
-            .catch(e => {
-              console.error(e)
-              alert("Couldn't save feedback")
-            }),
-        [convert]
-      )
+      download = (height: number) =>
+        convert(height)
+          .then(blob => {
+            console.log(blob)
+            saveAs(blob, "feedback")
+          })
+          .catch(e => {
+            console.error(e)
+            alert("Couldn't save feedback")
+          })
     return (
       <div style={{ display: "flex" }}>
         <Button onClick={save}>Save</Button>
         <Button onClick={restore}>Restore Last Save</Button>
-        <Button onClick={download}>Download</Button>
+        <Button onClick={() => download(feedbackHeight > 2160 ? 2160 : feedbackHeight)}>
+          Download
+        </Button>
       </div>
     )
   }

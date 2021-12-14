@@ -11,9 +11,9 @@ import { WorkQueue } from "./work"
 
 const ssr = typeof window === "undefined"
 
-interface SimulationService {
+export interface SimulationService {
   /** Generates a PNG blob of the current feedback frame. */
-  convert(width?: number, height?: number): Promise<Blob>
+  convert(height?: number, width?: number): Promise<Blob>
 }
 
 const { Provider, useBinding, useService } = createService<SimulationService>()
