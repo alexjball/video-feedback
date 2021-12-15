@@ -36,7 +36,7 @@ function useInternalRenderer({ onDispose, onRender, onResize }: Renderer): Inter
     let renderer: WebGLRenderer
     return {
       init() {
-        renderer = new WebGLRenderer({ antialias: true })
+        renderer = new WebGLRenderer({ antialias: false })
         return renderer.domElement
       },
       setSize(width: number, height: number) {
