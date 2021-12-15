@@ -1,6 +1,45 @@
 import { ShaderMaterial, WebGLRenderer, WebGLRenderTarget } from "three"
 import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass"
 
+export default class Destination {
+  private targets = {
+    color: new ShaderMaterial(colorShader),
+    depth: new ShaderMaterial(depthShader)
+  }
+  private fsQuad = new FullScreenQuad(this.targets.color)
+
+  updateUniforms(uniforms: {
+    mirrorX?: boolean
+    mirrorY?: boolean
+    invertColor?: boolean
+    colorGain?: number
+    colorCycle?: number
+  }) {
+    Object.entries(uniforms).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) this.targets.color.uniforms[k].value = v
+    })
+  }
+
+  render(
+    renderer: WebGLRenderer,
+    destinationFrame: WebGLRenderTarget,
+    sourceFrame: WebGLRenderTarget,
+    type: keyof InstanceType<typeof Destination>["targets"] = "color"
+  ) {
+    const material = this.targets[type]
+    material.uniforms.tDiffuse.value = sourceFrame.texture
+    material.uniformsNeedUpdate = true
+
+    renderer.setRenderTarget(destinationFrame)
+    this.fsQuad.render(renderer)
+  }
+
+  dispose() {
+    this.fsQuad.dispose()
+    Object.values(this.targets).forEach(t => t.dispose())
+  }
+}
+
 const processColor = /* glsl */ `
   void processColor(inout vec4 color, float gain, float cycle, bool invert) {
     if (gain > 0.0) {
@@ -37,9 +76,16 @@ const processColor = /* glsl */ `
       color.x = r1;
     }
     if (invert) color.xyz = vec3(1.0, 1.0, 1.0) - color.xyz;
-  }`
+  }`,
+  baseVertexShader = /* glsl */ `
+    varying vec2 vUv;
 
-const shader = {
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    }`
+
+const colorShader = {
   uniforms: {
     tDiffuse: { value: null },
     mirrorX: { value: false },
@@ -49,13 +95,7 @@ const shader = {
     colorCycle: { value: 0.0 }
   },
 
-  vertexShader: /* glsl */ `
-    varying vec2 vUv;
-
-    void main() {
-      vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-    }`,
+  vertexShader: baseVertexShader,
 
   fragmentShader: /* glsl */ `
     uniform bool mirrorX;
@@ -79,36 +119,24 @@ const shader = {
     }`
 }
 
-export default class Destination {
-  private material
-  private fsQuad
+const depthShader = {
+  uniforms: {
+    tDiffuse: { value: null }
+  },
 
-  constructor() {
-    this.material = new ShaderMaterial(shader)
-    this.fsQuad = new FullScreenQuad(this.material)
-  }
+  vertexShader: baseVertexShader,
 
-  updateUniforms(uniforms: {
-    mirrorX?: boolean
-    mirrorY?: boolean
-    invertColor?: boolean
-    colorGain?: number
-    colorCycle?: number
-  }) {
-    Object.entries(uniforms).forEach(([k, v]) => {
-      if (v !== undefined && v !== null) this.material.uniforms[k].value = v
-    })
-  }
+  fragmentShader: /* glsl */ `
+    // Enables bitwise operators
+    #version 130
 
-  render(
-    renderer: WebGLRenderer,
-    destinationFrame: WebGLRenderTarget,
-    sourceFrame: WebGLRenderTarget
-  ) {
-    this.material.uniforms.tDiffuse.value = sourceFrame.texture
-    this.material.uniformsNeedUpdate = true
+    uniform sampler2D tDiffuse;
+    varying vec2 vUv;
 
-    renderer.setRenderTarget(destinationFrame)
-    this.fsQuad.render(renderer)
-  }
+    void main() {
+      vec2 uv = vUv;
+
+      vec4 color = texture2D( tDiffuse, uv );
+      gl_FragColor = color;
+    }`
 }

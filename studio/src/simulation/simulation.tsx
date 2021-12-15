@@ -6,7 +6,7 @@ import * as three from "../three"
 import { createService } from "../utils"
 import { Converter } from "./converter"
 import { setViewer } from "./model"
-import { SimulationView } from "./views"
+import { Simulation } from "./views"
 import { WorkQueue } from "./work"
 
 const ssr = typeof window === "undefined"
@@ -29,7 +29,7 @@ function useInstance() {
     store = useAppStore(),
     conversionRef = useRef<HTMLCanvasElement>(),
     instance: { renderer: three.Renderer; service: SimulationService } = useMemo(() => {
-      const view = new SimulationView(),
+      const view = new Simulation(),
         work = new WorkQueue()
 
       return {

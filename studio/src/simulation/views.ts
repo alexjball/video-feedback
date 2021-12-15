@@ -16,23 +16,24 @@ import { Binder } from "../utils"
 import Destination from "./destination"
 import { copyCoords, State } from "./model"
 
-export class SimulationView {
+export class Simulation {
   readonly scene: Scene
-  readonly feedback: FeedbackView
+  readonly feedback: Feedback
   readonly viewer: OrthographicCamera
   readonly border: Mesh<PlaneGeometry, MeshBasicMaterial>
   readonly background: Mesh<PlaneGeometry, MeshBasicMaterial>
 
   constructor() {
-    const o = this.initObjects()
+    const o = this.createScene()
     this.scene = o.scene
-    this.feedback = o.feedback
     this.viewer = o.viewer
     this.border = o.border
     this.background = o.background
+
+    this.feedback = new Feedback(this)
   }
 
-  private initObjects() {
+  private createScene() {
     const scene = new Scene()
 
     const background = new Mesh(
@@ -45,12 +46,10 @@ export class SimulationView {
     const border = new Mesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({ color: "#ffffff" }))
     scene.add(border)
 
-    const feedback = new FeedbackView(scene)
-
     const viewer = unitOrthoCamera()
     scene.add(viewer)
 
-    return { scene, background, feedback, viewer, border }
+    return { scene, background, viewer, border }
   }
 
   private binder = new Binder<State>()
@@ -90,7 +89,9 @@ export class SimulationView {
  * Renders visual feedback. Callers handle rendering and scenes. Scene should
  * not have position or anything.
  */
-export class FeedbackView {
+export class Feedback {
+  private view: Simulation
+
   /** Maps destination regions to source regions.  */
   private spacemap = new Object3D()
 
@@ -115,14 +116,12 @@ export class FeedbackView {
     return this.destinationFrames[this.currentFrameIndex]
   }
 
-  private camera
+  private camera = unitOrthoCamera()
 
-  constructor(scene: Scene) {
-    this.camera = unitOrthoCamera()
+  constructor(view: Simulation) {
+    this.view = view
+    this.view.scene.add(this.portal, this.spacemap)
     this.spacemap.add(this.camera)
-
-    scene.add(this.portal)
-    scene.add(this.spacemap)
   }
 
   readonly binder = new Binder<State>()
@@ -160,6 +159,7 @@ export class FeedbackView {
   dispose() {
     this.sourceFrame.dispose()
     this.destinationFrames.forEach(frame => frame.dispose())
+    this.destination.dispose()
   }
 
   setNumberFeedbackFrames(n: number) {

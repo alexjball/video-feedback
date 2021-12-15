@@ -1,5 +1,5 @@
 import { MeshBasicMaterial, WebGLRenderer, WebGLRenderTarget } from "three"
-import { SimulationView } from "./views"
+import { Simulation } from "./views"
 import { WorkQueue } from "./work"
 import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass"
 
@@ -15,9 +15,9 @@ export class Converter {
   fsQuad = new FullScreenQuad(this.material)
 
   work: WorkQueue
-  view: SimulationView
+  view: Simulation
 
-  constructor(work: WorkQueue, view: SimulationView) {
+  constructor(work: WorkQueue, view: Simulation) {
     this.work = work
     this.view = view
   }
@@ -32,15 +32,15 @@ export class Converter {
       this.canvas.width = width
       this.canvas.height = height
 
-      let target: WebGLRenderTarget
+      let source: WebGLRenderTarget
       if (width === fullSize.width && height === fullSize.height) {
-        target = fullSize
+        source = fullSize
       } else {
         this.resize(renderer, fullSize, width, height)
-        target = this.resizeBuffer
+        source = this.resizeBuffer
       }
 
-      this.copyToCanvas(renderer, target)
+      this.copyToCanvas(renderer, source)
       return this.canvas.convertToBlob()
     })
 
@@ -51,15 +51,15 @@ export class Converter {
     this.fsQuad.render(renderer)
   }
 
-  /** Assumes target is the same size as the canvas  */
+  /** Assumes source is the same size as the canvas  */
   // TODO: un-flip
-  copyToCanvas(renderer: WebGLRenderer, target: WebGLRenderTarget) {
+  copyToCanvas(renderer: WebGLRenderer, source: WebGLRenderTarget) {
     let x = 0,
       y = 0,
       bw = this.transferBuffer.width,
       bh = this.transferBuffer.height,
-      tw = target.width,
-      th = target.height
+      tw = source.width,
+      th = source.height
     while (y < th) {
       x = 0
       while (x < tw) {
@@ -69,7 +69,7 @@ export class Converter {
           transfer = new Uint8ClampedArray(this.transferBuffer.data.buffer, 0, size),
           data = new ImageData(transfer, width, height)
 
-        renderer.readRenderTargetPixels(target, x, y, width, height, transfer)
+        renderer.readRenderTargetPixels(source, x, y, width, height, transfer)
         this.context.putImageData(data, x, y, 0, 0, width, height)
         x += bw
       }
