@@ -3,6 +3,7 @@ import { BaseProps } from "../three"
 import { useInteractions } from "./interactions"
 
 export { reducer } from "./model"
+export * as model from "./model"
 export { Provider, useService } from "./service"
 export function SimulationPanel(props: BaseProps) {
   const interactions = useInteractions()
