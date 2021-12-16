@@ -85,10 +85,6 @@ export class Simulation {
   }
 }
 
-/**
- * Renders visual feedback. Callers handle rendering and scenes. Scene should
- * not have position or anything.
- */
 export class Feedback {
   private view: Simulation
 
@@ -144,8 +140,7 @@ export class Feedback {
         colorCycle: s.feedback.colorCycle,
         invertColor: s.feedback.invertColor
       }),
-      v => this.destination.updateUniforms(v),
-      shallowEqual
+      v => this.destination.updateUniforms(v)
     )
     .add(
       s => s.feedback.nFrames,

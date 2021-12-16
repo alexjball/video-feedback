@@ -293,6 +293,7 @@ function ResolutionControls() {
             <option value={4320}>8K</option>
             <option value={6480}>12K</option>
             <option value={8640}>16K</option>
+            <option value={13500}>Tapestry</option>
           </select>
         </label>
 
@@ -300,13 +301,16 @@ function ResolutionControls() {
           aspect ratio
           <select
             value={
-              matchAspect ? "screen" : [1, 4 / 3, 16 / 9].find(x => Math.abs(x - aspect) < 1e-2)
+              matchAspect
+                ? "screen"
+                : [1, 4 / 3, 16 / 9, 106 / 90].find(x => Math.abs(x - aspect) < 1e-2)
             }
             onChange={setAspect}>
             <option value="screen">screen</option>
             <option value={1}>1:1</option>
             <option value={4 / 3}>4:3</option>
             <option value={16 / 9}>16:9</option>
+            <option value={106 / 90}>Tapestry</option>
           </select>
         </label>
       </fieldset>

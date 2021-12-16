@@ -1,5 +1,18 @@
 import { Quaternion, Vector2, Vector3, Vector4 } from "three"
 import { State } from "./model"
+import { cloneDeepWith } from "lodash"
+
+export type JsonState = any
+
+/** Converts simulation state to a JSON-serializable format */
+export function deflate(s: State): JsonState {
+  return cloneDeepWith(s, deflater)
+}
+
+/** Converts a previously-deflated JSON object into simulation state. */
+export function inflate(json: JsonState): State {
+  return cloneDeepWith(json, inflater)
+}
 
 /** Serialized classes included in the model state */
 const jsonTypes: Record<string, { new (): any }> = {
@@ -9,18 +22,7 @@ const jsonTypes: Record<string, { new (): any }> = {
   Vector4: Vector4
 }
 
-/** Initializes class instance values */
-function threeReviver(key: string, value: any) {
-  if (value?.["__type"] in jsonTypes) {
-    const { __type: name, ...v } = value,
-      Class = jsonTypes[name]
-    return Object.assign(new Class(), v)
-  }
-  return value
-}
-
-/** Serializes class instance values */
-function threeReplacer(key: string, value: any) {
+function deflater(value: any) {
   const name = value?.constructor?.name
   if (name in jsonTypes) {
     return {
@@ -28,13 +30,12 @@ function threeReplacer(key: string, value: any) {
       __type: name
     }
   }
-  return value
 }
 
-export function stringify(s: State, space?: number): string {
-  return JSON.stringify(s, threeReplacer, space)
-}
-
-export function parse(s: string): State {
-  return JSON.parse(s, threeReviver)
+function inflater(value: any) {
+  if (value?.["__type"] in jsonTypes) {
+    const { __type: name, ...v } = value,
+      Class = jsonTypes[name]
+    return Object.assign(new Class(), v)
+  }
 }

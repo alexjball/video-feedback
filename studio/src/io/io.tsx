@@ -127,9 +127,7 @@ const Io = styled.div`
       <div style={{ display: "flex" }}>
         <Button onClick={save}>Save</Button>
         <Button onClick={restore}>Restore Last Save</Button>
-        <Button onClick={() => download(feedbackHeight > 2160 ? 2160 : feedbackHeight)}>
-          Download
-        </Button>
+        <Button onClick={() => download(feedbackHeight)}>Download</Button>
       </div>
     )
   }
