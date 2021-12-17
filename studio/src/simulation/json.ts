@@ -22,20 +22,28 @@ const jsonTypes: Record<string, { new (): any }> = {
   Vector4: Vector4
 }
 
+const labelsByCtors = new Map()
+    .set(Quaternion, "Q")
+    .set(Vector2, "V2")
+    .set(Vector3, "V3")
+    .set(Vector4, "V4"),
+  ctorsByLabels = new Map()
+labelsByCtors.forEach((label, ctor) => ctorsByLabels.set(label, ctor))
+
 function deflater(value: any) {
-  const name = value?.constructor?.name
-  if (name in jsonTypes) {
+  const ctor = value?.constructor
+  if (ctor && labelsByCtors.has(ctor)) {
     return {
       ...value,
-      __type: name
+      __t: labelsByCtors.get(ctor)
     }
   }
 }
 
 function inflater(value: any) {
-  if (value?.["__type"] in jsonTypes) {
-    const { __type: name, ...v } = value,
-      Class = jsonTypes[name]
+  if (ctorsByLabels.has(value?.["__t"])) {
+    const { __t: name, ...v } = value,
+      Class = ctorsByLabels.get(name)
     return Object.assign(new Class(), v)
   }
 }

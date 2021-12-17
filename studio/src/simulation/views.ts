@@ -1,4 +1,3 @@
-import { shallowEqual } from "react-redux"
 import {
   Mesh,
   MeshBasicMaterial,
@@ -77,7 +76,6 @@ export class Simulation {
 
     renderer.setRenderTarget(null)
     renderer.render(this.scene, this.viewer)
-    // TODO: Render debug scene
   }
 
   dispose() {
