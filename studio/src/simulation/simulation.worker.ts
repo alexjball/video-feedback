@@ -1,9 +1,11 @@
-import { WebGLRenderer } from "three"
+import { WebGLRenderer, WebGLRenderTarget } from "three"
 import { Binder, isDefined, singleton } from "../utils"
-import { Converter } from "./converter"
 import { inflate, JsonState } from "./json"
 import { State } from "./model"
+import RenderLoop from "./render-loop"
+import Resizer from "./resizer"
 import { PlaybackAction } from "./service"
+import Settler from "./settler"
 import { Simulation } from "./views"
 
 interface Id {
@@ -37,8 +39,8 @@ export type Message = Request & Id
 /** Message type for responses from this worker */
 export type Response =
   | ({ type: "ack"; result?: any } & Id)
-  | { type: "renderStart"; now: number }
-  | { type: "renderEnd"; now: number }
+  | { type: "renderStart"; frame: number; now: number }
+  | { type: "renderEnd"; frame: number; settled: boolean; now: number }
 
 /** Message handler for this worker */
 onmessage = ({ data: message }: MessageEvent<Message>) => {
@@ -62,8 +64,10 @@ onmessage = ({ data: message }: MessageEvent<Message>) => {
   }
 }
 
-const renderStart = () => postMessage({ type: "renderStart", now: performance.now() }),
-  renderEnd = () => postMessage({ type: "renderEnd", now: performance.now() }),
+const renderStart = (frame: number) =>
+    postMessage({ type: "renderStart", frame, now: performance.now() }),
+  renderEnd = (frame: number, settled: boolean) =>
+    postMessage({ type: "renderEnd", frame, settled, now: performance.now() }),
   ack = ({ id }: Message, result?: any) =>
     postMessage({
       type: "ack",
@@ -71,27 +75,25 @@ const renderStart = () => postMessage({ type: "renderStart", now: performance.no
       result
     })
 
+/** Controller logic to bind the graphics simulation to the rest of the application */
 const simulation = singleton(
   class {
-    view = new Simulation()
+    frameIndex = 0
+    simulation = new Simulation()
+    resizer = new Resizer()
+    settler = new Settler()
+    renderLoop: RenderLoop
     renderer?: WebGLRenderer
     currentState?: State
-    animationRequest?: number
-    converter = new Converter(this.view)
+
+    constructor() {
+      this.renderLoop = new RenderLoop(this.renderFrame)
+    }
 
     binder = new Binder<State>().add(
       s => s.viewport,
       v => this.renderer?.setSize(v.width, v.height, false)
     )
-
-    renderFrame() {
-      if (isDefined(this.currentState) && isDefined(this.renderer)) {
-        renderStart()
-        this.binder.apply(this.currentState)
-        this.view.draw(this.currentState, this.renderer)
-        renderEnd()
-      }
-    }
 
     initialize(canvas: OffscreenCanvas) {
       this.renderer = new WebGLRenderer({ antialias: false, canvas })
@@ -102,56 +104,51 @@ const simulation = singleton(
     }
 
     setPlayback(action: PlaybackAction) {
+      const loop = this.renderLoop
       switch (action) {
-        case "pause":
-          this.stopAnimating()
+        case "stop":
+          loop.stop()
           return
-        case "play":
-          this.startAnimating()
+        case "start":
+          loop.start()
           return
         case "step":
-          this.stopAnimating()
+          loop.stop()
           this.renderFrame()
           return
       }
     }
 
-    convert(width?: number, height?: number) {
+    convert(width?: number, height?: number): Promise<Blob> {
       if (!isDefined(this.renderer)) {
         throw Error("Not initialized")
       }
-      const shouldPause = this.isAnimating()
-      if (shouldPause) this.stopAnimating()
-      const result = this.converter.convert(this.renderer, height, width)
-      result.finally(() => shouldPause && this.startAnimating())
+      this.renderLoop.pause()
+      const result = this.resizer.convert(
+        this.renderer,
+        this.simulation.feedback.currentFrame,
+        height,
+        width
+      )
+      result.finally(() => this.renderLoop.unpause())
       return result
     }
 
     dispose() {
-      this.view.dispose()
+      this.simulation.dispose()
       this.renderer?.dispose()
     }
 
-    private startAnimating() {
-      this.stopAnimating()
-      this.loop()
-    }
-
-    private loop() {
-      this.animationRequest = requestAnimationFrame(() => {
-        this.renderFrame()
-        this.loop()
-      })
-    }
-
-    private isAnimating() {
-      return isDefined(this.animationRequest)
-    }
-
-    private stopAnimating() {
-      if (isDefined(this.animationRequest)) {
-        cancelAnimationFrame(this.animationRequest)
-        this.animationRequest = undefined
+    private renderFrame = () => {
+      if (isDefined(this.currentState) && isDefined(this.renderer)) {
+        this.frameIndex++
+        renderStart(this.frameIndex)
+        // Bind state
+        this.binder.apply(this.currentState)
+        this.simulation.render(this.currentState, this.renderer)
+        // Compute settled status from depth frame
+        const settled = this.settler.compute(this.renderer, this.simulation.feedback.currentFrame)
+        renderEnd(this.frameIndex, settled)
       }
     }
   }

@@ -1,8 +1,7 @@
 import { MeshBasicMaterial, WebGLRenderer, WebGLRenderTarget } from "three"
 import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass"
-import { Simulation } from "./views"
 
-export class Converter {
+export default class Resizer {
   canvas = new OffscreenCanvas(0, 0)
   context = this.canvas.getContext("2d")!
   transferBuffer = new ImageData(1024, 1024)
@@ -10,15 +9,13 @@ export class Converter {
   material = new MeshBasicMaterial()
   fsQuad = new FullScreenQuad(this.material)
 
-  view: Simulation
-
-  constructor(view: Simulation) {
-    this.view = view
-  }
-
-  convert = (renderer: WebGLRenderer, resizeHeight?: number, resizeWidth?: number) => {
-    const fullSize = this.view.feedback.currentFrame,
-      aspect = fullSize.width / fullSize.height,
+  convert = (
+    renderer: WebGLRenderer,
+    fullSize: WebGLRenderTarget,
+    resizeHeight?: number,
+    resizeWidth?: number
+  ) => {
+    const aspect = fullSize.width / fullSize.height,
       height = resizeHeight ?? fullSize.height,
       width = resizeWidth ?? Math.round(height * aspect)
 

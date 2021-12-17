@@ -32,6 +32,23 @@ export class Simulation {
     this.feedback = new Feedback(this)
   }
 
+  render(state: State, renderer: WebGLRenderer) {
+    // Bind state
+    this.binder.apply(state)
+    this.feedback.binder.apply(state)
+
+    // Render feedback color and depth frames
+    this.feedback.render(renderer)
+
+    // Render viewer to the canvas
+    renderer.setRenderTarget(null)
+    renderer.render(this.scene, this.viewer)
+  }
+
+  dispose() {
+    this.feedback.dispose()
+  }
+
   private createScene() {
     const scene = new Scene()
 
@@ -68,19 +85,6 @@ export class Simulation {
       s => s.background.color,
       v => this.background.material.color.set(v)
     )
-
-  draw(state: State, renderer: WebGLRenderer) {
-    this.binder.apply(state)
-    this.feedback.binder.apply(state)
-    this.feedback.iterate(renderer, this.scene)
-
-    renderer.setRenderTarget(null)
-    renderer.render(this.scene, this.viewer)
-  }
-
-  dispose() {
-    this.feedback.dispose()
-  }
 }
 
 export class Feedback {
@@ -175,7 +179,7 @@ export class Feedback {
     this.destinationFrames.forEach(frame => frame.setSize(width, height))
   }
 
-  iterate(renderer: WebGLRenderer, scene: Scene) {
+  render(renderer: WebGLRenderer) {
     // Set up the camera to cover the feedback source region. Align the camera
     // with the bounding box of the portal geometry, then transform the camera
     // through the portal and spacemap.
@@ -194,7 +198,7 @@ export class Feedback {
 
     // Render the source frame
     renderer.setRenderTarget(this.sourceFrame)
-    renderer.render(scene, this.camera)
+    renderer.render(this.view.scene, this.camera)
 
     // Render the destination frame
     this.destination.render(renderer, destinationFrame, this.sourceFrame)

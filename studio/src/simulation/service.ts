@@ -10,4 +10,4 @@ export interface SimulationService {
 
 export const { Provider, useBinding, useService } = createService<SimulationService>()
 
-export type PlaybackAction = "play" | "pause" | "step"
+export type PlaybackAction = "start" | "stop" | "step"

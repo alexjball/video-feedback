@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid"
-import React, { useEffect, useMemo } from "react"
+import React, { useEffect } from "react"
 import { BaseProps, Canvas } from "../canvas"
 import { useAppStore } from "../hooks"
 import { StatsJs, useStats } from "../stats"
@@ -30,7 +30,7 @@ function useInstance() {
                 canvas.transferControlToOffscreen(),
                 store.getState().simulation
               )
-              this.client.setPlayback("play")
+              this.client.setPlayback("start")
             } else {
               this.client.terminate()
             }
