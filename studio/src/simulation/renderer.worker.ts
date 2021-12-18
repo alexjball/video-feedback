@@ -6,7 +6,7 @@ import RenderLoop from "./render-loop"
 import Resizer from "./resizer"
 import { PlaybackAction } from "./service"
 import Settler from "./settler"
-import { Simulation } from "./views"
+import Simulation from "./simulation"
 
 interface Id {
   id: string
@@ -126,7 +126,7 @@ const simulation = singleton(
       this.renderLoop.pause()
       const result = this.resizer.convert(
         this.renderer,
-        this.simulation.feedback.currentFrame,
+        this.simulation.feedback.currentFrames.color,
         height,
         width
       )
@@ -147,7 +147,10 @@ const simulation = singleton(
         this.binder.apply(this.currentState)
         this.simulation.render(this.currentState, this.renderer)
         // Compute settled status from depth frame
-        const settled = this.settler.compute(this.renderer, this.simulation.feedback.currentFrame)
+        const settled = this.settler.compute(
+          this.renderer,
+          this.simulation.feedback.currentFrames.depth
+        )
         renderEnd(this.frameIndex, settled)
       }
     }

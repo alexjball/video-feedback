@@ -7,7 +7,7 @@ import { settablePromise, SettablePromise, useSingleton } from "../utils"
 import { deflate } from "./json"
 import { setViewer, State } from "./model"
 import { PlaybackAction, useBinding } from "./service"
-import type { Request, Response } from "./simulation.worker"
+import type { Request, Response } from "./renderer.worker"
 
 export default function Renderer(props: BaseProps) {
   return <Canvas {...useInstance()} {...props} />
@@ -69,7 +69,7 @@ class Client {
   }
 
   private createWorker() {
-    const worker = new Worker(new URL("./simulation.worker.ts", import.meta.url))
+    const worker = new Worker(new URL("./renderer.worker.ts", import.meta.url))
     worker.onmessage = this.onmessage
     return worker
   }

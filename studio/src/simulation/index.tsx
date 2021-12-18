@@ -10,6 +10,6 @@ export function SimulationPanel(props: BaseProps) {
   return <Renderer {...props} {...interactions} />
 }
 
-const Renderer = dynamic(() => import("./simulation"), {
+const Renderer = dynamic(() => import("./renderer"), {
   ssr: false
 })
