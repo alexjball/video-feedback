@@ -1,5 +1,5 @@
 import dynamic from "next/dynamic"
-import { BaseProps } from "../three"
+import { BaseProps } from "../canvas"
 import { useInteractions } from "./interactions"
 
 export { reducer } from "./model"
