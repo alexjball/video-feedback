@@ -11,6 +11,7 @@ import {
   setMirrorX,
   setMirrorY,
   setNumberFeedbackFrames,
+  setPreventStrobing,
   updatePortal
 } from "./simulation/model"
 import { RootState } from "./store"
@@ -214,6 +215,14 @@ const config: ControlConfig[] = [
       min: 1,
       max: 30,
       step: 1
+    }
+  },
+  {
+    Component: ToggleInput,
+    selector: s => s.simulation.preventStrobing,
+    actionCreator: v => setPreventStrobing(v),
+    props: {
+      legend: "prevent strobing"
     }
   }
 ]

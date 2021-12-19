@@ -90,7 +90,8 @@ export default class Feedback {
         mirrorY: s.spacemap.mirrorY,
         colorGain: s.feedback.colorGain,
         colorCycle: s.feedback.colorCycle,
-        invertColor: s.feedback.invertColor
+        invertColor: s.feedback.invertColor,
+        preventStrobing: s.preventStrobing
       }),
       v => this.destination.updateUniforms(v)
     )

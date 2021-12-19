@@ -8,19 +8,18 @@ export default class Destination {
   }
   private fsQuad = new FullScreenQuad(this.targets.color)
 
-  updateUniforms(uniforms: {
+  updateUniforms = (uniforms: {
     mirrorX?: boolean
     mirrorY?: boolean
     invertColor?: boolean
     colorGain?: number
     colorCycle?: number
-  }) {
-    ;[this.targets.color.uniforms, this.targets.depth.uniforms].forEach(shaderUniforms =>
+  }) =>
+    [this.targets.color.uniforms, this.targets.depth.uniforms].forEach(shaderUniforms =>
       Object.entries(uniforms).forEach(([k, v]) => {
         if (v !== undefined && v !== null && shaderUniforms[k]) shaderUniforms[k].value = v
       })
     )
-  }
 
   render({
     renderer,
@@ -132,6 +131,7 @@ const colorShader = {
   uniforms: {
     source: { value: null },
     depth: { value: null },
+    preventStrobing: { value: false },
     mirrorX: { value: false },
     mirrorY: { value: false },
     invertColor: { value: false },
@@ -147,6 +147,7 @@ const colorShader = {
     uniform bool invertColor;
     uniform float colorGain;
     uniform float colorCycle;
+    uniform bool preventStrobing;
     uniform sampler2D source;
     uniform sampler2D depth;
     varying vec2 vUv;
@@ -165,7 +166,7 @@ const colorShader = {
       decode(depthColor, settled, fdepth, label);
 
       vec4 color = texture2D(source, uv);
-      if (fdepth < 20. || settled) {
+      if (!preventStrobing || fdepth < 15. || settled) {
         processColor(color, colorGain, colorCycle, invertColor);
       }
 

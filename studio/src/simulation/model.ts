@@ -60,6 +60,7 @@ export type State = {
       y: number
     } | null
   }
+  preventStrobing: boolean
 }
 
 /** Axis-aligned 2-d rectangle! */
@@ -132,7 +133,8 @@ const initialState: State = {
     width: 0,
     height: 0
   },
-  drag: { start: null }
+  drag: { start: null },
+  preventStrobing: true
 }
 
 export function createCoords(): Coords {
@@ -168,6 +170,9 @@ const slice = createSlice({
   name: "simulation",
   initialState,
   reducers: {
+    setPreventStrobing(state, { payload }: PayloadAction<boolean>) {
+      state.preventStrobing = payload
+    },
     setMirrorX({ spacemap }, { payload: mirrorX }: PayloadAction<boolean>) {
       spacemap.mirrorX = mirrorX
     },
@@ -321,7 +326,8 @@ export const {
     setViewer,
     updatePortal,
     drag,
-    center
+    center,
+    setPreventStrobing
   }
 } = slice
 
