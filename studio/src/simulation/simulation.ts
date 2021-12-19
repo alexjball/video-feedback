@@ -40,7 +40,7 @@ export default class Simulation {
     renderer.setRenderTarget(null)
     renderer.render(this.scene, this.viewer)
 
-    this.feedback.renderDebug(renderer)
+    this.feedback.debug.render(renderer)
   }
 
   dispose() {

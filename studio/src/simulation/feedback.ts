@@ -11,15 +11,13 @@ import {
 } from "three"
 import { unitOrthoCamera } from "../camera"
 import { Binder } from "../utils"
+import DepthView from "./depth-view"
 import Destination from "./destination"
 import { copyCoords, State } from "./model"
 import type Simulation from "./simulation"
 
-const round = Math.round,
-  max = Math.max
-
 export default class Feedback {
-  private view: Simulation
+  readonly view: Simulation
 
   /** Maps destination regions to source regions.  */
   private spacemap = new Object3D()
@@ -52,19 +50,7 @@ export default class Feedback {
 
   private camera = unitOrthoCamera()
 
-  private debug = (() => {
-    const view = new Mesh(
-        new PlaneGeometry(0.25, 0.25),
-        new MeshBasicMaterial({ map: new Texture() })
-      ),
-      camera = unitOrthoCamera()
-
-    view.position.x = -0.375
-    view.position.y = -0.375
-    view.updateMatrixWorld()
-
-    return { view, camera }
-  })()
+  readonly debug = new DepthView(this)
 
   constructor(view: Simulation) {
     this.view = view
@@ -146,14 +132,6 @@ export default class Feedback {
     this.commitFrame()
   }
 
-  /** Render debug info, call at the end of a frame so it's drawn on top */
-  renderDebug(renderer: WebGLRenderer) {
-    renderer.autoClear = false
-    renderer.setRenderTarget(null)
-    renderer.render(this.debug.view, this.debug.camera)
-    renderer.autoClear = true
-  }
-
   private alignCamera() {
     // Set up the camera to cover the feedback source region. Align the camera
     // with the bounding box of the portal geometry, then transform the camera
@@ -225,7 +203,7 @@ export default class Feedback {
     this.delayFrames[this.currentFrameIndex] = this.destinationFrame
     this.destinationFrame = frame
     this.portal.material.map = this.currentFrames.color.texture
-    this.debug.view.material.map = this.currentFrames.depth.texture
+    this.debug.setDepthTarget(this.currentFrames.depth)
   }
 
   private renderSourceRegion(renderer: WebGLRenderer, target: WebGLRenderTarget) {
@@ -263,9 +241,8 @@ class Frames {
   }
 
   constructor(width = 0, height = 0) {
-    const depth = this.depthSize(width, height)
     this.color = new WebGLRenderTarget(width, height, { format: RGBAFormat })
-    this.depth = new WebGLRenderTarget(depth.width, depth.height, { format: RGBAFormat })
+    this.depth = new WebGLRenderTarget(width, height, { format: RGBAFormat })
   }
 
   markDirty() {
@@ -285,9 +262,8 @@ class Frames {
   }
 
   setSize(width: number, height: number) {
-    const depth = this.depthSize(width, height)
     this.color.setSize(width, height)
-    this.depth.setSize(depth.width, depth.height)
+    this.depth.setSize(width, height)
   }
 
   clear(renderer: WebGLRenderer, depth = true, color = false) {
@@ -301,21 +277,5 @@ class Frames {
       renderer.setRenderTarget(this.color)
       renderer.clear()
     }
-  }
-
-  depthSize(width: number, height: number) {
-    if (height == 0 || width === 0) return { width, height }
-
-    const size = round(max(width, height)),
-      aspect = width / height
-    return aspect > 1
-      ? {
-          width: size,
-          height: round(size / aspect)
-        }
-      : {
-          width: round(size * aspect),
-          height: size
-        }
   }
 }

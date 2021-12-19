@@ -45,3 +45,19 @@ export function contain({
 function pad(d: number, maxPadding: number) {
   return Math.ceil(d / maxPadding) * maxPadding
 }
+
+/** Scale width and height to fit both dimensions inside the given size while
+ * maintaining aspect ratio. */
+export function containInside(width: number, height: number, size: number) {
+  if (height == 0 || width === 0) return { width, height }
+  const aspect = width / height
+  return aspect > 1
+    ? {
+        width: size,
+        height: size / aspect
+      }
+    : {
+        width: size * aspect,
+        height: size
+      }
+}
