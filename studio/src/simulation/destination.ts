@@ -25,6 +25,7 @@ export default class Destination {
   render({
     renderer,
     source,
+    depth,
     destination,
     prevDestination,
     type = "color"
@@ -33,12 +34,16 @@ export default class Destination {
     destination: WebGLRenderTarget
     prevDestination?: WebGLRenderTarget
     source: WebGLRenderTarget
+    depth?: WebGLRenderTarget
     type?: keyof InstanceType<typeof Destination>["targets"]
   }) {
     const material = this.targets[type]
     material.uniforms.source.value = source.texture
     if (prevDestination) {
       material.uniforms.prevDestination.value = prevDestination.texture
+    }
+    if (depth) {
+      material.uniforms.depth.value = depth.texture
     }
     material.uniformsNeedUpdate = true
     this.fsQuad.material = material
@@ -126,6 +131,7 @@ const processColor = /* glsl */ `
 const colorShader = {
   uniforms: {
     source: { value: null },
+    depth: { value: null },
     mirrorX: { value: false },
     mirrorY: { value: false },
     invertColor: { value: false },
@@ -142,17 +148,26 @@ const colorShader = {
     uniform float colorGain;
     uniform float colorCycle;
     uniform sampler2D source;
+    uniform sampler2D depth;
     varying vec2 vUv;
 
     ${processColor}
+    ${encodeDecodeDepth}
     ${applyMirroring}
 
     void main() {
       vec2 uv = vUv;
       applyMirroring(uv, mirrorX, mirrorY);
 
+      bool settled;
+      float fdepth, label;
+      vec4 depthColor = texture2D(depth, uv);
+      decode(depthColor, settled, fdepth, label);
+
       vec4 color = texture2D(source, uv);
-      processColor(color, colorGain, colorCycle, invertColor);
+      if (fdepth < 20. || settled) {
+        processColor(color, colorGain, colorCycle, invertColor);
+      }
 
       gl_FragColor = color;
     }`

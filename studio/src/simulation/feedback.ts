@@ -15,6 +15,9 @@ import Destination from "./destination"
 import { copyCoords, State } from "./model"
 import type Simulation from "./simulation"
 
+const round = Math.round,
+  max = Math.max
+
 export default class Feedback {
   private view: Simulation
 
@@ -137,8 +140,8 @@ export default class Feedback {
   iterate(renderer: WebGLRenderer) {
     this.alignCamera()
     this.incrementFrame(renderer)
-    this.renderColor(renderer)
     this.renderDepth(renderer)
+    this.renderColor(renderer)
     this.commitFrame()
   }
 
@@ -174,6 +177,7 @@ export default class Feedback {
     this.destination.render({
       renderer,
       destination: this.destinationFrame.color,
+      depth: this.destinationFrame.depth,
       source: this.sourceFrame.color
     })
   }
@@ -301,15 +305,15 @@ class Frames {
   depthSize(width: number, height: number) {
     if (height == 0 || width === 0) return { width, height }
 
-    const size = this.depthDimension,
+    const size = round(max(width, height)),
       aspect = width / height
     return aspect > 1
       ? {
           width: size,
-          height: size / aspect
+          height: round(size / aspect)
         }
       : {
-          width: size * aspect,
+          width: round(size * aspect),
           height: size
         }
   }
