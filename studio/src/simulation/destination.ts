@@ -15,22 +15,35 @@ export default class Destination {
     colorGain?: number
     colorCycle?: number
   }) {
-    Object.entries(uniforms).forEach(([k, v]) => {
-      if (v !== undefined && v !== null) this.targets.color.uniforms[k].value = v
-    })
+    ;[this.targets.color.uniforms, this.targets.depth.uniforms].forEach(shaderUniforms =>
+      Object.entries(uniforms).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && shaderUniforms[k]) shaderUniforms[k].value = v
+      })
+    )
   }
 
-  render(
-    renderer: WebGLRenderer,
-    destinationFrame: WebGLRenderTarget,
-    sourceFrame: WebGLRenderTarget,
-    type: keyof InstanceType<typeof Destination>["targets"] = "color"
-  ) {
+  render({
+    renderer,
+    source,
+    destination,
+    prevDestination,
+    type = "color"
+  }: {
+    renderer: WebGLRenderer
+    destination: WebGLRenderTarget
+    prevDestination?: WebGLRenderTarget
+    source: WebGLRenderTarget
+    type?: keyof InstanceType<typeof Destination>["targets"]
+  }) {
     const material = this.targets[type]
-    material.uniforms.tDiffuse.value = sourceFrame.texture
+    material.uniforms.source.value = source.texture
+    if (prevDestination) {
+      material.uniforms.prevDestination.value = prevDestination.texture
+    }
     material.uniformsNeedUpdate = true
+    this.fsQuad.material = material
 
-    renderer.setRenderTarget(destinationFrame)
+    renderer.setRenderTarget(destination)
     this.fsQuad.render(renderer)
   }
 
@@ -77,6 +90,31 @@ const processColor = /* glsl */ `
     }
     if (invert) color.xyz = vec3(1.0, 1.0, 1.0) - color.xyz;
   }`,
+  applyMirroring = /* glsl */ `
+    void applyMirroring(inout vec2 uv, bool mirrorX, bool mirrorY) {
+      if (mirrorX && vUv.x > 0.5) uv.x = 1.0 - vUv.x;
+      if (mirrorY && vUv.y > 0.5) uv.y = 1.0 - vUv.y;
+    }`,
+  /**
+   * Packs pixel depth, source label, and settled bit into one RGB pixel. The
+   * settled bit is the MSB of r. label is the other 7 bits. Depth is g + b. a
+   * is 1.
+   */
+  encodeDecodeDepth = /* glsl */ `
+    vec4 encode(bool settled, float depth, float label) {
+      label = clamp(label, 0., 127.);
+      depth = clamp(depth, 0., 65535.);
+      float g = floor(depth / 256.);
+      vec4 enc = vec4((settled ? 128. : 0.) + label, g, depth - g * 256., 1. );
+      return enc / 255.;
+    }   
+    void decode(vec4 color, out bool settled, out float depth, out float label) {
+      vec4 enc = color * 255.;
+      float msb = floor(enc.r / 128.);
+      settled = msb == 1.;
+      label = enc.r - msb * 128.;
+      depth = 256. * enc.g + enc.b;
+    }`,
   baseVertexShader = /* glsl */ `
     varying vec2 vUv;
 
@@ -87,7 +125,7 @@ const processColor = /* glsl */ `
 
 const colorShader = {
   uniforms: {
-    tDiffuse: { value: null },
+    source: { value: null },
     mirrorX: { value: false },
     mirrorY: { value: false },
     invertColor: { value: false },
@@ -103,40 +141,58 @@ const colorShader = {
     uniform bool invertColor;
     uniform float colorGain;
     uniform float colorCycle;
-    uniform sampler2D tDiffuse;
+    uniform sampler2D source;
     varying vec2 vUv;
 
     ${processColor}
+    ${applyMirroring}
 
     void main() {
       vec2 uv = vUv;
-      if (mirrorX && vUv.x > 0.5) uv.x = 1.0 - vUv.x;
-      if (mirrorY && vUv.y > 0.5) uv.y = 1.0 - vUv.y;
+      applyMirroring(uv, mirrorX, mirrorY);
 
-      vec4 color = texture2D( tDiffuse, uv );
+      vec4 color = texture2D(source, uv);
       processColor(color, colorGain, colorCycle, invertColor);
+
       gl_FragColor = color;
     }`
 }
 
 const depthShader = {
   uniforms: {
-    tDiffuse: { value: null }
+    source: { value: null },
+    prevDestination: { value: null },
+    mirrorX: { value: false },
+    mirrorY: { value: false }
   },
 
   vertexShader: baseVertexShader,
 
   fragmentShader: /* glsl */ `
-    // Enables bitwise operators
-    #version 130
-
-    uniform sampler2D tDiffuse;
+    uniform bool mirrorX;
+    uniform bool mirrorY;
+    uniform sampler2D source;
+    uniform sampler2D prevDestination;
     varying vec2 vUv;
+
+    ${encodeDecodeDepth}
+    ${applyMirroring}
 
     void main() {
       vec2 uv = vUv;
+      applyMirroring(uv, mirrorX, mirrorY);
 
-      vec4 color = texture2D( tDiffuse, uv );
-      gl_FragColor = color;
+      bool settled, prevSettled;
+      float depth, label, prevDepth, prevLabel;
+      
+      vec4 color = texture2D(source, uv);
+      decode(color, settled, depth, label);
+
+      vec4 prevColor = texture2D(prevDestination, vUv);
+      decode(prevColor, prevSettled, prevDepth, prevLabel);
+
+      depth += 1.;
+
+      gl_FragColor = encode(depth == prevDepth && label == prevLabel, depth, label);
     }`
 }

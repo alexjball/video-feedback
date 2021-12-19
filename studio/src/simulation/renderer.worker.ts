@@ -1,4 +1,4 @@
-import { WebGLRenderer, WebGLRenderTarget } from "three"
+import { WebGLRenderer } from "three"
 import { Binder, isDefined, singleton } from "../utils"
 import { inflate, JsonState } from "./json"
 import { State } from "./model"
@@ -142,15 +142,18 @@ const simulation = singleton(
     private renderFrame = () => {
       if (isDefined(this.currentState) && isDefined(this.renderer)) {
         this.frameIndex++
+        let settled = false
         renderStart(this.frameIndex)
-        // Bind state
-        this.binder.apply(this.currentState)
-        this.simulation.render(this.currentState, this.renderer)
-        // Compute settled status from depth frame
-        const settled = this.settler.compute(
-          this.renderer,
-          this.simulation.feedback.currentFrames.depth
-        )
+        {
+          // Bind state
+          this.binder.apply(this.currentState)
+          this.simulation.render(this.currentState, this.renderer)
+          // Compute settled status from depth frame
+          settled = this.settler.compute(
+            this.renderer,
+            this.simulation.feedback.currentFrames.depth
+          )
+        }
         renderEnd(this.frameIndex, settled)
       }
     }

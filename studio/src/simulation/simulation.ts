@@ -34,11 +34,13 @@ export default class Simulation {
     this.feedback.binder.apply(state)
 
     // Render feedback color and depth frames
-    this.feedback.render(renderer)
+    this.feedback.iterate(renderer)
 
     // Render viewer to the canvas
     renderer.setRenderTarget(null)
     renderer.render(this.scene, this.viewer)
+
+    this.feedback.renderDebug(renderer)
   }
 
   dispose() {

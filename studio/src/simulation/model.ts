@@ -100,7 +100,7 @@ const initialState: State = {
     mirrorX: true,
     mirrorY: false,
     /** Scroll wheel pixels per unit scaling */
-    pixelsPerScale: 5e2
+    pixelsPerScale: 2e3
   },
   feedback: {
     nFrames: 5,
