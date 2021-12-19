@@ -5,7 +5,9 @@ import {
   processColor,
   encodeDecodeDepth,
   applyMirroring,
-  minStrobeDepth
+  minStrobeDepth,
+  noise,
+  constants
 } from "./shader"
 
 export default class Destination {
@@ -21,6 +23,7 @@ export default class Destination {
     invertColor?: boolean
     colorGain?: number
     colorCycle?: number
+    preventStrobing?: boolean
   }) =>
     [this.targets.color.uniforms, this.targets.depth.uniforms].forEach(shaderUniforms =>
       Object.entries(uniforms).forEach(([k, v]) => {
@@ -92,6 +95,8 @@ const colorShader = {
     ${processColor}
     ${encodeDecodeDepth}
     ${applyMirroring}
+    ${noise}
+    ${constants}
 
     void main() {
       vec2 uv = vUv;
@@ -99,10 +104,18 @@ const colorShader = {
 
       vec4 depthColor = texture2D(depth, uv);
       vec3 dec = decode(depthColor);
+      bool settled = dec.x > 0.;
+      float depth = dec.y;
 
       vec4 color = texture2D(source, uv);
-      if (!preventStrobing || dec.y < ${minStrobeDepth} || dec.x != 0.) {
+      if (!preventStrobing || depth < ${minStrobeDepth} || settled) {
         processColor(color, colorGain, colorCycle, invertColor);
+      } else {
+        float period = 0.1;
+        // TODO: Figure out a good set of parameters to control this effect.
+        // Can we make a rainbow?
+        // Different sin parameters yield different colors since different channels are emphasized.
+        color.xyz += .1 * sin(vUv.yyx * 2. * PI / period);
       }
 
       gl_FragColor = color;
