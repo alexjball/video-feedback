@@ -105,19 +105,20 @@ const processColor = /* glsl */ `
    * is 1.
    */
   encodeDecodeDepth = /* glsl */ `
-    vec4 encode(bool settled, float depth, float label) {
-      label = clamp(label, 0., 127.);
-      depth = clamp(depth, 0., 65535.);
-      float g = floor(depth / 256.);
-      vec4 enc = vec4((settled ? 128. : 0.) + label, g, depth - g * 256., 1. );
-      return enc / 255.;
-    }   
-    void decode(vec4 color, out bool settled, out float depth, out float label) {
+    vec4 encode(vec3 settledDepthLabel) {
+      bool settled = settledDepthLabel.x != 0.;
+      int depth = int(round(settledDepthLabel.y));
+      int label = int(round(settledDepthLabel.z));
+
+      return vec4(round((settled ? 128. : 0.) + float(label)), depth >> 8, depth & 255, 1.) / 255.;
+    }  
+    vec3 decode(vec4 color) {
       vec4 enc = color * 255.;
-      float msb = floor(enc.r / 128.);
-      settled = msb == 1.;
-      label = enc.r - msb * 128.;
-      depth = 256. * enc.g + enc.b;
+      int r = int(round(enc.r));
+      bool settled = (r >> 7) == 1;
+      int label = r & 127;
+      int depth = int(round(256. * enc.g + enc.b));
+      return vec3(settled ? 1. : 0., float(depth), float(label));
     }`,
   baseVertexShader = /* glsl */ `
     varying vec2 vUv;
@@ -160,13 +161,11 @@ const colorShader = {
       vec2 uv = vUv;
       applyMirroring(uv, mirrorX, mirrorY);
 
-      bool settled;
-      float fdepth, label;
       vec4 depthColor = texture2D(depth, uv);
-      decode(depthColor, settled, fdepth, label);
+      vec3 dec = decode(depthColor);
 
       vec4 color = texture2D(source, uv);
-      if (!preventStrobing || fdepth < 15. || settled) {
+      if (!preventStrobing || dec.y < 15. || dec.x != 0.) {
         processColor(color, colorGain, colorCycle, invertColor);
       }
 
@@ -197,18 +196,17 @@ const depthShader = {
     void main() {
       vec2 uv = vUv;
       applyMirroring(uv, mirrorX, mirrorY);
-
-      bool settled, prevSettled;
-      float depth, label, prevDepth, prevLabel;
       
       vec4 color = texture2D(source, uv);
-      decode(color, settled, depth, label);
+      vec3 curr = decode(color);
 
       vec4 prevColor = texture2D(prevDestination, vUv);
-      decode(prevColor, prevSettled, prevDepth, prevLabel);
+      vec3 prev = decode(prevColor);
 
-      depth += 1.;
+      float depth = round(curr.y + 1.);
+      float label = round(curr.z);
+      bool settled = depth == round(prev.y) && label == round(prev.z);
 
-      gl_FragColor = encode(depth == prevDepth && label == prevLabel, depth, label);
+      gl_FragColor = encode(vec3(settled, depth, label));
     }`
 }
