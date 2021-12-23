@@ -1,8 +1,32 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write: if request.auth!=null;
+    function thumbnail() {
+      // TODO: Must be owner
+      return request.resource.size < 1 * 1024 * 1024
+        && request.resource.contentType.matches('image/png');
+    }
+
+    match /public {
+      match /animations/{animation}/states/{state} {
+        match /thumbnail {
+          allow read: if true;
+          allow write: if thumbnail();
+        }
+      }
+
+      match /states/{state} {
+        match /thumbnail {
+          allow read: if true;
+          allow write: if thumbnail();
+        }
+      }
+    }
+
+    match /users/{uid}/studio_documents/{docid}/{assetSegments=**} {
+      allow write: if request.auth.uid == uid 
+        && request.resource.size < 1 * 1024 * 1024;
+      allow read: if request.auth.uid == uid;
     }
   }
 }

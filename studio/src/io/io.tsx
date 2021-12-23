@@ -24,7 +24,7 @@ import * as model from "./model"
 
 export const IoPanel = (props: any) => (
   <Io {...props}>
-    {/* <Playlist /> */}
+    <Playlist />
     <Controls />
   </Io>
 )
@@ -45,33 +45,36 @@ const Io = styled.div`
     pointer-events: all;
     margin: 10px;
   `,
-  KeyframeContainer = styled.div`
-    height: 100px;
-    width: 100px;
+  KeyframeContainer = styled.img`
+    max-height: 150px;
+    max-width: 150px;
     border: solid black;
-    border-radius: 50%;
-    background: tomato;
+    object-fit: contain;
+    border-radius: 10px;
     display: flex;
     justify-content: center;
     margin: 0.5rem;
   `,
-  Keyframe: React.FC<{ index: number; keyframe: model.Keyframe }> = ({ index, keyframe }) => (
+  Keyframe: React.FC<{
+    index: number
+    keyframe: model.Keyframe
+    onClick: (k: model.Keyframe) => void
+  }> = ({ onClick, index, keyframe }) => (
     <Draggable draggableId={keyframe.id} index={index}>
       {provided => (
         <KeyframeContainer
+          onClick={() => onClick(keyframe)}
           ref={provided.innerRef}
           {...provided.draggableProps}
-          {...provided.dragHandleProps}>
-          {keyframe.name}
-        </KeyframeContainer>
+          {...provided.dragHandleProps}
+          src={keyframe.thumbnail}
+        />
       )}
     </Draggable>
   ),
   PlaylistContainer = styled.div`
     display: flex;
-    min-width: 100px;
-    max-width: 400px;
-    min-height: 150px;
+    max-width: 800px;
     align-items: center;
     pointer-events: all;
     overflow: auto;
@@ -79,11 +82,20 @@ const Io = styled.div`
   Playlist = () => {
     const playlist = useAppSelector(s => s.io.playlist)
     const dispatch = useAppDispatch()
-    function onDragEnd(result: DropResult) {
-      if (result.destination && result.destination.index !== result.source.index) {
-        dispatch(model.moveKeyframe({ id: result.draggableId, index: result.destination.index }))
-      }
-    }
+    const onDragEnd = useCallback(
+        (result: DropResult) => {
+          if (result.destination && result.destination.index !== result.source.index) {
+            dispatch(
+              model.moveKeyframe({ id: result.draggableId, index: result.destination.index })
+            )
+          }
+        },
+        [dispatch]
+      ),
+      onStateClicked = useCallback(
+        (k: model.Keyframe) => dispatch(simulation.model.restore(k.state)),
+        [dispatch]
+      )
 
     return (
       <DragDropContext onDragEnd={onDragEnd}>
@@ -91,7 +103,7 @@ const Io = styled.div`
           {provided => (
             <PlaylistContainer ref={provided.innerRef} {...provided.droppableProps}>
               {playlist.map((k, i) => (
-                <Keyframe keyframe={k} index={i} key={k.id} />
+                <Keyframe keyframe={k} index={i} key={k.id} onClick={onStateClicked} />
               ))}
               {provided.placeholder}
             </PlaylistContainer>
@@ -106,8 +118,12 @@ const Io = styled.div`
       { convert } = simulation.useService(),
       feedbackHeight = useAppSelector(s => s.simulation.feedback.resolution.height)
     const save = useCallback(
-        () => dispatch(model.addToPlaylist(store.getState().simulation)),
-        [dispatch, store]
+        () =>
+          convert(256).then(blob => {
+            const thumbnail = URL.createObjectURL(blob)
+            dispatch(model.addToPlaylist({ state: store.getState().simulation, thumbnail }))
+          }),
+        [convert, dispatch, store]
       ),
       restore = useCallback(() => {
         const playlist = store.getState().io.playlist
@@ -116,7 +132,6 @@ const Io = styled.div`
       download = (height: number) =>
         convert(height)
           .then(blob => {
-            console.log(blob)
             saveAs(blob, "feedback")
           })
           .catch(e => {

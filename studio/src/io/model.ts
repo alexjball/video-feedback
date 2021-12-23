@@ -31,6 +31,7 @@ export interface Keyframe {
   state: model.State
   id: string
   name: string
+  thumbnail: string
 }
 
 const initialState: State = { playlist: [], selection: null, recording: false }
@@ -39,8 +40,13 @@ const slice = createSlice({
   name: "io",
   initialState,
   reducers: {
-    addToPlaylist(state, { payload }: PayloadAction<model.State>) {
-      state.playlist.push({ state: payload, name: availableName(state.playlist), id: nanoid() })
+    addToPlaylist(state, { payload }: PayloadAction<{ state: model.State; thumbnail: string }>) {
+      state.playlist.push({
+        state: payload.state,
+        name: availableName(state.playlist),
+        id: nanoid(),
+        thumbnail: payload.thumbnail
+      })
     },
     moveKeyframe(
       { playlist },

@@ -9,13 +9,19 @@
     "export": "next export",
     "lint": "next lint",
     "fix": "prettier --write .",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "deploy-firebase": "firebase deploy --only functions",
+    "call": "node ./functions/call.js"
+  },
+  "engines": {
+    "node": "16"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^1.6.2",
     "classnames": "^2.3.1",
     "file-saver": "^2.0.5",
     "firebase": "^9.6.1",
+    "firebase-functions": "^3.16.0",
     "lodash": "^4.17.21",
     "nanoid": "^3.1.30",
     "next": "11.1.2",

@@ -10,5 +10,8 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "functions": {
+    "predeploy": ["node ./functions/build.js"]
   }
 }

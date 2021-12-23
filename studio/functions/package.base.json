@@ -1,0 +1,9 @@
+{
+  "//": "Configures the firebase function deployment",
+  "name": "functions",
+  "engines": {
+    "node": "16"
+  },
+  "main": "./server/firebase-functions.js",
+  "private": true
+}
