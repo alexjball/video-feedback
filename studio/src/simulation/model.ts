@@ -43,8 +43,6 @@ export type State = {
   }
   portal: {
     coords: Coords
-    matchViewAspect: boolean
-    matchViewHeight: boolean
 
     // geometry: Rect
   }
@@ -118,9 +116,7 @@ const initialState: State = {
       position: new Vector3(0, 0, 0),
       scale: new Vector3(1, 1, 1),
       quaternion: new Quaternion()
-    },
-    matchViewAspect: true,
-    matchViewHeight: true
+    }
   },
   viewer: {
     coords: {
@@ -248,13 +244,18 @@ const slice = createSlice({
       spacemap.coords.scale.x += distance / pps
       spacemap.coords.scale.y += distance / pps
     },
+    /**
+     * width: width of feedback target, defaults to the current resolution
+     * aspect: aspect of feedback target, determines height using width
+     * height: height of feedback target, defaults to matching aspect given width
+     */
     updatePortal(state, { payload }: PayloadAction<UpdatePortal>) {
-      if (payload.matchViewAspect !== undefined)
-        state.portal.matchViewAspect = payload.matchViewAspect
-      if (payload.matchViewHeight !== undefined)
-        state.portal.matchViewHeight = payload.matchViewHeight
-
-      resizePortal(payload, state)
+      const res = state.feedback.resolution,
+        width = payload.width ?? res.width,
+        aspect = payload.aspect ?? res.width / res.height,
+        height = payload.height ?? width / aspect
+      if (isNaN(height) || isNaN(width)) throw Error("Invalid portal resolution")
+      resizePortal({ width, height }, state)
       setViewToContainPortal(state)
     },
     setViewer(
@@ -264,9 +265,6 @@ const slice = createSlice({
       state.viewport.width = width
       state.viewport.height = height
 
-      if (state.portal.matchViewAspect || state.portal.matchViewHeight) {
-        resizePortal({}, state)
-      }
       setViewToContainPortal(state)
     },
     center(state) {
@@ -285,14 +283,17 @@ const slice = createSlice({
       state.border.color = cleanColor(color)
     },
     restore(state, { payload }: PayloadAction<State>) {
-      assign(payload.portal, state.portal, ["matchViewAspect", "coords"])
+      assign(payload.portal, state.portal, ["coords"])
       assign(payload.border, state.border, ["color", "width", "coords"])
       assign(payload.background, state.background, ["color"])
       assign(payload.feedback, state.feedback, ["colorCycle", "colorGain", "invertColor"])
       assign(payload.spacemap, state.spacemap, ["mirrorX", "mirrorY", "coords"])
 
-      const aspect = payload.feedback.resolution.width / payload.feedback.resolution.height
-      resizePortal({ aspect }, state)
+      // Maintain the current width resolution but restore the exact aspect of
+      // the saved state.
+      const aspect = payload.feedback.resolution.width / payload.feedback.resolution.height,
+        currentWidth = state.feedback.resolution.width
+      resizePortal({ width: currentWidth, height: currentWidth / aspect }, state)
       setViewToContainPortal(state)
     }
   }
@@ -350,34 +351,13 @@ function contain(width: number, height: number, aspect: number) {
   else return { height, width: aspect * height }
 }
 
-type Box = { width: number; height: number; aspect: number }
 type UpdatePortal = {
   aspect?: number
   height?: number
   width?: number
-  matchViewHeight?: boolean
-  matchViewAspect?: boolean
 }
 
-function resizePortal(
-  { width, height, aspect }: Partial<Box>,
-  { feedback, portal, border, viewport, viewer }: State
-) {
-  height = portal.matchViewHeight ? viewport.height : height ?? feedback.resolution.height
-  aspect = portal.matchViewAspect
-    ? viewport.width / viewport.height
-    : aspect ?? feedback.resolution.width / feedback.resolution.height
-
-  if (height === undefined) {
-    height = Math.round(width! / aspect!)
-  }
-  if (width === undefined) {
-    width = Math.round(height * aspect!)
-  }
-  if (width === NaN || height === NaN) {
-    throw Error("Must specify aspect and at least 1 of width and height")
-  }
-
+function resizePortal({ width, height }: Resolution, { feedback, portal, border }: State) {
   feedback.resolution.height = height
   feedback.resolution.width = width
   portal.coords.scale.copy(unitAspect(width / height))

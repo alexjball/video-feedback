@@ -1,4 +1,4 @@
-import React, { ChangeEventHandler, useCallback } from "react"
+import React, { ChangeEventHandler, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import styled from "styled-components"
 import { useAppDispatch, useAppSelector } from "./hooks"
 import {
@@ -16,7 +16,7 @@ import {
 } from "./simulation/model"
 import { RootState } from "./store"
 
-const Form = styled.form`
+const Form = styled.div`
     display: flex;
     flex-direction: column;
     align-items: end;
@@ -44,7 +44,8 @@ const Form = styled.form`
       width: 100%;
     }
 
-    select {
+    select,
+    button {
       margin-left: 0.5rem;
     }
 
@@ -256,73 +257,123 @@ export const ControlsPanel = (props: any) => (
 function ResolutionControls() {
   const dispatch = useAppDispatch(),
     res = useAppSelector(s => s.simulation.feedback.resolution),
-    matchAspect = useAppSelector(s => s.simulation.portal.matchViewAspect),
-    matchHeight = useAppSelector(s => s.simulation.portal.matchViewHeight),
-    height = res.height,
-    aspect = res.width / res.height
-  const setHeight: React.ChangeEventHandler<HTMLSelectElement> = useCallback(
-    e => {
-      const v = e.target.value,
-        update =
-          v === "screen"
-            ? { matchViewHeight: true }
-            : { height: parseInt(v), matchViewHeight: false }
-      if (update.height && update.height > 2160) {
-        // Minimize memory requirements for high resolutions
-        dispatch(setNumberFeedbackFrames(1))
-      }
-      dispatch(updatePortal(update))
-    },
-    [dispatch]
-  )
-  const setAspect: React.ChangeEventHandler<HTMLSelectElement> = useCallback(
-    e => {
-      const v = e.target.value,
-        update =
-          v === "screen"
-            ? { matchViewAspect: true }
-            : { aspect: parseFloat(v), matchViewAspect: false }
-      dispatch(updatePortal(update))
-    },
-    [dispatch]
-  )
+    width = res.width,
+    aspect = res.height !== 0 ? res.width / res.height : 0,
+    cb = useMemo(
+      () => ({
+        setWidth: (width: number) => {
+          if (isNaN(width)) return
+          width = Math.round(width)
+          if (width > 3840) {
+            // Minimize memory requirements for high resolutions
+            dispatch(setNumberFeedbackFrames(1))
+          }
+          dispatch(updatePortal({ width }))
+        },
+        setAspect: (aspect: number) => {
+          if (isNaN(aspect)) return
+          dispatch(updatePortal({ aspect }))
+        },
+        fitWidth: () => {
+          dispatch(updatePortal({ width: window.screen.width * window.devicePixelRatio }))
+        },
+        fitAspect: () => {
+          dispatch(updatePortal({ aspect: window.screen.width / window.screen.height }))
+        }
+      }),
+      [dispatch]
+    )
+
   return (
     <Control>
       <fieldset>
-        <legend>portal resolution</legend>
+        <legend>Feedback Resolution</legend>
 
-        <label>
-          height
-          <select value={matchHeight ? "screen" : height} onChange={setHeight}>
-            <option value="screen">screen</option>
-            <option value={720}>720p</option>
-            <option value={1080}>1080p</option>
-            <option value={1440}>1440p</option>
-            <option value={2160}>4K</option>
-            <option value={4320}>8K</option>
-            <option value={6480}>12K</option>
-            <option value={8640}>16K</option>
-            <option value={13500}>Tapestry</option>
-          </select>
-        </label>
+        <NumberWithOptions
+          appValue={width}
+          setAppValue={cb.setWidth}
+          fitToScreen={cb.fitWidth}
+          label="Width"
+          options={[
+            [1280, "720p"],
+            [1920, "1080p"],
+            [2560, "1440p"],
+            [3840, "4K"],
+            [7680, "8K"],
+            [12288, "12K"],
+            [15360, "16K"],
+            [15900, "Tapestry"]
+          ]}
+        />
 
-        <label>
-          aspect ratio
-          <select
-            value={
-              matchAspect
-                ? "screen"
-                : [1, 4 / 3, 16 / 9, 106 / 90].find(x => Math.abs(x - aspect) < 1e-2)
-            }
-            onChange={setAspect}>
-            <option value="screen">screen</option>
-            <option value={1}>1:1</option>
-            <option value={4 / 3}>4:3</option>
-            <option value={16 / 9}>16:9</option>
-            <option value={106 / 90}>Tapestry</option>
-          </select>
-        </label>
+        <NumberWithOptions
+          appValue={aspect}
+          setAppValue={cb.setAspect}
+          fitToScreen={cb.fitAspect}
+          label="Aspect Ratio"
+          options={[
+            [1, "1:1"],
+            [4 / 3, "4:3"],
+            [16 / 9, "16:9"],
+            [106 / 90, "Tapestry"]
+          ]}
+        />
       </fieldset>
     </Control>
+  )
+}
+
+const relativeTolerance = 1e-2,
+  different = (a: number, b: number) =>
+    Math.abs(a - b) / (Math.abs(a + b) * 0.5) > relativeTolerance
+
+// TODO: add a select field that commits specific values
+const NumberWithOptions: React.FC<{
+  appValue: number
+  setAppValue: (v: number) => void
+  options: [number, string][]
+  label: string
+  fitToScreen: () => void
+}> = ({ appValue, setAppValue: doSet, options, label, fitToScreen }) => {
+  const [value, setValue] = useState(appValue),
+    setAppValue = useCallback(
+      (v: number) => {
+        if (different(v, appValue)) doSet(v)
+      },
+      [appValue, doSet]
+    ),
+    matchingOption = options.find(([v]) => Math.abs(v - appValue) / appValue < relativeTolerance),
+    matchingOptionValue = matchingOption?.[0]
+
+  useEffect(() => setValue(appValue), [appValue])
+
+  return (
+    <label>
+      <div>{label}</div>
+      <input
+        style={{ maxWidth: "100px" }}
+        type="number"
+        value={value}
+        onChange={e => setValue(Number(e.target.value))}
+        onBlur={() => setAppValue(value)}
+        onKeyUp={e => {
+          if (e.key === "Enter") setAppValue(value)
+        }}
+      />
+      <select
+        style={{ maxWidth: "100px" }}
+        value={matchingOptionValue ?? appValue}
+        onChange={e => setAppValue(Number(e.target.value))}>
+        {!matchingOption && <option value={appValue}>--</option>}
+        {options.map(([value, label]) => (
+          <option value={value} key={label}>
+            {label}
+          </option>
+        ))}
+      </select>
+      <button style={{ lineHeight: "25px", fontSize: "20px" }} onClick={fitToScreen}>
+        🖵
+      </button>
+    </label>
   )
 }
