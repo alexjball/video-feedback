@@ -4,7 +4,7 @@ import { inflate, JsonState } from "./json"
 import { State } from "./model"
 import RenderLoop from "./render-loop"
 import Resizer from "./resizer"
-import { PlaybackAction } from "./service"
+import { PlaybackAction, PlaybackState } from "./service"
 import Settler from "./settler"
 import Simulation from "./simulation"
 
@@ -41,6 +41,7 @@ export type Response =
   | ({ type: "ack"; result?: any } & Id)
   | { type: "renderStart"; frame: number; now: number }
   | { type: "renderEnd"; frame: number; settled: boolean; now: number }
+  | { type: "playbackState"; state: PlaybackState }
 
 /** Message handler for this worker */
 onmessage = ({ data: message }: MessageEvent<Message>) => {
@@ -68,6 +69,7 @@ const renderStart = (frame: number) =>
     postMessage({ type: "renderStart", frame, now: performance.now() }),
   renderEnd = (frame: number, settled: boolean) =>
     postMessage({ type: "renderEnd", frame, settled, now: performance.now() }),
+  playbackState = (state: PlaybackState) => postMessage({ type: "playbackState", state: state }),
   ack = ({ id }: Message, result?: any) =>
     postMessage({
       type: "ack",
@@ -107,13 +109,22 @@ const simulation = singleton(
       const loop = this.renderLoop
       switch (action) {
         case "stop":
-          loop.stop()
+          if (loop.isAnimating()) {
+            loop.stop()
+            playbackState("stopped")
+          }
           return
         case "start":
-          loop.start()
+          if (!loop.isAnimating()) {
+            loop.start()
+            playbackState("playing")
+          }
           return
         case "step":
-          loop.stop()
+          if (loop.isAnimating()) {
+            loop.stop()
+            playbackState("stopped")
+          }
           this.renderFrame()
           return
       }
