@@ -77,6 +77,11 @@ export default class Feedback {
         colorGain: s.feedback.colorGain,
         colorCycle: s.feedback.colorCycle,
         invertColor: s.feedback.invertColor,
+        fsPeriod: s.feedback.fsPeriod,
+        fsPhase: s.feedback.fsPhase,
+        fsAmplitude: s.feedback.fsAmplitude,
+        fsColor1: s.feedback.fsColor1,
+        fsColor2: s.feedback.fsColor2,
         preventStrobing: s.preventStrobing
       }),
       v => this.destination.updateUniforms(v)
@@ -89,12 +94,10 @@ export default class Feedback {
       s => s.feedback.resolution,
       v => this.setSize(v.width, v.height)
     )
-    .add(
-      s => ({ border: s.border.color, background: s.background.color }),
-      v => {
-        this.delayFrames.forEach(frame => frame.markDirty())
-      }
-    )
+
+  markDirty({ color = false, depth = false }) {
+    this.delayFrames.forEach(frame => frame.markDirty(color, depth))
+  }
 
   dispose() {
     this.sourceFrame.dispose()
@@ -226,14 +229,14 @@ const depthColors = {
 
 function encodeDepth(settled: boolean, depth: number, label: number): Color {
   if (label < 0 || label > 127) throw Error("label must be between 0 and 127")
-  if (depth < 0 || depth > 65535) throw Error("label must be between 0 and 65535")
+  if (depth < 0 || depth > 65535) throw Error("depth must be between 0 and 65535")
   return new Color((label + (settled ? 128 : 0)) / 255, (depth >> 8) / 255, (depth & 255) / 255)
 }
 
 class Frames {
   color: WebGLRenderTarget
   depth: WebGLRenderTarget
-  dirty = true
+  dirty = { color: true, depth: true }
   depthDimension = 1024
   clearColor = {
     color: "#000000",
@@ -245,15 +248,22 @@ class Frames {
     this.depth = new WebGLRenderTarget(width, height, { format: RGBAFormat })
   }
 
-  markDirty() {
-    this.dirty = true
+  markDirty(color = false, depth = false) {
+    this.dirty = { color: this.dirty.color || color, depth: this.dirty.depth || depth }
   }
 
   clearIfDirty(renderer: WebGLRenderer) {
-    if (this.dirty) {
-      this.clear(renderer)
+    if (this.dirty.depth) {
+      renderer.setClearColor(this.clearColor.depth, 1)
+      renderer.setRenderTarget(this.depth)
+      renderer.clear()
     }
-    this.dirty = false
+    if (this.dirty.color) {
+      renderer.setClearColor(this.clearColor.color, 1)
+      renderer.setRenderTarget(this.color)
+      renderer.clear()
+    }
+    this.dirty = { color: false, depth: false }
   }
 
   dispose() {
@@ -264,18 +274,6 @@ class Frames {
   setSize(width: number, height: number) {
     this.color.setSize(width, height)
     this.depth.setSize(width, height)
-  }
-
-  clear(renderer: WebGLRenderer, depth = true, color = false) {
-    if (depth) {
-      renderer.setClearColor(this.clearColor.depth)
-      renderer.setRenderTarget(this.depth)
-      renderer.clear()
-    }
-    if (color) {
-      renderer.setClearColor(this.clearColor.color)
-      renderer.setRenderTarget(this.color)
-      renderer.clear()
-    }
+    this.markDirty(true, true)
   }
 }

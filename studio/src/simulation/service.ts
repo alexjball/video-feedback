@@ -3,6 +3,7 @@ import { State } from "./model"
 
 export interface SimulationService {
   setState(state: State): void
+  clearFrames(color: boolean, depth: boolean): void
   setPlayback(action: PlaybackAction): void
   getPlayback(): PlaybackState
   /** Generates a PNG blob of the current feedback frame. */

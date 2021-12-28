@@ -37,6 +37,11 @@ export type State = {
   feedback: {
     nFrames: number
     invertColor: boolean
+    fsPeriod: number
+    fsAmplitude: number
+    fsPhase: number
+    fsColor1: string
+    fsColor2: string
     colorCycle: number
     colorGain: number
     resolution: Resolution
@@ -105,6 +110,11 @@ const initialState: State = {
     nFrames: 5,
     colorCycle: 0.3,
     colorGain: 0.3,
+    fsPeriod: 0.1,
+    fsAmplitude: 0.1,
+    fsPhase: 0,
+    fsColor1: "#000000",
+    fsColor2: "#ffffff",
     invertColor: false,
     resolution: {
       width: 0,
@@ -282,6 +292,9 @@ const slice = createSlice({
     setBorderColor(state, { payload: color }: PayloadAction<string>) {
       state.border.color = cleanColor(color)
     },
+    setFeedbackOptions(state, { payload }: PayloadAction<Partial<State["feedback"]>>) {
+      Object.assign(state.feedback, payload)
+    },
     restore(state, { payload }: PayloadAction<State>) {
       assign(payload.portal, state.portal, ["coords"])
       assign(payload.border, state.border, ["color", "width", "coords"])
@@ -328,7 +341,8 @@ export const {
     updatePortal,
     drag,
     center,
-    setPreventStrobing
+    setPreventStrobing,
+    setFeedbackOptions
   }
 } = slice
 

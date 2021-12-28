@@ -39,8 +39,8 @@ function useInstance() {
             if (!this.started) {
               store.dispatch(
                 updatePortal({
-                  width: Math.round(window.screen.width * window.devicePixelRatio),
-                  height: Math.round(window.screen.height * window.devicePixelRatio)
+                  width: window.screen.width,
+                  height: window.screen.height
                 })
               )
               this.client.setPlayback("start")
@@ -54,7 +54,8 @@ function useInstance() {
           convert: this.client.convert,
           setState: this.client.setState,
           setPlayback: this.client.setPlayback,
-          getPlayback: () => this.client.playback
+          getPlayback: () => this.client.playback,
+          clearFrames: this.client.clearFrames
         }
 
         updateState = () => this.client.setState(store.getState().simulation)
@@ -180,5 +181,12 @@ class Client {
     this.post({
       type: "setPlayback",
       action
+    })
+
+  clearFrames = (color: boolean, depth: boolean) =>
+    this.post({
+      type: "clearFrames",
+      color,
+      depth
     })
 }

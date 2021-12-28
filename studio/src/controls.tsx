@@ -12,9 +12,10 @@ import {
   setMirrorY,
   setNumberFeedbackFrames,
   setPreventStrobing,
-  updatePortal
+  updatePortal,
+  setFeedbackOptions
 } from "./simulation/model"
-import { RootState } from "./store"
+import { AppDispatch, RootState } from "./store"
 
 const Form = styled.div`
     display: flex;
@@ -140,7 +141,10 @@ const config: ControlConfig[] = [
   {
     Component: ColorInput,
     selector: s => s.simulation.background.color,
-    actionCreator: v => setBackgroundColor(v),
+    actionCreator: v => (dispatch: AppDispatch) => {
+      dispatch(setBackgroundColor(v))
+      dispatch(setFeedbackOptions({ fsColor1: v }))
+    },
     props: {
       legend: "background color"
     }
@@ -148,7 +152,10 @@ const config: ControlConfig[] = [
   {
     Component: ColorInput,
     selector: s => s.simulation.border.color,
-    actionCreator: v => setBorderColor(v),
+    actionCreator: v => (dispatch: AppDispatch) => {
+      dispatch(setBorderColor(v))
+      dispatch(setFeedbackOptions({ fsColor2: v }))
+    },
     props: {
       legend: "border color"
     }
@@ -181,6 +188,39 @@ const config: ControlConfig[] = [
       min: 0,
       max: 1,
       step: 0.01
+    }
+  },
+  {
+    Component: RangeInput,
+    selector: s => s.simulation.feedback.fsPeriod,
+    actionCreator: v => setFeedbackOptions({ fsPeriod: v }),
+    props: {
+      legend: "fixed set period",
+      min: 0.01,
+      max: 0.3,
+      step: 0.001
+    }
+  },
+  {
+    Component: RangeInput,
+    selector: s => s.simulation.feedback.fsPhase,
+    actionCreator: v => setFeedbackOptions({ fsPhase: v }),
+    props: {
+      legend: "fixed set phase",
+      min: -0.5,
+      max: 0.5,
+      step: 0.001
+    }
+  },
+  {
+    Component: RangeInput,
+    selector: s => s.simulation.feedback.fsAmplitude,
+    actionCreator: v => setFeedbackOptions({ fsAmplitude: v }),
+    props: {
+      legend: "fixed set amplitude",
+      min: 0.1,
+      max: 0.5,
+      step: 0.001
     }
   },
   {
@@ -246,7 +286,7 @@ function createControl({ selector, actionCreator, Component, props }: ControlCon
 }
 
 export const ControlsPanel = (props: any) => (
-  <Form onSubmit={e => void console.log(e)} {...props}>
+  <Form {...props}>
     {controls.map((C, i) => (
       <C key={i} />
     ))}
@@ -275,10 +315,10 @@ function ResolutionControls() {
           dispatch(updatePortal({ aspect }))
         },
         fitWidth: () => {
-          dispatch(updatePortal({ width: window.screen.width * window.devicePixelRatio }))
+          dispatch(updatePortal({ width: window.innerWidth * window.devicePixelRatio }))
         },
         fitAspect: () => {
-          dispatch(updatePortal({ aspect: window.screen.width / window.screen.height }))
+          dispatch(updatePortal({ aspect: window.innerWidth / window.innerHeight }))
         }
       }),
       [dispatch]

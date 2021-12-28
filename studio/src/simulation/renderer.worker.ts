@@ -32,6 +32,11 @@ export type Request =
       width?: number
       height?: number
     }
+  | {
+      type: "clearFrames"
+      color?: boolean
+      depth?: boolean
+    }
 
 /** Message type for requests to this worker */
 export type Message = Request & Id
@@ -62,6 +67,12 @@ onmessage = ({ data: message }: MessageEvent<Message>) => {
       simulation.setPlayback(message.action)
       ack(message)
       break
+    case "clearFrames":
+      simulation.simulation.feedback.markDirty({
+        color: message.color ?? false,
+        depth: message.depth ?? false
+      })
+      ack(message)
   }
 }
 

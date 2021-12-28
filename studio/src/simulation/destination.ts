@@ -1,4 +1,4 @@
-import { ShaderMaterial, WebGLRenderer, WebGLRenderTarget } from "three"
+import { Color, ShaderMaterial, WebGLRenderer, WebGLRenderTarget } from "three"
 import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass"
 import {
   baseVertexShader,
@@ -17,17 +17,16 @@ export default class Destination {
   }
   private fsQuad = new FullScreenQuad(this.targets.color)
 
-  updateUniforms = (uniforms: {
-    mirrorX?: boolean
-    mirrorY?: boolean
-    invertColor?: boolean
-    colorGain?: number
-    colorCycle?: number
-    preventStrobing?: boolean
-  }) =>
+  updateUniforms = (uniforms: any) =>
     [this.targets.color.uniforms, this.targets.depth.uniforms].forEach(shaderUniforms =>
       Object.entries(uniforms).forEach(([k, v]) => {
-        if (v !== undefined && v !== null && shaderUniforms[k]) shaderUniforms[k].value = v
+        const curr = shaderUniforms[k]
+        if (v !== undefined && v !== null && curr) {
+          if (curr.value instanceof Color && typeof v === "string") {
+            v = new Color(v)
+          }
+          shaderUniforms[k].value = v
+        }
       })
     )
 
@@ -76,12 +75,23 @@ const colorShader = {
     mirrorY: { value: false },
     invertColor: { value: false },
     colorGain: { value: 0.0 },
-    colorCycle: { value: 0.0 }
+    colorCycle: { value: 0.0 },
+    fsPeriod: { value: 0.1 },
+    fsAmplitude: { value: 0.1 },
+    fsPhase: { value: 0 },
+    fsColor1: { value: new Color(0, 0, 0) },
+    fsColor2: { value: new Color(1, 1, 1) }
   },
 
   vertexShader: baseVertexShader,
 
   fragmentShader: /* glsl */ `
+    uniform float fsPeriod;
+    uniform float fsAmplitude;
+    uniform float fsPhase;
+    uniform vec3 fsColor1;
+    uniform vec3 fsColor2;
+
     uniform bool mirrorX;
     uniform bool mirrorY;
     uniform bool invertColor;
@@ -111,11 +121,13 @@ const colorShader = {
       if (!preventStrobing || depth < ${minStrobeDepth} || settled) {
         processColor(color, colorGain, colorCycle, invertColor);
       } else {
-        float period = 0.1;
-        // TODO: Figure out a good set of parameters to control this effect.
-        // Can we make a rainbow?
-        // Different sin parameters yield different colors since different channels are emphasized.
-        color.xyz += .1 * sin(vUv.yyx * 2. * PI / period);
+        vec3 r = normalize(fsColor2 - fsColor1), c = color.xyz;
+        float period = 2. * PI / fsPeriod, phase = 2. * PI * fsPhase;
+        c += r 
+            * fsAmplitude 
+            * sin(vUv.x * period + phase);
+
+        color.xyz = clamp(c, min(fsColor1, fsColor2), max(fsColor1, fsColor2));
       }
 
       gl_FragColor = color;
