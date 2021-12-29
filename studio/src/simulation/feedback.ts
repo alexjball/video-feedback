@@ -82,7 +82,8 @@ export default class Feedback {
         fsAmplitude: s.feedback.fsAmplitude,
         fsColor1: s.feedback.fsColor1,
         fsColor2: s.feedback.fsColor2,
-        preventStrobing: s.preventStrobing
+        preventStrobing: s.preventStrobing,
+        fsPop: s.feedback.fsPop
       }),
       v => this.destination.updateUniforms(v)
     )

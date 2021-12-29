@@ -40,6 +40,7 @@ export type State = {
     fsPeriod: number
     fsAmplitude: number
     fsPhase: number
+    fsPop: number
     fsColor1: string
     fsColor2: string
     colorCycle: number
@@ -113,6 +114,7 @@ const initialState: State = {
     fsPeriod: 0.1,
     fsAmplitude: 0.1,
     fsPhase: 0,
+    fsPop: 0.5,
     fsColor1: "#000000",
     fsColor2: "#ffffff",
     invertColor: false,

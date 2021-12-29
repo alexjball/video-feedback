@@ -7,7 +7,8 @@ import {
   applyMirroring,
   minStrobeDepth,
   noise,
-  constants
+  constants,
+  colorConversion
 } from "./shader"
 
 export default class Destination {
@@ -79,6 +80,7 @@ const colorShader = {
     fsPeriod: { value: 0.1 },
     fsAmplitude: { value: 0.1 },
     fsPhase: { value: 0 },
+    fsPop: { value: 0 },
     fsColor1: { value: new Color(0, 0, 0) },
     fsColor2: { value: new Color(1, 1, 1) }
   },
@@ -89,6 +91,7 @@ const colorShader = {
     uniform float fsPeriod;
     uniform float fsAmplitude;
     uniform float fsPhase;
+    uniform float fsPop;
     uniform vec3 fsColor1;
     uniform vec3 fsColor2;
 
@@ -103,6 +106,7 @@ const colorShader = {
     varying vec2 vUv;
 
     ${processColor}
+    ${colorConversion}
     ${encodeDecodeDepth}
     ${applyMirroring}
     ${noise}
@@ -121,11 +125,11 @@ const colorShader = {
       if (!preventStrobing || depth < ${minStrobeDepth} || settled) {
         processColor(color, colorGain, colorCycle, invertColor);
       } else {
-        vec3 r = normalize(fsColor2 - fsColor1), c = color.xyz;
-        float period = 2. * PI / fsPeriod, phase = 2. * PI * fsPhase;
-        c += r 
-            * fsAmplitude 
-            * sin(vUv.x * period + phase);
+        vec3 dc = normalize(fsColor2 - fsColor1), 
+            c = color.xyz,
+            pop = hsv2rgb(vec3(mod(distance(vUv, vec2(0.4, 0.6)) * 2. / (fsPeriod * 10.), 1.), 1., 1.)),
+            shift = sin(vUv.xxx * PI2 / fsPeriod + PI2 * fsPhase);
+        c += fsAmplitude * (shift * dc + fsPop * pop);
 
         color.xyz = clamp(c, min(fsColor1, fsColor2), max(fsColor1, fsColor2));
       }

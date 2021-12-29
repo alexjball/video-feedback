@@ -1,3 +1,5 @@
+export * from "./shader-color-conversion"
+
 export const processColor = /* glsl */ `
   void processColor(inout vec4 color, float gain, float cycle, bool invert) {
     if (gain > 0.0) {
@@ -68,12 +70,6 @@ export const processColor = /* glsl */ `
       vUv = uv;
       gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
     }`,
-  /** https://www.shadertoy.com/view/XljGzV */
-  colorConversion = /* glsl */ `
-    vec3 hsl2rgb( in vec3 c ) {
-      vec3 rgb = clamp( abs(mod(c.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0, 0.0, 1.0 );
-      return c.z + c.y * (rgb-0.5)*(1.0-abs(2.0*c.z-1.0));
-    }`,
   noise = /* glsl */ `
     float iqhash( float n ) {
       return fract(sin(n)*43758.5453);
@@ -94,4 +90,5 @@ export const processColor = /* glsl */ `
   minStrobeDepth = (15.0).toFixed(1),
   constants = /* glsl */ `
     const float PI = 3.1415926535897932384626433832795;
+    const float PI2 = PI * 2.;
     `

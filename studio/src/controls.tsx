@@ -224,6 +224,17 @@ const config: ControlConfig[] = [
     }
   },
   {
+    Component: RangeInput,
+    selector: s => s.simulation.feedback.fsPop,
+    actionCreator: v => setFeedbackOptions({ fsPop: v }),
+    props: {
+      legend: "fixed set pop",
+      min: 0,
+      max: 1,
+      step: 0.001
+    }
+  },
+  {
     Component: ToggleInput,
     selector: s => s.simulation.feedback.invertColor,
     actionCreator: v => setInvertColor(v),

@@ -12,37 +12,42 @@ import { Coords } from "./simulation/model"
 export function LegendPanel(props: any) {
   const state = useAppSelector(s => s.simulation)
   return (
-    <Legend viewBox="-1.5 -1.5 3 3" {...props}>
-      <Destination
-        color="#ff0000"
-        portal={state.portal.coords}
-        borderWidth={state.border.width}
-        mirrorX={state.spacemap.mirrorX}
-        mirrorY={state.spacemap.mirrorY}
-      />
-      <Source
-        color="#00ff00"
-        portal={state.portal.coords}
-        spacemap={state.spacemap.coords}
-        mirrorX={state.spacemap.mirrorX}
-        mirrorY={state.spacemap.mirrorY}
-      />
-      <Viewer coords={state.viewer.coords} />
-    </Legend>
+    <Container {...props}>
+      <Legend viewBox="-1.5 -1.5 3 3">
+        <Destination
+          color="#ff0000"
+          portal={state.portal.coords}
+          borderWidth={state.border.width}
+          mirrorX={state.spacemap.mirrorX}
+          mirrorY={state.spacemap.mirrorY}
+        />
+        <Source
+          color="#00ff00"
+          portal={state.portal.coords}
+          spacemap={state.spacemap.coords}
+          mirrorX={state.spacemap.mirrorX}
+          mirrorY={state.spacemap.mirrorY}
+        />
+        <Viewer coords={state.viewer.coords} />
+      </Legend>
+      <div>Zoom: {state.spacemap.coords.scale.x.toFixed(3)}</div>
+    </Container>
   )
 }
 
 type Corner = "UR" | "LR" | "UL" | "LL"
 const corners = ["UR", "LR", "UL", "LL"] as Corner[]
 
-const Legend = styled.svg`
-    /* border: 3px solid black; */
+const Container = styled.div`
     background-color: rgba(255, 255, 255, 0.3);
     border-radius: 10px;
     margin: 20px;
+    margin-bottom: auto;
     box-shadow: 0 0 10px 10px rgba(255, 255, 255, 0.3);
-    transform: scaleY(-1);
     user-select: none;
+  `,
+  Legend = styled.svg`
+    transform: scaleY(-1);
 
     text {
       transform: scaleY(-1);
