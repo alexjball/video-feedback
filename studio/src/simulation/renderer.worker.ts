@@ -1,6 +1,6 @@
 import { WebGLRenderer } from "three"
 import { Binder, isDefined, singleton } from "../utils"
-import { inflate, JsonState } from "./json"
+import { inflate, deflate, JsonState } from "./json"
 import { State } from "./model"
 import RenderLoop from "./render-loop"
 import Resizer from "./resizer"
@@ -61,7 +61,9 @@ onmessage = ({ data: message }: MessageEvent<Message>) => {
       ack(message)
       break
     case "exportCurrentFrame":
-      simulation.convert(message.width, message.height).then(blob => ack(message, blob))
+      simulation
+        .convert(message.width, message.height)
+        .then(blob => ack(message, { state: deflate(simulation.currentState!), blob }))
       break
     case "setPlayback":
       simulation.setPlayback(message.action)

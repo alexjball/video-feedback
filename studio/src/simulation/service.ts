@@ -7,7 +7,7 @@ export interface SimulationService {
   setPlayback(action: PlaybackAction): void
   getPlayback(): PlaybackState
   /** Generates a PNG blob of the current feedback frame. */
-  convert(height?: number, width?: number): Promise<Blob>
+  convert(height?: number, width?: number): Promise<{ state: State; blob: Blob }>
 }
 
 export const { Provider, useBinding, useService } = createService<SimulationService>()

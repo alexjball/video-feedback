@@ -15,19 +15,30 @@
 // https://github.com/atlassian/react-beautiful-dnd/blob/master/stories/src/primatives/author-list.jsx
 
 import { saveAs } from "file-saver"
-import { useCallback } from "react"
+import { useCallback, useMemo } from "react"
 import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautiful-dnd"
 import styled from "styled-components"
 import { useAppDispatch, useAppSelector, useAppStore } from "../hooks"
 import * as simulation from "../simulation"
+import {
+  addKeyframe,
+  deleteKeyframe,
+  undoKeyframe,
+  snapshotKeyframe,
+  selectKeyframe
+} from "./actions"
+import useIoSync from "./io-sync"
 import * as model from "./model"
 
-export const IoPanel = (props: any) => (
-  <Io {...props}>
-    <Playlist />
-    <Controls />
-  </Io>
-)
+export default function IoPanel(props: any) {
+  useIoSync()
+  return (
+    <Io {...props}>
+      <Playlist />
+      <Controls />
+    </Io>
+  )
+}
 
 const Io = styled.div`
     display: flex;
@@ -45,10 +56,12 @@ const Io = styled.div`
     pointer-events: all;
     margin: 10px;
   `,
-  KeyframeContainer = styled.img`
+  KeyframeContainer = styled.img<{ selected: boolean; modified: boolean }>`
     max-height: 150px;
     max-width: 150px;
-    border: solid black;
+    border: solid;
+    border-color: ${({ selected, modified }) =>
+      selected ? (modified ? "#ff0000" : "#00ff00") : "#000000"};
     object-fit: contain;
     border-radius: 10px;
     display: flex;
@@ -59,10 +72,14 @@ const Io = styled.div`
     index: number
     keyframe: model.Keyframe
     onClick: (k: model.Keyframe) => void
-  }> = ({ onClick, index, keyframe }) => (
+    selected?: boolean
+    modified?: boolean
+  }> = ({ onClick, index, keyframe, selected = false, modified = false }) => (
     <Draggable draggableId={keyframe.id} index={index}>
       {provided => (
         <KeyframeContainer
+          selected={selected}
+          modified={modified}
           onClick={() => onClick(keyframe)}
           ref={provided.innerRef}
           {...provided.draggableProps}
@@ -80,7 +97,8 @@ const Io = styled.div`
     overflow: auto;
   `,
   Playlist = () => {
-    const playlist = useAppSelector(s => s.io.playlist)
+    const playlist = useAppSelector(s => s.io.keyframes)
+    const selection = useAppSelector(s => s.io.selection)
     const dispatch = useAppDispatch()
     const onDragEnd = useCallback(
         (result: DropResult) => {
@@ -93,7 +111,7 @@ const Io = styled.div`
         [dispatch]
       ),
       onStateClicked = useCallback(
-        (k: model.Keyframe) => dispatch(simulation.model.restore(k.state)),
+        (k: model.Keyframe) => dispatch(selectKeyframe(k.id)),
         [dispatch]
       )
 
@@ -103,7 +121,14 @@ const Io = styled.div`
           {provided => (
             <PlaylistContainer ref={provided.innerRef} {...provided.droppableProps}>
               {playlist.map((k, i) => (
-                <Keyframe keyframe={k} index={i} key={k.id} onClick={onStateClicked} />
+                <Keyframe
+                  keyframe={k}
+                  index={i}
+                  key={k.id}
+                  selected={selection?.id === k.id}
+                  modified={!!selection?.modified}
+                  onClick={onStateClicked}
+                />
               ))}
               {provided.placeholder}
             </PlaylistContainer>
@@ -114,24 +139,23 @@ const Io = styled.div`
   },
   Controls = () => {
     const dispatch = useAppDispatch(),
-      store = useAppStore(),
-      { convert } = simulation.useService(),
+      service = simulation.useService(),
       feedbackHeight = useAppSelector(s => s.simulation.feedback.resolution.height)
-    const save = useCallback(
-        () =>
-          convert(256).then(blob => {
-            const thumbnail = URL.createObjectURL(blob)
-            dispatch(model.addToPlaylist({ state: store.getState().simulation, thumbnail }))
-          }),
-        [convert, dispatch, store]
-      ),
-      restore = useCallback(() => {
-        const playlist = store.getState().io.playlist
-        if (playlist.length) dispatch(simulation.model.restore(playlist[playlist.length - 1].state))
-      }, [dispatch, store]),
+    const cb = useMemo(
+      () =>
+        service && {
+          add: () => dispatch(addKeyframe(service)),
+          update: () => dispatch(snapshotKeyframe(service)),
+          undo: () => dispatch(undoKeyframe()),
+          delete: () => dispatch(deleteKeyframe())
+        },
+      [dispatch, service]
+    )
+    const clear = useCallback(() => service?.clearFrames(true, true), [service]),
       download = (height: number) =>
-        convert(height)
-          .then(blob => {
+        service
+          ?.convert(height)
+          .then(({ blob }) => {
             saveAs(blob, "feedback")
           })
           .catch(e => {
@@ -140,8 +164,11 @@ const Io = styled.div`
           })
     return (
       <div style={{ display: "flex" }}>
-        <Button onClick={save}>Save</Button>
-        <Button onClick={restore}>Restore Last Save</Button>
+        <Button onClick={cb?.update}>Update</Button>
+        <Button onClick={cb?.undo}>Undo</Button>
+        <Button onClick={cb?.add}>Add</Button>
+        <Button onClick={cb?.delete}>Delete</Button>
+        <Button onClick={clear}>Clear Screen</Button>
         <Button onClick={() => download(feedbackHeight)}>Download</Button>
       </div>
     )

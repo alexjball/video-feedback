@@ -4,7 +4,7 @@ import { BaseProps, Canvas } from "../canvas"
 import { useAppStore } from "../hooks"
 import { StatsJs, useStats } from "../stats"
 import { settablePromise, SettablePromise, useSingleton } from "../utils"
-import { deflate } from "./json"
+import { deflate, inflate } from "./json"
 import { setViewer, State, updatePortal } from "./model"
 import { PlaybackAction, PlaybackState, SimulationService, useBinding } from "./service"
 import type { Request, Response } from "./renderer.worker"
@@ -14,11 +14,11 @@ export default function Renderer(props: BaseProps) {
 }
 
 function useInstance() {
-  const { stats } = useStats(),
+  const stats = useStats(),
     store = useAppStore(),
     instance = useSingleton(
       class {
-        client = new Client(stats)
+        client = new Client(stats?.stats)
         started = false
 
         props = {
@@ -155,11 +155,11 @@ class Client {
   }
 
   convert = (height?: number, width?: number) =>
-    this.promise<Blob>({
+    this.promise<{ state: State; blob: Blob }>({
       type: "exportCurrentFrame",
       height,
       width
-    })
+    }).then(({ state, blob }) => ({ state: inflate(state), blob }))
 
   initialize = (canvas: OffscreenCanvas, initialState: State) =>
     this.post(
