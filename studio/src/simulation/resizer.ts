@@ -1,4 +1,4 @@
-import { MeshBasicMaterial, WebGLRenderer, WebGLRenderTarget } from "three"
+import { Mesh, MeshBasicMaterial, WebGLRenderer, WebGLRenderTarget } from "three"
 import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass"
 
 export default class Resizer {
@@ -7,7 +7,19 @@ export default class Resizer {
   transferBuffer = new ImageData(1024, 1024)
   resizeBuffer = new WebGLRenderTarget(0, 0)
   material = new MeshBasicMaterial()
-  fsQuad = new FullScreenQuad(this.material)
+  fsQuad
+
+  constructor() {
+    const quad = new FullScreenQuad(this.material),
+      mesh: Mesh = (quad as any)._mesh
+
+    // The 2d and webgl contexts use opposite conventions for the vertical axis.
+    // Flip the texture so the image ends up upright in the 2d canvas.
+    mesh.scale.y = -1.0
+    mesh.updateMatrixWorld()
+
+    this.fsQuad = quad
+  }
 
   convert = (
     renderer: WebGLRenderer,
@@ -22,15 +34,11 @@ export default class Resizer {
     this.canvas.width = width
     this.canvas.height = height
 
-    let source: WebGLRenderTarget
-    if (width === fullSize.width && height === fullSize.height) {
-      source = fullSize
-    } else {
-      this.resize(renderer, fullSize, width, height)
-      source = this.resizeBuffer
-    }
+    this.resizeBuffer.texture.flipY = false
+    this.resize(renderer, fullSize, width, height)
+    this.copyToCanvas(renderer, this.resizeBuffer)
+    this.resizeBuffer.setSize(0, 0)
 
-    this.copyToCanvas(renderer, source)
     return this.canvas.convertToBlob()
   }
 
