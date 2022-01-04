@@ -4,7 +4,8 @@ import { SimulationService } from "../simulation"
 import * as model from "./model"
 import * as simulation from "../simulation"
 
-const hasSelection = (_: any, { getState }: any) => getState().io.selection?.id !== undefined
+const hasSelection = (_: any, { getState }: any) =>
+  getState().io.selection?.keyframeId !== undefined
 
 export const addKeyframe = createAppThunk(
   model.thunks.addKeyframe,
@@ -21,7 +22,7 @@ export const addKeyframe = createAppThunk(
 export const snapshotKeyframe = createAppThunk(
   model.thunks.snapshotKeyframe,
   async (simulation: SimulationService, { getState }) => {
-    const id = getState().io.selection?.id!
+    const id = getState().io.selection.keyframeId!
     const result = await simulation.convert(256)
     await db.documents.updateKeyframe(id, {
       state: result.state,
@@ -40,7 +41,7 @@ export const deleteKeyframe = createAppThunk(
   model.thunks.deleteKeyframe,
   async (_: void, { getState }) => {
     const state = getState().io
-    const id = state.selection?.id!
+    const id = state.selection.keyframeId!
     await db.documents.deleteKeyframe(id)
     return id
   },
@@ -50,22 +51,10 @@ export const deleteKeyframe = createAppThunk(
 export const undoKeyframe = createAppThunk(
   model.thunks.undoKeyframe,
   async (_: void, { getState, dispatch }) => {
-    const id = getState().io.selection?.id!
+    const id = getState().io.selection.keyframeId!
     const currentFrame = getState().io.keyframes.find(k => k.id === id)
     if (currentFrame) {
       dispatch(simulation.model.restore(currentFrame.state))
-    }
-    return id
-  },
-  { condition: hasSelection }
-)
-
-export const selectKeyframe = createAppThunk(
-  model.thunks.selectKeyframe,
-  async (id: string, { getState, dispatch }) => {
-    const newSelection = getState().io.keyframes.find(k => k.id === id)
-    if (newSelection) {
-      dispatch(simulation.model.restore(newSelection.state))
     }
     return id
   },

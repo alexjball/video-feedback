@@ -20,13 +20,7 @@ import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautif
 import styled from "styled-components"
 import { useAppDispatch, useAppSelector, useAppStore } from "../hooks"
 import * as simulation from "../simulation"
-import {
-  addKeyframe,
-  deleteKeyframe,
-  undoKeyframe,
-  snapshotKeyframe,
-  selectKeyframe
-} from "./actions"
+import { addKeyframe, deleteKeyframe, undoKeyframe, snapshotKeyframe } from "./actions"
 import useIoSync from "./io-sync"
 import * as model from "./model"
 
@@ -111,7 +105,7 @@ const Io = styled.div`
         [dispatch]
       ),
       onStateClicked = useCallback(
-        (k: model.Keyframe) => dispatch(selectKeyframe(k.id)),
+        (k: model.Keyframe) => dispatch(model.selectKeyframe(k.id)),
         [dispatch]
       )
 
@@ -125,8 +119,8 @@ const Io = styled.div`
                   keyframe={k}
                   index={i}
                   key={k.id}
-                  selected={selection?.id === k.id}
-                  modified={!!selection?.modified}
+                  selected={selection.keyframeId === k.id}
+                  modified={selection.modified}
                   onClick={onStateClicked}
                 />
               ))}

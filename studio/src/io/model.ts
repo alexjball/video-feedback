@@ -16,15 +16,24 @@
 
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 import * as model from "../simulation/model"
-import { declareThunk } from "../utils"
+import { declareThunk, isDefined } from "../utils"
 
 export interface State {
   keyframes: Keyframe[]
   title?: string
-  selection: {
-    id: string
-    modified: boolean
-  } | null
+  selection: Selection
+}
+
+export interface Selection {
+  /** Selected keyframe */
+  keyframeId?: string
+  /** Identifies the simulation state */
+  stateId?: string
+  modified: boolean
+}
+
+export function newSelection(keyframeId?: string): Selection {
+  return { keyframeId, modified: false }
 }
 
 export interface Keyframe {
@@ -35,14 +44,26 @@ export interface Keyframe {
   thumbnail: string
 }
 
-const initialState: State = { keyframes: [], selection: null }
+const initialState: State = {
+  keyframes: [],
+  selection: { modified: false }
+}
 
 const slice = createSlice({
   name: "io",
   initialState,
   reducers: {
-    setSelection(state, { payload: selection }: PayloadAction<State["selection"]>) {
-      state.selection = selection
+    selectKeyframe(state, { payload: keyframeId }: PayloadAction<string>) {
+      state.selection.keyframeId = keyframeId
+      state.selection.stateId = undefined
+    },
+    updateStateId(state, { payload: stateId }: PayloadAction<string>) {
+      if (!state.selection.stateId) {
+        state.selection.stateId = stateId
+        state.selection.modified = false
+      } else {
+        state.selection.modified = stateId !== state.selection.stateId
+      }
     },
     moveKeyframe(
       { keyframes },
@@ -59,15 +80,15 @@ const slice = createSlice({
     builder
       .addCase(thunks.addKeyframe.fulfilled, (state, { payload: keyframe }) => {
         let index: number
-        const selection = state.selection?.id
-        if (selection !== undefined) {
+        const selection = state.selection.keyframeId
+        if (isDefined(selection)) {
           index = state.keyframes.findIndex(k => k.id === selection) + 1
         } else {
           index = state.keyframes.length
         }
 
         state.keyframes.splice(index, 0, keyframe)
-        state.selection = { id: keyframe.id, modified: false }
+        state.selection = newSelection(keyframe.id)
       })
       .addCase(thunks.snapshotKeyframe.fulfilled, (state, { payload: update }) => {
         const frame = state.keyframes.find(k => k.id === update.id)
@@ -75,43 +96,36 @@ const slice = createSlice({
           frame.state = update.state
           frame.thumbnail = update.thumbnail
         }
-        state.selection = { id: update.id, modified: false }
+        state.selection = newSelection(update.id)
       })
       .addCase(thunks.deleteKeyframe.fulfilled, (state, { payload: id }) => {
         const index = state.keyframes.findIndex(k => k.id === id)
         if (index === -1) return
 
         state.keyframes.splice(index, 1)
-        if (state.selection?.id === id) {
+        if (state.selection?.keyframeId === id) {
           if (state.keyframes.length > 0) {
             const newSelectionIndex = Math.min(Math.max(index - 1, 0), state.keyframes.length)
-            state.selection = {
-              id: state.keyframes[newSelectionIndex].id,
-              modified: false
-            }
+            state.selection = newSelection(state.keyframes[newSelectionIndex].id)
           } else {
-            state.selection = null
+            state.selection = newSelection()
           }
         }
       })
       .addCase(thunks.undoKeyframe.fulfilled, (state, { payload: id }) => {
-        state.selection = { id, modified: false }
-      })
-      .addCase(thunks.selectKeyframe.fulfilled, (state, { payload: id }) => {
-        state.selection = { id, modified: false }
+        state.selection = newSelection(id)
       })
 })
 
 export const {
   reducer,
-  actions: { moveKeyframe, setSelection }
+  actions: { moveKeyframe, selectKeyframe, updateStateId }
 } = slice
 
 export const thunks = {
   addKeyframe: declareThunk<Keyframe>("io/addKeyframe"),
   deleteKeyframe: declareThunk<string>("io/deleteKeyframe"),
   undoKeyframe: declareThunk<string>("io/undoKeyframe"),
-  selectKeyframe: declareThunk<string>("io/selectKeyframe"),
   snapshotKeyframe:
     declareThunk<Pick<Keyframe, "id" | "thumbnail" | "state">>("io/snapshotKeyframe")
 }
