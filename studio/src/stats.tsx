@@ -55,11 +55,11 @@ export const {
 } = slice
 
 export const StatsPanel: React.FC<HTMLProps<HTMLDivElement>> = props => {
-  const { init } = useStats()
+  const stats = useStats()
   const show = useAppSelector(state => state.stats.show)
   return show ? (
     <div style={{ display: "flex", flexDirection: "column", maxHeight: "500px" }} {...props}>
-      <div ref={init} />
+      <div ref={stats?.init} />
     </div>
   ) : null
 }
