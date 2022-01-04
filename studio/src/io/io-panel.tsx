@@ -20,16 +20,18 @@ import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautif
 import styled from "styled-components"
 import { useAppDispatch, useAppSelector, useAppStore } from "../hooks"
 import * as simulation from "../simulation"
+import { isDefined } from "../utils"
 import { addKeyframe, deleteKeyframe, undoKeyframe, snapshotKeyframe } from "./actions"
 import useIoSync from "./io-sync"
 import * as model from "./model"
 
 export default function IoPanel(props: any) {
   useIoSync()
+  const selection = useSelectionState()
   return (
     <Io {...props}>
-      <Playlist />
-      <Controls />
+      <Playlist selection={selection} />
+      <Controls selection={selection} />
     </Io>
   )
 }
@@ -55,7 +57,7 @@ const Io = styled.div`
     max-width: 150px;
     border: solid;
     border-color: ${({ selected, modified }) =>
-      selected ? (modified ? "#ff0000" : "#00ff00") : "#000000"};
+      selected ? (modified ? "#fffb26" : "#62ff62") : "#000000"};
     object-fit: contain;
     border-radius: 10px;
     display: flex;
@@ -90,24 +92,18 @@ const Io = styled.div`
     pointer-events: all;
     overflow: auto;
   `,
-  Playlist = () => {
+  Playlist: React.FC<{ selection: SelectionState }> = ({ selection: cb }) => {
     const playlist = useAppSelector(s => s.io.keyframes)
     const selection = useAppSelector(s => s.io.selection)
     const dispatch = useAppDispatch()
     const onDragEnd = useCallback(
-        (result: DropResult) => {
-          if (result.destination && result.destination.index !== result.source.index) {
-            dispatch(
-              model.moveKeyframe({ id: result.draggableId, index: result.destination.index })
-            )
-          }
-        },
-        [dispatch]
-      ),
-      onStateClicked = useCallback(
-        (k: model.Keyframe) => dispatch(model.selectKeyframe(k.id)),
-        [dispatch]
-      )
+      (result: DropResult) => {
+        if (result.destination && result.destination.index !== result.source.index) {
+          dispatch(model.moveKeyframe({ id: result.draggableId, index: result.destination.index }))
+        }
+      },
+      [dispatch]
+    )
 
     return (
       <DragDropContext onDragEnd={onDragEnd}>
@@ -121,7 +117,7 @@ const Io = styled.div`
                   key={k.id}
                   selected={selection.keyframeId === k.id}
                   modified={selection.modified}
-                  onClick={onStateClicked}
+                  onClick={cb.select.onClick}
                 />
               ))}
               {provided.placeholder}
@@ -131,20 +127,9 @@ const Io = styled.div`
       </DragDropContext>
     )
   },
-  Controls = () => {
-    const dispatch = useAppDispatch(),
-      service = simulation.useService(),
+  Controls: React.FC<{ selection: SelectionState }> = ({ selection }) => {
+    const service = simulation.useService(),
       feedbackHeight = useAppSelector(s => s.simulation.feedback.resolution.height)
-    const cb = useMemo(
-      () =>
-        service && {
-          add: () => dispatch(addKeyframe(service)),
-          update: () => dispatch(snapshotKeyframe(service)),
-          undo: () => dispatch(undoKeyframe()),
-          delete: () => dispatch(deleteKeyframe())
-        },
-      [dispatch, service]
-    )
     const clear = useCallback(() => service?.clearFrames(true, true), [service]),
       download = (height: number) =>
         service
@@ -158,12 +143,46 @@ const Io = styled.div`
           })
     return (
       <div style={{ display: "flex" }}>
-        <Button onClick={cb?.update}>Update</Button>
-        <Button onClick={cb?.undo}>Undo</Button>
-        <Button onClick={cb?.add}>Add</Button>
-        <Button onClick={cb?.delete}>Delete</Button>
+        <Button {...selection.update}>Update</Button>
+        <Button {...selection.undo}>Undo</Button>
+        <Button {...selection.add}>Add</Button>
+        <Button {...selection.delete}>Delete</Button>
         <Button onClick={clear}>Clear Screen</Button>
         <Button onClick={() => download(feedbackHeight)}>Download</Button>
       </div>
     )
   }
+
+function useSelectionState() {
+  const dispatch = useAppDispatch(),
+    service = simulation.useService(),
+    selection = useAppSelector(s => s.io.selection),
+    hasSelection = isDefined(selection.keyframeId),
+    isModified = hasSelection && selection.modified
+
+  return useMemo(
+    () => ({
+      add: {
+        onClick: () => service && dispatch(addKeyframe(service))
+      },
+      undo: {
+        disabled: !isModified,
+        onClick: () => dispatch(undoKeyframe())
+      },
+      update: {
+        disabled: !isModified,
+        onClick: () => service && dispatch(snapshotKeyframe(service))
+      },
+      delete: {
+        disabled: !hasSelection || isModified,
+        onClick: () => dispatch(deleteKeyframe())
+      },
+      select: {
+        onClick: (k: model.Keyframe) => !isModified && dispatch(model.selectKeyframe(k.id))
+      }
+    }),
+    [dispatch, hasSelection, isModified, service]
+  )
+}
+
+type SelectionState = ReturnType<typeof useSelectionState>
