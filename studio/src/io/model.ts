@@ -15,12 +15,14 @@
 // https://github.com/atlassian/react-beautiful-dnd/blob/master/stories/src/primatives/author-list.jsx
 
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
-import * as model from "../simulation/model"
-import { declareThunk, isDefined } from "../utils"
-
+import { declareThunk, isDefined, Modify } from "../utils"
+import type * as db from "../db"
 export interface State {
+  document?: {
+    id: string
+    title?: string
+  }
   keyframes: Keyframe[]
-  title?: string
   selection: Selection
 }
 
@@ -36,13 +38,16 @@ export function newSelection(keyframeId?: string): Selection {
   return { keyframeId, modified: false }
 }
 
-export interface Keyframe {
-  state: model.State
-  id: string
-  name?: string
-  // Created via URL.createObjectURL
-  thumbnail: string
-}
+export type Keyframe = Modify<
+  db.keyframes.Keyframe,
+  {
+    // Created via URL.createObjectURL
+    thumbnail: string
+    thumbnailId: string
+  }
+>
+
+export type Document = Modify<db.documents.Document, { keyframes: Keyframe[] }>
 
 const initialState: State = {
   keyframes: [],
@@ -115,6 +120,14 @@ const slice = createSlice({
       .addCase(thunks.undoKeyframe.fulfilled, (state, { payload: id }) => {
         state.selection = newSelection(id)
       })
+      .addCase(thunks.openDocument.fulfilled, (state, { payload: doc }) => {
+        state.document = {
+          id: doc.id,
+          title: doc.name
+        }
+        state.keyframes = doc.keyframes
+        state.selection = newSelection(state.keyframes[0]?.id)
+      })
 })
 
 export const {
@@ -126,6 +139,7 @@ export const thunks = {
   addKeyframe: declareThunk<Keyframe>("io/addKeyframe"),
   deleteKeyframe: declareThunk<string>("io/deleteKeyframe"),
   undoKeyframe: declareThunk<string>("io/undoKeyframe"),
+  openDocument: declareThunk<Document>("io/openDocument"),
   snapshotKeyframe:
     declareThunk<Pick<Keyframe, "id" | "thumbnail" | "state">>("io/snapshotKeyframe")
 }

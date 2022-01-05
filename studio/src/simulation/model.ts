@@ -301,8 +301,19 @@ const slice = createSlice({
       assign(payload.portal, state.portal, ["coords"])
       assign(payload.border, state.border, ["color", "width", "coords"])
       assign(payload.background, state.background, ["color"])
-      assign(payload.feedback, state.feedback, ["colorCycle", "colorGain", "invertColor"])
+      assign(payload.feedback, state.feedback, [
+        "colorCycle",
+        "colorGain",
+        "invertColor",
+        "fsAmplitude",
+        "fsColor1",
+        "fsColor2",
+        "fsPeriod",
+        "fsPhase",
+        "fsPop"
+      ])
       assign(payload.spacemap, state.spacemap, ["mirrorX", "mirrorY", "coords"])
+      state.preventStrobing = payload.preventStrobing
 
       // Maintain the current width resolution but restore the exact aspect of
       // the saved state.

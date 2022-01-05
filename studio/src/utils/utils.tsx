@@ -27,3 +27,5 @@ export function useSingleton<T>(Class: { new (): T }, deps: DependencyList) {
 export function singleton<T>(Class: { new (): T }) {
   return new Class()
 }
+
+export type Modify<A, B> = Omit<A, keyof B> & B

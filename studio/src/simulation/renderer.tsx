@@ -4,7 +4,7 @@ import { BaseProps, Canvas } from "../canvas"
 import { useAppStore } from "../hooks"
 import { StatsJs, useStats } from "../stats"
 import { settablePromise, SettablePromise, useSingleton } from "../utils"
-import { deflate, inflate } from "./json"
+import { deflate, inflate, JsonState } from "./json"
 import { setViewer, State, updatePortal } from "./model"
 import { PlaybackAction, PlaybackState, SimulationService, useBinding } from "./service"
 import type { Request, Response } from "./renderer.worker"
@@ -155,7 +155,7 @@ class Client {
   }
 
   convert = (height?: number, width?: number) =>
-    this.promise<{ state: State; blob: Blob }>({
+    this.promise<{ state: JsonState; blob: Blob }>({
       type: "exportCurrentFrame",
       height,
       width

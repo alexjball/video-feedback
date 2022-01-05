@@ -22,11 +22,11 @@ import { useAppDispatch, useAppSelector, useAppStore } from "../hooks"
 import * as simulation from "../simulation"
 import { isDefined } from "../utils"
 import { addKeyframe, deleteKeyframe, undoKeyframe, snapshotKeyframe } from "./actions"
-import useIoSync from "./io-sync"
+import useIo from "./io-hooks"
 import * as model from "./model"
 
 export default function IoPanel(props: any) {
-  useIoSync()
+  useIo()
   const selection = useSelectionState()
   return (
     <Io {...props}>

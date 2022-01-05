@@ -1,7 +1,7 @@
-import { Table } from "dexie"
 import { nanoid } from "nanoid"
-import { deflate, inflate, model } from "../simulation"
-import db from "./core"
+import { Modify } from "../utils"
+import db, { getExisting, BaseTable } from "./core"
+import keyframes, { Keyframe } from "./keyframes"
 
 export type Id = string
 
@@ -12,95 +12,35 @@ export interface Document {
   keyframes: Keyframe[]
 }
 
-export interface Keyframe {
-  id: Id
-  name?: string
-  state: model.State
-  // Make sure this is async
-  thumbnail: Blob
-}
+export type DbDocument = Modify<Document, { keyframes: Id[] }>
 
-export interface DbDocument extends Omit<Document, "keyframes"> {
-  keyframes: Id[]
-}
-
-export class Documents {
-  async create(): Promise<Document> {
-    const id = await db.documents.add({
-      id: nanoid(),
+const docTables = [db.documents, db.keyframes, db.images]
+export class Documents extends BaseTable<DbDocument, Document> {
+  async create(id = nanoid()): Promise<Document> {
+    await this.table.add({
+      id,
       keyframes: []
     })
     return this.get(id)
   }
-  async createKeyframe(state: model.State, thumbnail: Blob): Promise<Keyframe> {
-    const id = await db.keyframes.add(
-      deflateKeyframe({
-        id: nanoid(),
-        state,
-        thumbnail
-      })
-    )
-    return getExisting(db.keyframes, id).then(inflateKeyframe)
-  }
-  async updateKeyframe(id: string, update: Partial<Keyframe>) {
-    await db.keyframes.update(id, deflateKeyframe(update))
-  }
-  async deleteKeyframe(id: string): Promise<void> {
-    await db.keyframes.delete(id)
-  }
-  list(): Promise<Id[]> {
-    return db.documents.toCollection().primaryKeys()
-  }
   get(docId: string): Promise<Document> {
-    return db.transaction("readonly", [db.keyframes, db.documents], async () => {
-      const doc = await getExisting(db.documents, docId)
-      const keyframes = await Promise.all(
-        doc.keyframes.map(id => getExisting(db.keyframes, id).then(inflateKeyframe))
-      )
+    return db.transaction("readonly", docTables, async () => {
+      const doc = await getExisting(this.table, docId)
+      const frames = await Promise.all(doc.keyframes.map(id => keyframes.get(id)))
       return {
         ...doc,
-        keyframes
+        keyframes: frames
       }
     })
   }
-  save(doc: Document): Promise<void> {
-    return db.transaction(
-      "rw",
-      [db.keyframes, db.documents],
-      () =>
-        void Promise.all(
-          doc.keyframes.map(keyframe => {
-            db.keyframes.put(deflateKeyframe(keyframe))
-          })
-        ).then(() =>
-          db.documents.put({
-            ...doc,
-            keyframes: doc.keyframes.map(({ id }) => id)
-          })
-        )
+  async update(doc: Document | DbDocument) {
+    await db.transaction("rw", docTables, () =>
+      this.table.put({
+        ...doc,
+        keyframes: doc.keyframes.map(k => (typeof k === "object" ? k.id : k))
+      })
     )
   }
 }
 
-function getExisting<T>(table: Table<T>, id: string): Promise<T> {
-  return table.get(id).then(doc => {
-    if (!doc) throw Error(`No doc found with id ${id}`)
-    return doc
-  })
-}
-
-function deflateKeyframe(k: Partial<Keyframe>): any {
-  k = { ...k }
-  if (k.state) {
-    k.state = deflate(k.state)
-  }
-  return k
-}
-
-function inflateKeyframe(k: Keyframe): Keyframe {
-  k = { ...k }
-  if (k.state) {
-    k.state = inflate(k.state)
-  }
-  return k
-}
+export default new Documents(db.documents)
