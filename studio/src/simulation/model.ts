@@ -1,6 +1,9 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 import { immerable } from "immer"
 import { Color, Matrix4, Object3D, Quaternion, Vector2, Vector3, Vector4 } from "three"
+import { Coords, Resolution, State } from "./types"
+
+export * from "./types"
 
 const pi2 = 2 * Math.PI
 
@@ -14,76 +17,11 @@ function markImmerable() {
 }
 markImmerable()
 
-export type Resolution = {
-  width: number
-  height: number
-}
-
-export type State = {
-  border: {
-    width: number
-    coords: Coords
-    color: string
-  }
-  background: {
-    color: string
-  }
-  spacemap: {
-    coords: Coords
-    pixelsPerScale: number
-    mirrorX: boolean
-    mirrorY: boolean
-  }
-  feedback: {
-    nFrames: number
-    invertColor: boolean
-    fsPeriod: number
-    fsAmplitude: number
-    fsPhase: number
-    fsPop: number
-    fsColor1: string
-    fsColor2: string
-    colorCycle: number
-    colorGain: number
-    resolution: Resolution
-  }
-  portal: {
-    coords: Coords
-
-    // geometry: Rect
-  }
-  viewer: {
-    coords: Coords
-    // geometry: Rect
-  }
-  viewport: Resolution
-  drag: {
-    start: {
-      coords: Coords
-      x: number
-      y: number
-    } | null
-  }
-  preventStrobing: boolean
-}
-
-/** Axis-aligned 2-d rectangle! */
-export interface Rect {
-  min: Vector2
-  max: Vector2
-}
-
-export interface Coords {
-  position: Vector3
-  quaternion: Quaternion
-  scale: Vector3
-}
-
 /**
  * The portal, viewer, and feedback geometries are 1x1 squares centered on the
  * origin. Therefore width and height are equal to scale!
  */
-const initialState: State = {
+export const initialState: State = {
   border: {
     width: 0.1,
     coords: {
