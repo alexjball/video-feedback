@@ -1,8 +1,7 @@
 import { Quaternion, Vector2, Vector3, Vector4 } from "three"
 import { State } from "./model"
 import { cloneDeepWith } from "lodash"
-
-export type JsonState = never
+import { JsonState } from "./types"
 
 /** Converts simulation state to a JSON-serializable format */
 export function deflate(s: State): JsonState {
