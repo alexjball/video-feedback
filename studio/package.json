@@ -4,14 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:emulate": "node ./functions/scripts/dev.js",
     "build": "next build",
     "start": "next start",
     "export": "next export",
     "lint": "next lint",
     "fix": "prettier --write .",
     "check-types": "tsc --noEmit",
-    "deploy-firebase": "firebase deploy --only functions",
-    "call": "node ./functions/call.js"
+    "deploy-firebase": "firebase deploy --only functions,storage,firestore",
+    "call": "node ./functions/scripts/call.js"
   },
   "engines": {
     "node": "16"
@@ -51,7 +52,8 @@
     "eslint": "7.32.0",
     "eslint-config-next": "11.1.2",
     "eslint-config-prettier": "^8.3.0",
-    "firebase-tools": "^9.23.1",
+    "firebase-admin": "^10.0.1",
+    "firebase-tools": "^10.0.1",
     "jest": "^27.3.1",
     "prettier": "^2.4.1",
     "typescript": "4.4.3"

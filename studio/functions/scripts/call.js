@@ -1,6 +1,6 @@
 const { initializeApp } = require("firebase/app")
 const { getFunctions, httpsCallable } = require("firebase/functions")
-const firebaseConfig = require("../firebase-config.json")
+const firebaseConfig = require("../../firebase-config.json")
 
 if (process.argv.length !== 4) {
   console.log("Usage: call.js service data")

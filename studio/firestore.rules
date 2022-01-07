@@ -1,30 +1,31 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /public {
-      // Animations are sequences of states that are interpolated
-      match /animations/{animation} {
-        // Anyone can view
-        allow read: if true;
-
-        // Only the owner can update
-        allow write: 
-          if request.auth.uid == resource.data.owner;
+    // Everything is scoped to a particular user.
+    match /users/{uid} {
+      function owner() {
+        return request.auth.uid == uid;
       }
 
-      // States are individual configurations rendered as a still image
-      match /states/{state} {
-        // Anyone can view
-        allow read: if true;
-
-        // Only the owner can update
-        allow write:
-          if  request.auth.uid == resource.data.owner;
+      // Anyone can read public docs, but only owners can write.
+      match /public {
+        match /{path=**} {
+          allow read: if true;
+        }
+        match /studios/{sid} {
+          allow write: if owner();
+        }
       }
-    }
 
-    match /users/{uid}/studio_documents/{docid} {
-      allow read, write: if request.auth.uid == uid;
+      // Only owners can read or write private docs.
+      match /private {
+        match /{path=**} {
+          allow read: if owner();
+        }
+        match /studios/{sid} {
+          allow write: if owner();
+        }
+      }
     }
   }
 }

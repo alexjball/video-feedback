@@ -6,12 +6,24 @@ import * as simulation from "../simulation"
 import { updateStateId } from "./model"
 import db, { documents } from "../db"
 import { openDocument } from "./actions"
+import { auth } from "../firebase"
 
 export default function useIo() {
   useApplySelection()
   useStateId()
   usePushUpdatesToDatabase()
   useDefaultDocument()
+  useUser()
+}
+
+function useUser() {
+  useEffect(
+    () =>
+      auth.onAuthStateChanged(user => {
+        console.log("user change", user)
+      }),
+    []
+  )
 }
 
 function useApplySelection() {

@@ -1,32 +1,40 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    function thumbnail() {
-      // TODO: Must be owner
-      return request.resource.size < 1 * 1024 * 1024
-        && request.resource.contentType.matches('image/png');
-    }
+    // Everything is scoped to a particular user.
+    match /users/{uid} {
+      function thumbnail() {
+        return request.resource.size < 1 * 1024 * 1024
+          && request.resource.contentType.matches('image/png');
+      }
 
-    match /public {
-      match /animations/{animation}/states/{state} {
-        match /thumbnail {
+      function owner() {
+        return request.auth.uid == uid;
+      }
+
+      // Anyone can read public assets, but only owners can write.
+      match /public {
+        match /{path=**} {
           allow read: if true;
-          allow write: if thumbnail();
+        }
+        match /studios/{sid} {
+          match /thumbnails/{id} {
+            allow write: if owner() && thumbnail();
+          }
         }
       }
 
-      match /states/{state} {
-        match /thumbnail {
-          allow read: if true;
-          allow write: if thumbnail();
+      // Only owners can read or write private assets.
+      match /private {
+        match /{path=**} {
+          allow read: if owner();
+        }
+        match /studios/{sid} {
+          match /thumbnails/{id} {
+            allow write: if owner() && thumbnail();
+          }
         }
       }
-    }
-
-    match /users/{uid}/studio_documents/{docid}/{assetSegments=**} {
-      allow write: if request.auth.uid == uid 
-        && request.resource.size < 1 * 1024 * 1024;
-      allow read: if request.auth.uid == uid;
     }
   }
 }
