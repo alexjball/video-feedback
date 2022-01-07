@@ -323,8 +323,8 @@ type UpdatePortal = {
 }
 
 function resizePortal({ width, height }: Resolution, { feedback, portal, border }: State) {
-  feedback.resolution.height = height
-  feedback.resolution.width = width
+  feedback.resolution.height = Math.round(height)
+  feedback.resolution.width = Math.round(width)
   portal.coords.scale.copy(unitAspect(width / height))
   border.coords.scale.set(
     portal.coords.scale.x + 2 * border.width,

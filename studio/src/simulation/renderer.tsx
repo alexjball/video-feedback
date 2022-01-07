@@ -39,8 +39,8 @@ function useInstance() {
             if (!this.started) {
               store.dispatch(
                 updatePortal({
-                  width: window.screen.width,
-                  height: window.screen.height
+                  width: window.innerWidth * devicePixelRatio,
+                  height: window.innerHeight * devicePixelRatio
                 })
               )
               this.client.setPlayback("start")

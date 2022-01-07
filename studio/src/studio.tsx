@@ -3,7 +3,7 @@ import { Providers } from "./providers"
 import { SimulationPanel } from "./simulation"
 import { StatsPanel } from "./stats"
 import { ControlsPanel } from "./controls"
-import { NavigationPanel } from "./navigation"
+import { MenuPanel } from "./menu"
 import { LegendPanel } from "./legend"
 import { IoPanel } from "./io"
 
@@ -23,7 +23,7 @@ const Io = styled(IoPanel)`
   z-index: 5;
 `
 
-const Navigation = styled(NavigationPanel)`
+const Menu = styled(MenuPanel)`
   grid-column: 2;
   grid-row: 1;
   z-index: 5;
@@ -60,7 +60,7 @@ export function Studio() {
       <Layout>
         <Controls />
         <Io />
-        <Navigation />
+        <Menu />
         <Stats />
         <Legend />
         <Simulation /> {/* stats={stats}  */}

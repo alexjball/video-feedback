@@ -315,7 +315,7 @@ function ResolutionControls() {
         setWidth: (width: number) => {
           if (isNaN(width)) return
           width = Math.round(width)
-          if (width > 3840) {
+          if (width >= 3840) {
             // Minimize memory requirements for high resolutions
             dispatch(setNumberFeedbackFrames(1))
           }

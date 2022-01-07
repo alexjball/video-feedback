@@ -14,16 +14,17 @@
 // https://github.com/atlassian/react-beautiful-dnd/blob/master/stories/src/horizontal/author-app.jsx
 // https://github.com/atlassian/react-beautiful-dnd/blob/master/stories/src/primatives/author-list.jsx
 
-import { saveAs } from "file-saver"
 import { useCallback, useMemo } from "react"
 import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautiful-dnd"
 import styled from "styled-components"
-import { useAppDispatch, useAppSelector, useAppStore } from "../hooks"
+import { useAppDispatch, useAppSelector } from "../hooks"
 import * as simulation from "../simulation"
 import { isDefined } from "../utils"
 import { addKeyframe, deleteKeyframe, undoKeyframe, snapshotKeyframe } from "./actions"
 import useIo from "./io-hooks"
 import * as model from "./model"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faCheck, faTrash, faUndo, faPlus } from "@fortawesome/free-solid-svg-icons"
 
 export default function IoPanel(props: any) {
   useIo()
@@ -128,27 +129,12 @@ const Io = styled.div`
     )
   },
   Controls: React.FC<{ selection: SelectionState }> = ({ selection }) => {
-    const service = simulation.useService(),
-      feedbackHeight = useAppSelector(s => s.simulation.feedback.resolution.height)
-    const clear = useCallback(() => service?.clearFrames(true, true), [service]),
-      download = (height: number) =>
-        service
-          ?.convert(height)
-          .then(({ blob }) => {
-            saveAs(blob, "feedback")
-          })
-          .catch(e => {
-            console.error(e)
-            alert("Couldn't save feedback")
-          })
     return (
       <div style={{ display: "flex" }}>
-        <Button {...selection.update}>Update</Button>
-        <Button {...selection.undo}>Undo</Button>
-        <Button {...selection.add}>Add</Button>
-        <Button {...selection.delete}>Delete</Button>
-        <Button onClick={clear}>Clear Screen</Button>
-        <Button onClick={() => download(feedbackHeight)}>Download</Button>
+        <Button {...selection.update}>{icon(faCheck)}</Button>
+        <Button {...selection.undo}>{icon(faUndo)}</Button>
+        <Button {...selection.add}>{icon(faPlus)}</Button>
+        <Button {...selection.delete}>{icon(faTrash)}</Button>
       </div>
     )
   }
@@ -186,3 +172,7 @@ function useSelectionState() {
 }
 
 type SelectionState = ReturnType<typeof useSelectionState>
+
+function icon(icon: any) {
+  return <FontAwesomeIcon icon={icon} size="lg" />
+}
