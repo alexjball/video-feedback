@@ -13,12 +13,12 @@ type ThunkConfig = {
 }
 
 export const createAppThunk = <Returned, ThunkArg = void>(
-  asyncActions: AsyncThunkActions<Returned>,
+  typeOrActions: string | AsyncThunkActions<Returned>,
   payloadCreator: AsyncThunkPayloadCreator<Returned, ThunkArg, ThunkConfig>,
   options?: AsyncThunkOptions<ThunkArg, ThunkConfig>
 ) =>
   createAsyncThunk<Returned, ThunkArg, ThunkConfig>(
-    asyncActions.typePrefix,
+    typeof typeOrActions === "string" ? typeOrActions : typeOrActions.typePrefix,
     payloadCreator,
     options
   )

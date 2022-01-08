@@ -8,21 +8,21 @@ service cloud.firestore {
       }
 
       // Anyone can read public docs, but only owners can write.
-      match /public {
+      match /publicDocuments {
         match /{path=**} {
           allow read: if true;
         }
-        match /documents/{sid} {
+        match /{docid} {
           allow write: if owner();
         }
       }
 
       // Only owners can read or write private docs.
-      match /private {
+      match /privateDocuments {
         match /{path=**} {
           allow read: if owner();
         }
-        match /documents/{sid} {
+        match /{docid} {
           allow write: if owner();
         }
       }

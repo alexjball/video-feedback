@@ -18,6 +18,7 @@ export type DbKeyframe = Modify<
     thumbnail: Id
   }
 >
+export type JsonKeyframe = DbKeyframe
 
 type KeyframeUpdate = Modify<Partial<Keyframe>, { id: Id }>
 
@@ -49,7 +50,7 @@ export class Keyframes extends BaseTable<DbKeyframe, Keyframe> {
   }
 }
 
-function deflateKeyframe(k: Partial<Keyframe>): DbKeyframe {
+export function deflateKeyframe(k: Partial<Keyframe>): DbKeyframe {
   const o: any = { ...k }
   if (k.state) {
     o.state = model.JsonState.check(deflate(k.state))

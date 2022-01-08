@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid"
 import { Modify } from "../utils"
 import db, { getExisting, BaseTable } from "./core"
-import keyframes, { Keyframe } from "./keyframes"
+import keyframes, { deflateKeyframe, JsonKeyframe, Keyframe } from "./keyframes"
 
 export type Id = string
 
@@ -13,6 +13,7 @@ export interface Document {
 }
 
 export type DbDocument = Modify<Document, { keyframes: Id[] }>
+export type JsonDocument = Modify<Document, { keyframes: JsonKeyframe[] }>
 
 const docTables = [db.documents, db.keyframes, db.images]
 export class Documents extends BaseTable<DbDocument, Document> {
@@ -44,3 +45,10 @@ export class Documents extends BaseTable<DbDocument, Document> {
 }
 
 export default new Documents(db.documents)
+
+export function toJson(document: Document): JsonDocument {
+  return {
+    ...document,
+    keyframes: document.keyframes.map(deflateKeyframe)
+  }
+}

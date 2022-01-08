@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app"
 import { getAuth, connectAuthEmulator } from "firebase/auth"
 import { getStorage, connectStorageEmulator } from "firebase/storage"
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore"
+import { initializeFirestore, connectFirestoreEmulator } from "firebase/firestore"
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions"
 import firebaseConfig from "../firebase-config.json"
 
@@ -12,7 +12,7 @@ if (process.env.NEXT_PUBLIC_PROJECT_ID) {
 
 export const app = initializeApp(config)
 export const storage = getStorage(app)
-export const firestore = getFirestore(app)
+export const firestore = initializeFirestore(app, { ignoreUndefinedProperties: true })
 export const functions = getFunctions(app)
 export const auth = getAuth(app)
 

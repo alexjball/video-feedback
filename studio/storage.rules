@@ -17,8 +17,8 @@ service firebase.storage {
         match /{path=**} {
           allow read: if true;
         }
-        match /documents/{sid} {
-          match /thumbnails/{id} {
+        match /documents/{docid} {
+          match /thumbnails/{tid} {
             allow write: if owner() && thumbnail();
           }
         }
@@ -29,8 +29,8 @@ service firebase.storage {
         match /{path=**} {
           allow read: if owner();
         }
-        match /documents/{sid} {
-          match /thumbnails/{id} {
+        match /documents/{docid} {
+          match /thumbnails/{tid} {
             allow write: if owner() && thumbnail();
           }
         }
