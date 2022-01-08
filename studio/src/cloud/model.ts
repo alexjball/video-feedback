@@ -22,11 +22,11 @@ const slice = createSlice({
   },
   extraReducers: builder =>
     builder
-      .addCase(publishDocument.rejected, (state, action) => {
+      .addCase(thunks.publishDocument.rejected, (state, action) => {
         const rejection = action.payload as PublishRejection
         console.error("failed to publish", rejection)
       })
-      .addCase(publishDocument.fulfilled, (state, action) => {
+      .addCase(thunks.publishDocument.fulfilled, (state, action) => {
         console.log("successfully published", action.payload)
       })
 })
@@ -41,9 +41,14 @@ export const { Provider } = createService(() => {
   useEffect(() => auth.onAuthStateChanged(user => dispatch(setUser(user?.uid ?? null))), [dispatch])
 })
 
-/** Publishes a document and returns the public url. Rejects with a
- * `PublishRejection` payload if anything goes wrong */
-export const publishDocument = declareThunk<string>("cloud/publishDocument")
+export const thunks = {
+  viewPublicDocument: declareThunk<void>("cloud/viewPublicDocument"),
+  /**
+   * Publishes a document and returns the public url. Rejects with a
+   * `PublishRejection` payload if anything goes wrong.
+   */
+  publishDocument: declareThunk<string>("cloud/publishDocument")
+}
 
 export type ErrorReason =
   | "unsaved-changes"

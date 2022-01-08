@@ -9,7 +9,7 @@ import { doc, setDoc } from "firebase/firestore"
  * Publish the current version of the given document to /v/uid/docId
  */
 export const publishDocument = createAppThunk(
-  model.publishDocument,
+  model.thunks.publishDocument,
   async (docId: string, { getState, rejectWithValue }) => {
     const s = getState(),
       uid = s.cloud.uid
@@ -44,12 +44,14 @@ async function uploadDocument({ uid, document }: { uid: string; document: docume
 }
 
 async function uploadThumbnails({ uid, document }: { uid: string; document: documents.Document }) {
-  await document.keyframes.map(keyframe => {
-    const thumbnail = keyframe.thumbnail,
-      thumbnailRef = paths.thumbnail(uid, document.id, thumbnail.id)
+  await Promise.all(
+    document.keyframes.map(keyframe => {
+      const thumbnail = keyframe.thumbnail,
+        thumbnailRef = paths.thumbnail(uid, document.id, thumbnail.id)
 
-    return uploadBytes(thumbnailRef, thumbnail.blob)
-  })
+      return uploadBytes(thumbnailRef, thumbnail.blob)
+    })
+  )
 }
 
 const paths = {
@@ -59,5 +61,5 @@ const paths = {
     doc(firestore, "users", uid, "publicDocuments", docId),
   privateDocument: (uid: string, docId: string) =>
     doc(firestore, "users", uid, "privateDocuments", docId),
-  publicUrl: (uid: string, docId: string) => `${window.origin}/v/${uid}/${docId}`
+  publicUrl: (uid: string, docId: string) => `${window.origin}/view/${uid}/${docId}`
 }

@@ -36,14 +36,21 @@ export class Keyframes extends BaseTable<DbKeyframe, Keyframe> {
     })
     return this.get(id)
   }
-  async update({ id, thumbnail, ...update }: KeyframeUpdate) {
+  async update({ id, ...update }: KeyframeUpdate) {
     await db.transaction("rw", [db.keyframes, db.images], async () => {
+      const thumbnail = update.thumbnail
       if (thumbnail) {
         await images.update(thumbnail.id, thumbnail.blob)
       }
       return this.table.update(id, deflateKeyframe(update))
     })
     return this.get(id)
+  }
+  async put(keyframe: Keyframe) {
+    await db.transaction("rw", [db.keyframes, db.images], async () => {
+      if (keyframe.thumbnail) await images.put(keyframe.thumbnail)
+      await this.table.put(deflateKeyframe(keyframe))
+    })
   }
   get(id: string) {
     return getExisting(this.table, id).then(inflateKeyframe)

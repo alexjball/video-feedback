@@ -42,6 +42,15 @@ export class Documents extends BaseTable<DbDocument, Document> {
       })
     )
   }
+  async put(doc: Document) {
+    await db.transaction("rw", docTables, async () => {
+      await Promise.all(doc.keyframes.map(k => keyframes.put(k)))
+      await this.table.put({
+        ...doc,
+        keyframes: doc.keyframes.map(k => k.id)
+      })
+    })
+  }
 }
 
 export default new Documents(db.documents)

@@ -56,14 +56,12 @@ const Simulation = styled(SimulationPanel)`
 
 export function Studio() {
   return (
-    <Providers>
-      <Layout>
-        <Controls />
-        <Io />
-        <Menu />
-        <Info />
-        <Simulation />
-      </Layout>
-    </Providers>
+    <Layout>
+      <Controls />
+      <Io />
+      <Menu />
+      <Info />
+      <Simulation />
+    </Layout>
   )
 }

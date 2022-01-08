@@ -3,6 +3,7 @@ import "../styles/globals.css"
 import type { AppProps } from "next/app"
 import Head from "next/head"
 import * as three from "three"
+import { Providers } from "../src/providers"
 
 if (global.window) window.THREE = three
 
@@ -13,7 +14,9 @@ function App({ Component, pageProps }: AppProps) {
         <title>Feedback Studio</title>
       </Head>
 
-      <Component {...pageProps} />
+      <Providers>
+        <Component {...pageProps} />
+      </Providers>
     </>
   )
 }

@@ -1,1 +1,5 @@
-export { Studio as default } from "../src"
+import { Editor } from "../src"
+
+export default function Page() {
+  return <Editor docId="default" />
+}

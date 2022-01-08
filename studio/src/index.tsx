@@ -1,1 +1,2 @@
-export { Studio } from "./studio"
+export { Viewer } from "./viewer"
+export { Editor } from "./editor"

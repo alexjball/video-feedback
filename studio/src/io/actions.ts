@@ -56,12 +56,14 @@ export const undoKeyframe = createAppThunk(
 
 export const openDocument = createAppThunk(
   model.thunks.openDocument,
-  async (id?: string) => {
+  async ({ id, create }: { id?: string; force?: boolean; create?: boolean }) => {
     let doc: documents.Document
     if (id && (await db.documents.exists(id))) {
       doc = await db.documents.get(id)
-    } else {
+    } else if (create) {
       doc = await db.documents.create(id)
+    } else {
+      throw Error("Must specify create to create new documents")
     }
     return {
       ...doc,
@@ -69,7 +71,7 @@ export const openDocument = createAppThunk(
     }
   },
   {
-    condition: notModified
+    condition: ({ force }, { getState }) => !!force || !getState().io.selection?.modified
   }
 )
 

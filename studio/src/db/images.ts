@@ -17,6 +17,9 @@ export class Images extends BaseTable<Image, Image> {
   async update(id: string, blob: Blob) {
     await this.table.update(id, { blob })
   }
+  put(image: Image) {
+    return this.table.put(image)
+  }
   get(id: string): Promise<Image> {
     return getExisting(this.table, id)
   }

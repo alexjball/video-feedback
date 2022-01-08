@@ -1,18 +1,15 @@
 import { isEqual } from "lodash"
 import { nanoid } from "nanoid"
 import { useEffect } from "react"
+import db, { documents } from "../db"
 import { useAppDispatch, useAppSelector, useAppStore } from "../hooks"
 import * as simulation from "../simulation"
 import { updateStateId } from "./model"
-import db, { documents } from "../db"
-import { openDocument } from "./actions"
-import { auth } from "../firebase"
 
 export default function useIo() {
   useApplySelection()
   useStateId()
   usePushUpdatesToDatabase()
-  useDefaultDocument()
 }
 
 function useApplySelection() {
@@ -70,15 +67,4 @@ function usePushUpdatesToDatabase() {
       })(),
     [document]
   )
-}
-
-/** Open a singleton default document, creating it first if necessary */
-async function useDefaultDocument() {
-  const currentDocument = useAppSelector(s => s.io.document?.id),
-    dispatch = useAppDispatch()
-  useEffect(() => {
-    if (!currentDocument) {
-      dispatch(openDocument("default"))
-    }
-  }, [currentDocument, dispatch])
 }
