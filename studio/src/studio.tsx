@@ -20,32 +20,32 @@ const Layout = styled.div`
 const Io = styled(IoPanel)`
   grid-column: 2;
   grid-row: 1 / span 3;
-  z-index: 5;
+  z-index: 10;
 `
 
 const Menu = styled(MenuPanel)`
-  grid-column: 2;
+  grid-column: 1 / span 3;
   grid-row: 1;
-  z-index: 5;
+  z-index: 10;
 `
 
 const Controls = styled(ControlsPanel)`
   grid-column: 3;
-  grid-row: 1 / span 3;
+  grid-row: 2 / span 2;
   z-index: 10;
 `
 
-const Stats = styled(StatsPanel)`
-  grid-column: 1;
-  grid-row: 1;
-  z-index: 20;
-`
-
-const Legend = styled(LegendPanel)`
-  grid-row: 2;
-  grid-column: 1;
-  z-index: 10;
-`
+const InfoPanel = styled.div`
+    grid-row: 2;
+    grid-column: 1;
+    z-index: 10;
+  `,
+  Info = () => (
+    <InfoPanel>
+      <StatsPanel />
+      <LegendPanel />
+    </InfoPanel>
+  )
 
 const Simulation = styled(SimulationPanel)`
   grid-column: 1 / span 3;
@@ -61,9 +61,8 @@ export function Studio() {
         <Controls />
         <Io />
         <Menu />
-        <Stats />
-        <Legend />
-        <Simulation /> {/* stats={stats}  */}
+        <Info />
+        <Simulation />
       </Layout>
     </Providers>
   )

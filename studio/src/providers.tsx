@@ -1,13 +1,14 @@
 import { Provider } from "react-redux"
+import { Provider as Cloud } from "./cloud"
+import { Provider as Simulation } from "./simulation"
 import { Provider as Stats } from "./stats"
 import { store } from "./store"
-import { Provider as SimulationProvider } from "./simulation"
-import React from "react"
+import { ServiceProvider } from "./utils"
 
-export const Providers: React.FC = ({ children }) => (
+const services = [Cloud, Stats, Simulation]
+
+export const Providers: React.FC<{ children: React.ReactElement }> = ({ children }) => (
   <Provider store={store}>
-    <Stats>
-      <SimulationProvider>{children}</SimulationProvider>
-    </Stats>
+    <ServiceProvider providers={services}>{children}</ServiceProvider>
   </Provider>
 )

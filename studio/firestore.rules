@@ -12,7 +12,7 @@ service cloud.firestore {
         match /{path=**} {
           allow read: if true;
         }
-        match /studios/{sid} {
+        match /documents/{sid} {
           allow write: if owner();
         }
       }
@@ -22,7 +22,7 @@ service cloud.firestore {
         match /{path=**} {
           allow read: if owner();
         }
-        match /studios/{sid} {
+        match /documents/{sid} {
           allow write: if owner();
         }
       }

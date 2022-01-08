@@ -49,16 +49,6 @@ const Form = styled.div`
     button {
       margin-left: 0.5rem;
     }
-
-    label {
-      display: block;
-      margin-bottom: 0.2rem;
-    }
-
-    fieldset {
-      border: 2px solid grey;
-      border-radius: 5px;
-    }
   `
 
 function RangeInput({

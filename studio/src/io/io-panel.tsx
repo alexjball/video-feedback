@@ -25,6 +25,7 @@ import useIo from "./io-hooks"
 import * as model from "./model"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCheck, faTrash, faUndo, faPlus } from "@fortawesome/free-solid-svg-icons"
+import { common } from "../ui"
 
 export default function IoPanel(props: any) {
   useIo()
@@ -49,9 +50,8 @@ const Io = styled.div`
       opacity: 1;
     }
   `,
-  Button = styled.button`
-    pointer-events: all;
-    margin: 10px;
+  IconButton = styled(common.IconButton)`
+    margin: 0.5rem;
   `,
   KeyframeContainer = styled.img<{ selected: boolean; modified: boolean }>`
     max-height: 150px;
@@ -63,7 +63,8 @@ const Io = styled.div`
     border-radius: 10px;
     display: flex;
     justify-content: center;
-    margin: 0.5rem;
+    margin-right: 0.5rem;
+    margin-left: 0.5rem;
   `,
   Keyframe: React.FC<{
     index: number
@@ -131,10 +132,10 @@ const Io = styled.div`
   Controls: React.FC<{ selection: SelectionState }> = ({ selection }) => {
     return (
       <div style={{ display: "flex" }}>
-        <Button {...selection.update}>{icon(faCheck)}</Button>
-        <Button {...selection.undo}>{icon(faUndo)}</Button>
-        <Button {...selection.add}>{icon(faPlus)}</Button>
-        <Button {...selection.delete}>{icon(faTrash)}</Button>
+        <IconButton {...selection.update} icon={faCheck} />
+        <IconButton {...selection.undo} icon={faUndo} />
+        <IconButton {...selection.add} icon={faPlus} />
+        <IconButton {...selection.delete} icon={faTrash} />
       </div>
     )
   }
@@ -172,7 +173,3 @@ function useSelectionState() {
 }
 
 type SelectionState = ReturnType<typeof useSelectionState>
-
-function icon(icon: any) {
-  return <FontAwesomeIcon icon={icon} size="lg" />
-}

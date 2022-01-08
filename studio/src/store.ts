@@ -3,6 +3,7 @@ import { isDraftable } from "immer"
 import { reducer as simulation } from "./simulation"
 import { reducer as stats } from "./stats"
 import { reducer as io } from "./io"
+import { reducer as cloud } from "./cloud"
 
 export const createStore = () =>
   configureStore({
@@ -16,7 +17,8 @@ export const createStore = () =>
     reducer: {
       simulation,
       stats,
-      io
+      io,
+      cloud
     }
   })
 

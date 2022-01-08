@@ -1,10 +1,11 @@
+import { faFileDownload } from "@fortawesome/free-solid-svg-icons"
 import saveAs from "file-saver"
 import { useCallback } from "react"
 import styled from "styled-components"
+import { login, publish } from "./cloud"
 import { useAppDispatch, useAppSelector } from "./hooks"
 import * as simulation from "./simulation"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faFileDownload, faShare } from "@fortawesome/free-solid-svg-icons"
+import { common } from "./ui"
 
 const Menu = styled.div`
     display: flex;
@@ -13,14 +14,15 @@ const Menu = styled.div`
     opacity: 0.8;
     user-select: none;
 
+    & > * {
+      margin: 0.5rem;
+    }
+
     :hover {
       opacity: 1;
     }
   `,
-  Button = styled.button`
-    pointer-events: all;
-    margin: 10px;
-  `
+  { Button, IconButton } = common
 
 export const MenuPanel = (props: any) => {
   const service = simulation.useService(),
@@ -41,12 +43,11 @@ export const MenuPanel = (props: any) => {
     <Menu {...props}>
       <Recenter />
       <Button onClick={clear}>Clear Screen</Button>
-      <Button onClick={() => download(feedbackHeight)}>
-        <FontAwesomeIcon icon={faFileDownload} size={"lg"} />
-      </Button>
-      {/* <Button onClick={() => alert("hey!")}>
-        <FontAwesomeIcon icon={faShare} size={"lg"} />
-      </Button> */}
+      <IconButton icon={faFileDownload} onClick={() => download(feedbackHeight)}>
+        Download
+      </IconButton>
+      <publish.Publish />
+      <login.Account />
     </Menu>
   )
 }

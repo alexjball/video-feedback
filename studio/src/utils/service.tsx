@@ -45,3 +45,12 @@ export function createService<Service>(providerHook?: () => Service): {
     }
   }
 }
+
+type BaseProvider = React.FC<{}>
+
+/** Render a list of service providers */
+export const ServiceProvider: React.FC<{
+  providers: BaseProvider[]
+  children: React.ReactElement
+}> = ({ providers, children }) =>
+  providers.reduceRight((children, Provider) => <Provider>{children}</Provider>, children)

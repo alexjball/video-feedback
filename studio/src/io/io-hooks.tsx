@@ -13,17 +13,6 @@ export default function useIo() {
   useStateId()
   usePushUpdatesToDatabase()
   useDefaultDocument()
-  useUser()
-}
-
-function useUser() {
-  useEffect(
-    () =>
-      auth.onAuthStateChanged(user => {
-        console.log("user change", user)
-      }),
-    []
-  )
 }
 
 function useApplySelection() {
