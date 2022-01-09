@@ -1,9 +1,9 @@
 import { useRouter } from "next/router"
-import { Viewer } from "../../../src"
+import { Viewer } from "../src"
 
 export default function Page() {
   const router = useRouter(),
-    { authorUid, docId } = router.query
+    { u: authorUid, doc: docId } = router.query
 
   return (
     <Viewer

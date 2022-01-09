@@ -61,5 +61,5 @@ const paths = {
     doc(firestore, "users", uid, "publicDocuments", docId),
   privateDocument: (uid: string, docId: string) =>
     doc(firestore, "users", uid, "privateDocuments", docId),
-  publicUrl: (uid: string, docId: string) => `${window.origin}/view/${uid}/${docId}`
+  publicUrl: (uid: string, docId: string) => `${window.origin}/view?u=${uid}&doc=${docId}`
 }
