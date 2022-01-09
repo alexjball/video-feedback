@@ -1,8 +1,8 @@
 import { faShare } from "@fortawesome/free-solid-svg-icons"
-import { common, bootstrap } from "../../ui"
-import { useAppDispatch, useAppSelector } from "../../hooks"
+import { common, bootstrap } from "../ui"
+import { useAppDispatch, useAppSelector } from "../hooks"
 import { useCallback } from "react"
-import { publishDocument } from "./action"
+import { publishDocument } from "./actions"
 
 const { OverlayTrigger, Tooltip } = bootstrap
 

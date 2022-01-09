@@ -1,5 +1,5 @@
 import { useRouter } from "next/router"
-import { Editor } from "../src"
+import { Editor } from "../src/studio"
 
 export default function Page() {
   const router = useRouter(),

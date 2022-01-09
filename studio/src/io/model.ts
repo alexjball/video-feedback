@@ -61,6 +61,7 @@ const slice = createSlice({
     selectKeyframe(state, { payload: keyframeId }: PayloadAction<string>) {
       state.selection.keyframeId = keyframeId
       state.selection.stateId = undefined
+      state.selection.modified = false
     },
     updateStateId(state, { payload: stateId }: PayloadAction<string>) {
       if (!state.selection.stateId) {
@@ -128,6 +129,14 @@ const slice = createSlice({
         state.keyframes = doc.keyframes
         state.selection = newSelection(state.keyframes[0]?.id)
       })
+      .addCase(thunks.viewDocument.fulfilled, (state, { payload: doc }) => {
+        state.document = {
+          id: doc.id,
+          title: doc.name
+        }
+        state.keyframes = doc.keyframes
+        state.selection = newSelection(state.keyframes[0]?.id)
+      })
 })
 
 export const {
@@ -140,6 +149,7 @@ export const thunks = {
   deleteKeyframe: declareThunk<string>("io/deleteKeyframe"),
   undoKeyframe: declareThunk<string>("io/undoKeyframe"),
   openDocument: declareThunk<Document>("io/openDocument"),
+  viewDocument: declareThunk<Document>("io/viewDocument"),
   snapshotKeyframe:
     declareThunk<Pick<Keyframe, "id" | "thumbnail" | "state">>("io/snapshotKeyframe")
 }

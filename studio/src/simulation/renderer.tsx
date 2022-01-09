@@ -5,7 +5,7 @@ import { useAppStore } from "../hooks"
 import { StatsJs, useStats } from "../stats"
 import { settablePromise, SettablePromise, useSingleton } from "../utils"
 import { deflate, inflate } from "./json"
-import { setViewer, State, JsonState, updatePortal } from "./model"
+import { setViewer, State, JsonState, fitToScreen } from "./model"
 import { PlaybackAction, PlaybackState, SimulationService, useBinding } from "./service"
 import type { Request, Response } from "./renderer.worker"
 
@@ -37,12 +37,7 @@ function useInstance() {
           },
           onResize: (width: number, height: number) => {
             if (!this.started) {
-              store.dispatch(
-                updatePortal({
-                  width: window.innerWidth * devicePixelRatio,
-                  height: window.innerHeight * devicePixelRatio
-                })
-              )
+              store.dispatch(fitToScreen())
               this.client.setPlayback("start")
               this.started = true
             }

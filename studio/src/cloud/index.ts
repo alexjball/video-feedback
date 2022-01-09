@@ -1,4 +1,4 @@
-export * as login from "./login"
-export * as publish from "./publish"
-export * as view from "./view"
+export * from "./login"
+export * from "./publish"
+export * from "./actions"
 export { reducer, Provider } from "./model"

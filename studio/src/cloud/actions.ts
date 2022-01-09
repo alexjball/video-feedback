@@ -1,12 +1,14 @@
-import db, { documents } from "../../db"
-import { createAppThunk } from "../../hooks"
-import * as model from "../model"
-import { firestore, storage } from "../../firebase"
-import { ref, uploadBytes } from "firebase/storage"
-import { doc, setDoc } from "firebase/firestore"
+import { doc, getDoc, setDoc } from "firebase/firestore"
+import { getBlob, ref, uploadBytes } from "firebase/storage"
+import db, { documents, keyframes } from "../db"
+import { firestore, storage } from "../firebase"
+import { createAppThunk } from "../hooks"
+import { viewDocument } from "../io/actions"
+import { inflate, model as simulation } from "../simulation"
+import * as model from "./model"
 
 /**
- * Publish the current version of the given document to /v/uid/docId
+ * Publish the current version of the given document to /view?u=uid&doc=docId
  */
 export const publishDocument = createAppThunk(
   model.thunks.publishDocument,
@@ -32,6 +34,30 @@ export const publishDocument = createAppThunk(
     })
 
     return paths.publicUrl(uid, docId)
+  }
+)
+
+/**
+ * Load the document at /view?u=authorUid&doc=docId
+ */
+export const viewPublicDocument = createAppThunk(
+  model.thunks.viewPublicDocument,
+  async ({ authorUid, docId }: { authorUid: string; docId: string }, { dispatch }) => {
+    const doc = await getDoc(paths.publicDocument(authorUid, docId))
+    if (!doc.exists()) {
+      throw new Error("Document does not exist")
+    }
+    const json = doc.data() as documents.JsonDocument
+
+    const document: documents.Document = {
+      ...json,
+      keyframes: await inflateKeyframes({ uid: authorUid, document: json })
+    }
+
+    // TODO: Use different ID's for published documents.
+    // Currently this will overwrite the owner's local document
+    // Actually, don't write to the database at all in view mode.
+    await dispatch(viewDocument({ document }))
   }
 )
 
@@ -62,4 +88,26 @@ const paths = {
   privateDocument: (uid: string, docId: string) =>
     doc(firestore, "users", uid, "privateDocuments", docId),
   publicUrl: (uid: string, docId: string) => `${window.origin}/view?u=${uid}&doc=${docId}`
+}
+
+function inflateKeyframes({
+  uid,
+  document
+}: {
+  uid: string
+  document: documents.JsonDocument
+}): Promise<keyframes.Keyframe[]> {
+  return Promise.all(
+    document.keyframes.map(async keyframe => {
+      const thumbnailId = keyframe.thumbnail,
+        thumbnailRef = paths.thumbnail(uid, document.id, thumbnailId),
+        blob = await getBlob(thumbnailRef)
+
+      return {
+        ...keyframe,
+        state: simulation.State.check(inflate(keyframe.state)),
+        thumbnail: { id: thumbnailId, blob }
+      }
+    })
+  )
 }

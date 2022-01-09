@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import db, { documents } from "../db"
 import { useAppDispatch, useAppSelector, useAppStore } from "../hooks"
 import * as simulation from "../simulation"
+import { isDefined } from "../utils"
 import { updateStateId } from "./model"
 
 export default function useIo() {
@@ -15,11 +16,13 @@ export default function useIo() {
 function useApplySelection() {
   const dispatch = useAppDispatch(),
     { getState } = useAppStore(),
-    selection = useAppSelector(s => s.io.selection.keyframeId)
+    selection = useAppSelector(s => s.io.selection)
   useEffect(() => {
-    if (selection) {
+    if (selection.keyframeId && !isDefined(selection.stateId)) {
       dispatch(
-        simulation.model.restore(getState().io.keyframes.find(k => k.id === selection)!.state)
+        simulation.model.restore(
+          getState().io.keyframes.find(k => k.id === selection.keyframeId)!.state
+        )
       )
     }
   }, [dispatch, getState, selection])
@@ -45,6 +48,7 @@ function useStateId() {
 }
 
 function usePushUpdatesToDatabase() {
+  const viewOnly = useAppSelector(s => s.studio.mode === "view")
   const document: documents.DbDocument | undefined = useAppSelector(
     s =>
       s.io.document && {
@@ -58,13 +62,13 @@ function usePushUpdatesToDatabase() {
     () =>
       void (async () => {
         try {
-          if (document) {
+          if (document && !viewOnly) {
             await db.documents.update(document)
           }
         } catch (e) {
           console.error("error updating document", e)
         }
       })(),
-    [document]
+    [document, viewOnly]
   )
 }

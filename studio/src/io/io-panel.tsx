@@ -23,7 +23,6 @@ import { isDefined } from "../utils"
 import { addKeyframe, deleteKeyframe, undoKeyframe, snapshotKeyframe } from "./actions"
 import useIo from "./io-hooks"
 import * as model from "./model"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCheck, faTrash, faUndo, faPlus } from "@fortawesome/free-solid-svg-icons"
 import { common } from "../ui"
 
@@ -33,7 +32,7 @@ export default function IoPanel(props: any) {
   return (
     <Io {...props}>
       <Playlist selection={selection} />
-      <Controls selection={selection} />
+      {!selection.viewOnly && <Controls selection={selection} />}
     </Io>
   )
 }
@@ -45,6 +44,7 @@ const Io = styled.div`
     align-items: center;
     opacity: 0.8;
     user-select: none;
+    margin-bottom: 0.5rem;
 
     :hover {
       opacity: 1;
@@ -52,6 +52,7 @@ const Io = styled.div`
   `,
   IconButton = styled(common.IconButton)`
     margin: 0.5rem;
+    margin-bottom: 0;
   `,
   KeyframeContainer = styled.img<{ selected: boolean; modified: boolean }>`
     max-height: 150px;
@@ -72,8 +73,9 @@ const Io = styled.div`
     onClick: (k: model.Keyframe) => void
     selected?: boolean
     modified?: boolean
-  }> = ({ onClick, index, keyframe, selected = false, modified = false }) => (
-    <Draggable draggableId={keyframe.id} index={index}>
+    dragDisabled?: boolean
+  }> = ({ onClick, index, keyframe, selected = false, modified = false, dragDisabled = false }) => (
+    <Draggable isDragDisabled={dragDisabled} draggableId={keyframe.id} index={index}>
       {provided => (
         <KeyframeContainer
           selected={selected}
@@ -94,17 +96,16 @@ const Io = styled.div`
     pointer-events: all;
     overflow: auto;
   `,
-  Playlist: React.FC<{ selection: SelectionState }> = ({ selection: cb }) => {
+  Playlist: React.FC<{ selection: SelectionState }> = ({ selection: state }) => {
     const playlist = useAppSelector(s => s.io.keyframes)
     const selection = useAppSelector(s => s.io.selection)
-    const dispatch = useAppDispatch()
     const onDragEnd = useCallback(
       (result: DropResult) => {
         if (result.destination && result.destination.index !== result.source.index) {
-          dispatch(model.moveKeyframe({ id: result.draggableId, index: result.destination.index }))
+          state.move(result.draggableId, result.destination.index)
         }
       },
-      [dispatch]
+      [state]
     )
 
     return (
@@ -118,8 +119,9 @@ const Io = styled.div`
                   index={i}
                   key={k.id}
                   selected={selection.keyframeId === k.id}
-                  modified={selection.modified}
-                  onClick={cb.select.onClick}
+                  modified={!state.viewOnly && selection.modified}
+                  onClick={state.select}
+                  dragDisabled={state.viewOnly}
                 />
               ))}
               {provided.placeholder}
@@ -144,31 +146,34 @@ function useSelectionState() {
   const dispatch = useAppDispatch(),
     service = simulation.useService(),
     selection = useAppSelector(s => s.io.selection),
+    viewOnly = useAppSelector(s => s.studio.mode === "view"),
     hasSelection = isDefined(selection.keyframeId),
     isModified = hasSelection && selection.modified
 
   return useMemo(
     () => ({
       add: {
+        disabled: viewOnly,
         onClick: () => service && dispatch(addKeyframe(service))
       },
       undo: {
-        disabled: !isModified,
+        disabled: viewOnly || !isModified,
         onClick: () => dispatch(undoKeyframe())
       },
       update: {
-        disabled: !isModified,
+        disabled: viewOnly || !isModified,
         onClick: () => service && dispatch(snapshotKeyframe(service))
       },
       delete: {
-        disabled: !hasSelection || isModified,
+        disabled: viewOnly || !hasSelection || isModified,
         onClick: () => dispatch(deleteKeyframe())
       },
-      select: {
-        onClick: (k: model.Keyframe) => !isModified && dispatch(model.selectKeyframe(k.id))
-      }
+      select: (k: model.Keyframe) =>
+        (viewOnly || !isModified) && dispatch(model.selectKeyframe(k.id)),
+      move: (id: string, index: number) => !viewOnly && dispatch(model.moveKeyframe({ id, index })),
+      viewOnly
     }),
-    [dispatch, hasSelection, isModified, service]
+    [dispatch, hasSelection, isModified, service, viewOnly]
   )
 }
 

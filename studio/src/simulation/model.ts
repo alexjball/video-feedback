@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit"
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit"
 import { immerable } from "immer"
 import { Color, Matrix4, Object3D, Quaternion, Vector2, Vector3, Vector4 } from "three"
 import { Coords, Resolution, State } from "./types"
@@ -340,3 +340,12 @@ function setViewToContainPortal(state: State) {
 
   state.viewer.coords.scale.set(container.width, container.height, 1)
 }
+
+export const fitToScreen = createAsyncThunk("simulation/fitToScreen", (_: void, { dispatch }) => {
+  dispatch(
+    updatePortal({
+      width: innerWidth * devicePixelRatio,
+      height: innerHeight * devicePixelRatio
+    })
+  )
+})

@@ -4,6 +4,7 @@ import { reducer as simulation } from "./simulation"
 import { reducer as stats } from "./stats"
 import { reducer as io } from "./io"
 import { reducer as cloud } from "./cloud"
+import { reducer as studio } from "./studio"
 
 export const createStore = () =>
   configureStore({
@@ -18,7 +19,8 @@ export const createStore = () =>
       simulation,
       stats,
       io,
-      cloud
+      cloud,
+      studio
     }
   })
 
