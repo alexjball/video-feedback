@@ -1,12 +1,15 @@
+import { useEffect, useMemo } from "react"
 import styled from "styled-components"
 import { Providers } from "../providers"
-import { SimulationPanel } from "../simulation"
+import { SimulationPanel, useService as useSimService } from "../simulation"
 import { StatsPanel } from "../stats"
 import { ControlsPanel } from "../controls"
 import { EditMenuPanel, ViewMenuPanel } from "../menu"
 import { LegendPanel } from "../legend"
-import { IoPanel } from "../io"
+import { IoPanel, useService as useIoService } from "../io"
 import { bootstrap } from "../ui"
+import { useAppDispatch, useAppSelector } from "../hooks"
+import { Mode, setMode } from "./model"
 
 const Layout = styled.div`
   width: 100vw;
@@ -77,4 +80,21 @@ const LoadingPanel = styled.div`
     )
   }
 
-export { Simulation, Info, Controls, EditMenu, ViewMenu, Io, Layout, Loading }
+const StudioContainer: React.FC<{ loaded: boolean }> = ({ loaded, children }) => (
+  <Layout>{loaded ? children : <Loading />}</Layout>
+)
+
+export { Simulation, Info, Controls, EditMenu, ViewMenu, Io, Layout, Loading, StudioContainer }
+
+export function useStudio(mode: Mode) {
+  const dispatch = useAppDispatch(),
+    io = useIoService(),
+    simulation = useSimService(),
+    currentMode = useAppSelector(s => s.studio.mode)
+
+  useEffect(() => void dispatch(setMode(mode)), [dispatch, mode])
+  return useMemo(
+    () => ({ io, simulation, modeLoaded: currentMode === mode }),
+    [currentMode, io, mode, simulation]
+  )
+}

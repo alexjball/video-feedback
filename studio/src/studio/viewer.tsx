@@ -1,9 +1,10 @@
 import { useEffect } from "react"
-import { Io, Layout, Loading, Simulation, ViewMenu } from "./studio"
+import { Io, Layout, Loading, Simulation, StudioContainer, useStudio, ViewMenu } from "./studio"
 import { useAppDispatch, useAppSelector } from "../hooks"
-import { bootstrap } from "../ui"
 import { setMode } from "./model"
 import { viewPublicDocument } from "../cloud"
+import * as ioFeature from "../io"
+import * as simulationFeature from "../simulation"
 
 // TODO: clear db on auth failure or change. store current user in db and
 // compare with auth
@@ -23,27 +24,26 @@ import { viewPublicDocument } from "../cloud"
  */
 export function Viewer({ authorUid, docId }: { authorUid?: string; docId?: string }) {
   const dispatch = useAppDispatch(),
+    { modeLoaded, io } = useStudio("view"),
     currentDocId = useAppSelector(s => s.io.document?.id),
-    mode = useAppSelector(s => s.studio.mode),
-    loaded = mode === "view" && docId && currentDocId === docId
+    loaded = Boolean(modeLoaded && docId && currentDocId === docId)
 
-  useEffect(() => void dispatch(setMode("view")), [dispatch])
   useEffect(
-    () => void (authorUid && docId && dispatch(viewPublicDocument({ authorUid, docId }))),
-    [authorUid, dispatch, docId]
+    () =>
+      void (async () => {
+        if (authorUid && docId && io) {
+          await dispatch(simulationFeature.model.fitToScreen())
+          await dispatch(viewPublicDocument({ io, authorUid, docId }))
+        }
+      })(),
+    [authorUid, dispatch, docId, io]
   )
 
   return (
-    <Layout>
-      {loaded ? (
-        <>
-          <Io />
-          <ViewMenu />
-          <Simulation />
-        </>
-      ) : (
-        <Loading />
-      )}
-    </Layout>
+    <StudioContainer loaded={loaded}>
+      <Io />
+      <ViewMenu />
+      <Simulation />
+    </StudioContainer>
   )
 }

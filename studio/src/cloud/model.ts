@@ -1,8 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
-import { useEffect } from "react"
-import { auth } from "../firebase"
-import { useAppDispatch } from "../hooks"
-import { createService, declareThunk } from "../utils"
+import { declareThunk } from "../utils"
 
 export interface State {
   uid: string | null
@@ -35,11 +32,6 @@ export const {
   reducer,
   actions: { setUser }
 } = slice
-
-export const { Provider } = createService(() => {
-  const dispatch = useAppDispatch()
-  useEffect(() => auth.onAuthStateChanged(user => dispatch(setUser(user?.uid ?? null))), [dispatch])
-})
 
 export const thunks = {
   viewPublicDocument: declareThunk<void>("cloud/viewPublicDocument"),

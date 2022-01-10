@@ -148,8 +148,9 @@ export const thunks = {
   addKeyframe: declareThunk<Keyframe>("io/addKeyframe"),
   deleteKeyframe: declareThunk<string>("io/deleteKeyframe"),
   undoKeyframe: declareThunk<string>("io/undoKeyframe"),
+  snapshotKeyframe:
+    declareThunk<Pick<Keyframe, "id" | "thumbnail" | "state">>("io/snapshotKeyframe"),
   openDocument: declareThunk<Document>("io/openDocument"),
   viewDocument: declareThunk<Document>("io/viewDocument"),
-  snapshotKeyframe:
-    declareThunk<Pick<Keyframe, "id" | "thumbnail" | "state">>("io/snapshotKeyframe")
+  saveAsDocument: declareThunk<Document>("io/saveAsDocument")
 }

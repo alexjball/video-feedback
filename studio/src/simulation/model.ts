@@ -342,6 +342,7 @@ function setViewToContainPortal(state: State) {
 }
 
 export const fitToScreen = createAsyncThunk("simulation/fitToScreen", (_: void, { dispatch }) => {
+  dispatch(setViewer({ width: innerWidth, height: innerHeight }))
   dispatch(
     updatePortal({
       width: innerWidth * devicePixelRatio,

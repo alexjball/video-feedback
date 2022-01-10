@@ -1,16 +1,45 @@
 import { isEqual } from "lodash"
 import { nanoid } from "nanoid"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import db, { documents } from "../db"
 import { useAppDispatch, useAppSelector, useAppStore } from "../hooks"
 import * as simulation from "../simulation"
-import { isDefined } from "../utils"
+import { createService, isDefined } from "../utils"
 import { updateStateId } from "./model"
 
-export default function useIo() {
+export type IoService = NonNullable<ReturnType<typeof useService>>
+export const { Provider, useService } = createService(() => {
   useApplySelection()
   useStateId()
   usePushUpdatesToDatabase()
+  const cache = useBlobCache()
+  return cache
+})
+
+function useBlobCache() {
+  return useMemo(() => {
+    const urlsByBlob = new Map<Blob, string>(),
+      blobsByUrl = new Map<string, Blob>()
+    return {
+      createUrl: (blob: Blob) => {
+        const url = URL.createObjectURL(blob)
+        urlsByBlob.set(blob, url)
+        blobsByUrl.set(url, blob)
+        return url
+      },
+      resolveBlob: (url: string) => {
+        return blobsByUrl.get(url)
+      },
+      revokeUrl: (url: string) => {
+        URL.revokeObjectURL(url)
+        const blob = blobsByUrl.get(url)
+        if (blob) {
+          blobsByUrl.delete(url)
+          urlsByBlob.delete(blob)
+        }
+      }
+    }
+  }, [])
 }
 
 function useApplySelection() {

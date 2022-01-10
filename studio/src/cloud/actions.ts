@@ -3,7 +3,7 @@ import { getBlob, ref, uploadBytes } from "firebase/storage"
 import db, { documents, keyframes } from "../db"
 import { firestore, storage } from "../firebase"
 import { createAppThunk } from "../hooks"
-import { viewDocument } from "../io/actions"
+import * as io from "../io"
 import { inflate, model as simulation } from "../simulation"
 import * as model from "./model"
 
@@ -42,7 +42,10 @@ export const publishDocument = createAppThunk(
  */
 export const viewPublicDocument = createAppThunk(
   model.thunks.viewPublicDocument,
-  async ({ authorUid, docId }: { authorUid: string; docId: string }, { dispatch }) => {
+  async (
+    { authorUid, docId, io: service }: { io: io.IoService; authorUid: string; docId: string },
+    { dispatch }
+  ) => {
     const doc = await getDoc(paths.publicDocument(authorUid, docId))
     if (!doc.exists()) {
       throw new Error("Document does not exist")
@@ -57,8 +60,9 @@ export const viewPublicDocument = createAppThunk(
     // TODO: Use different ID's for published documents.
     // Currently this will overwrite the owner's local document
     // Actually, don't write to the database at all in view mode.
-    await dispatch(viewDocument({ document }))
-  }
+    await dispatch(io.actions.viewDocument({ io: service, document }))
+  },
+  { condition: args => !!args?.io }
 )
 
 function fail(docId: string, reason: model.ErrorReason, code?: string): model.PublishRejection {

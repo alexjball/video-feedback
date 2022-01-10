@@ -37,7 +37,6 @@ function useInstance() {
           },
           onResize: (width: number, height: number) => {
             if (!this.started) {
-              store.dispatch(fitToScreen())
               this.client.setPlayback("start")
               this.started = true
             }

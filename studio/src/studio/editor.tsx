@@ -1,36 +1,34 @@
 import { useEffect } from "react"
 import { useAppDispatch, useAppSelector } from "../hooks"
 import { openDocument } from "../io/actions"
+import * as simFeat from "../simulation"
 import { isDefined } from "../utils"
-import { setMode } from "./model"
-import { Controls, EditMenu, Info, Io, Layout, Loading, Simulation } from "./studio"
+import { Controls, EditMenu, Info, Io, Simulation, StudioContainer, useStudio } from "./studio"
 
 export function Editor({ docId }: { docId?: string }) {
   const dispatch = useAppDispatch(),
+    { io, modeLoaded } = useStudio("edit"),
     currentDocId = useAppSelector(s => s.io.document?.id),
-    mode = useAppSelector(s => s.studio.mode),
-    loaded = mode === "edit" && docId && currentDocId === docId
+    loaded = Boolean(modeLoaded && docId && currentDocId === docId)
 
-  useEffect(() => void dispatch(setMode("edit")), [dispatch])
-  useEffect(() => {
-    if (docId && !isDefined(currentDocId)) {
-      dispatch(openDocument({ id: docId, create: docId === "default" }))
-    }
-  }, [currentDocId, dispatch, docId])
+  useEffect(
+    () =>
+      void (async () => {
+        if (docId && isDefined(io)) {
+          await dispatch(simFeat.model.fitToScreen())
+          await dispatch(openDocument({ io, id: docId, create: docId === "default" }))
+        }
+      })(),
+    [currentDocId, dispatch, docId, io]
+  )
 
   return (
-    <Layout>
-      {loaded ? (
-        <>
-          <Controls />
-          <Io />
-          <EditMenu />
-          <Info />
-          <Simulation />
-        </>
-      ) : (
-        <Loading />
-      )}
-    </Layout>
+    <StudioContainer loaded={loaded}>
+      <Controls />
+      <Io />
+      <EditMenu />
+      <Info />
+      <Simulation />
+    </StudioContainer>
   )
 }

@@ -21,13 +21,12 @@ import { useAppDispatch, useAppSelector } from "../hooks"
 import * as simulation from "../simulation"
 import { isDefined } from "../utils"
 import { addKeyframe, deleteKeyframe, undoKeyframe, snapshotKeyframe } from "./actions"
-import useIo from "./io-hooks"
+import { useService } from "./service"
 import * as model from "./model"
 import { faCheck, faTrash, faUndo, faPlus } from "@fortawesome/free-solid-svg-icons"
 import { common } from "../ui"
 
 export default function IoPanel(props: any) {
-  useIo()
   const selection = useSelectionState()
   return (
     <Io {...props}>
@@ -144,17 +143,20 @@ const Io = styled.div`
 
 function useSelectionState() {
   const dispatch = useAppDispatch(),
-    service = simulation.useService(),
+    simulationService = simulation.useService(),
+    ioService = useService(),
     selection = useAppSelector(s => s.io.selection),
     viewOnly = useAppSelector(s => s.studio.mode === "view"),
     hasSelection = isDefined(selection.keyframeId),
     isModified = hasSelection && selection.modified
 
-  return useMemo(
-    () => ({
+  return useMemo(() => {
+    const services: any = { simulation: simulationService, io: ioService },
+      hasServices = services.simulation && services.io
+    return {
       add: {
         disabled: viewOnly,
-        onClick: () => service && dispatch(addKeyframe(service))
+        onClick: () => hasServices && dispatch(addKeyframe(services))
       },
       undo: {
         disabled: viewOnly || !isModified,
@@ -162,7 +164,7 @@ function useSelectionState() {
       },
       update: {
         disabled: viewOnly || !isModified,
-        onClick: () => service && dispatch(snapshotKeyframe(service))
+        onClick: () => hasServices && dispatch(snapshotKeyframe(services))
       },
       delete: {
         disabled: viewOnly || !hasSelection || isModified,
@@ -172,9 +174,8 @@ function useSelectionState() {
         (viewOnly || !isModified) && dispatch(model.selectKeyframe(k.id)),
       move: (id: string, index: number) => !viewOnly && dispatch(model.moveKeyframe({ id, index })),
       viewOnly
-    }),
-    [dispatch, hasSelection, isModified, service, viewOnly]
-  )
+    }
+  }, [dispatch, hasSelection, ioService, isModified, simulationService, viewOnly])
 }
 
 type SelectionState = ReturnType<typeof useSelectionState>
