@@ -33,7 +33,7 @@ export const publishDocument = createAppThunk(
       throw rejectWithValue(fail(docId, "document-upload-failure", e.code))
     })
 
-    return paths.publicUrl(uid, docId)
+    return { docId, publicUrl: paths.publicUrl(uid, docId) }
   }
 )
 

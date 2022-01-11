@@ -3,10 +3,15 @@ import { declareThunk } from "../utils"
 
 export interface State {
   uid: string | null
+  publish:
+    | { status: "unknown" | "pending" }
+    | { status: "current" | "outdated"; url: string; docId: string }
+    | { status: "error"; docId: string; reason: ErrorReason; code?: string }
 }
 
 const initialState: State = {
-  uid: null
+  uid: null,
+  publish: { status: "unknown" }
 }
 
 const slice = createSlice({
@@ -19,12 +24,15 @@ const slice = createSlice({
   },
   extraReducers: builder =>
     builder
-      .addCase(thunks.publishDocument.rejected, (state, action) => {
-        const rejection = action.payload as PublishRejection
-        console.error("failed to publish", rejection)
+      .addCase(thunks.publishDocument.pending, (state, action) => {
+        state.publish = { status: "pending" }
       })
-      .addCase(thunks.publishDocument.fulfilled, (state, action) => {
-        console.log("successfully published", action.payload)
+      .addCase(thunks.publishDocument.rejected, (state, action) => {
+        const { docId, reason, code } = action.payload as PublishRejection
+        state.publish = { status: "error", docId, reason, code }
+      })
+      .addCase(thunks.publishDocument.fulfilled, (state, { payload: { docId, publicUrl } }) => {
+        state.publish = { status: "current", docId, url: publicUrl }
       })
 })
 
@@ -39,7 +47,7 @@ export const thunks = {
    * Publishes a document and returns the public url. Rejects with a
    * `PublishRejection` payload if anything goes wrong.
    */
-  publishDocument: declareThunk<string>("cloud/publishDocument")
+  publishDocument: declareThunk<{ docId: string; publicUrl: string }>("cloud/publishDocument")
 }
 
 export type ErrorReason =
