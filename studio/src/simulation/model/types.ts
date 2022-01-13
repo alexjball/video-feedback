@@ -1,14 +1,16 @@
 import {
   Boolean,
   InstanceOf,
-  Literal,
+  Literal as L,
   Null,
   Number,
   Record as R,
   Runtype,
   Static,
   String,
-  Union
+  Union,
+  Array,
+  Optional
 } from "runtypes"
 import * as three from "three"
 
@@ -16,6 +18,8 @@ export type Resolution = Static<typeof Resolution>
 export type Coords = Static<typeof Coords>
 export type State = Static<typeof State>
 export type JsonState = Static<typeof JsonState>
+export type Pointer = Static<typeof Pointer>
+export type Gesture = Static<typeof Gesture>
 
 export const Resolution = R({ width: Number, height: Number })
 export const Vector3 = InstanceOf(three.Vector3)
@@ -25,10 +29,12 @@ export const Coords = R({
   quaternion: Quaternion,
   scale: Vector3
 })
+export const Pointer = R({ id: Number, x: Number, y: Number })
+export const Gesture = R({ type: Union(L("primary"), L("alternate")), pointers: Array(Pointer) })
 export const State = defineState(Coords)
 
-export const JsonVec3 = R({ __t: Literal("V3"), x: Number, y: Number, z: Number })
-export const JsonQuat = R({ __t: Literal("Q"), _x: Number, _y: Number, _z: Number, _w: Number })
+export const JsonVec3 = R({ __t: L("V3"), x: Number, y: Number, z: Number })
+export const JsonQuat = R({ __t: L("Q"), _x: Number, _y: Number, _z: Number, _w: Number })
 export const JsonCoords = R({
   position: JsonVec3,
   quaternion: JsonQuat,
@@ -81,6 +87,15 @@ function defineState<C extends Runtype>(Coords: C) {
         }),
         Null
       )
+    }),
+    gesture: R({
+      start: Optional(
+        R({
+          g: Gesture,
+          spacemap: Coords
+        })
+      ),
+      previous: Optional(Gesture)
     }),
     preventStrobing: Boolean
   })

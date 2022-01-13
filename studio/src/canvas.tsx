@@ -26,7 +26,7 @@ export const Canvas = forwardRef(function Canvas(
   useResize(frame, onResize)
 
   return (
-    <div style={{ position: "relative", ...style }} ref={frame} {...divProps}>
+    <div style={{ position: "relative", touchAction: "none", ...style }} ref={frame} {...divProps}>
       <canvas style={{ position: "absolute" }} ref={canvas} />
     </div>
   )

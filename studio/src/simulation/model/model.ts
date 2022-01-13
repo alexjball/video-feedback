@@ -1,11 +1,11 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit"
 import { immerable } from "immer"
-import { Color, Matrix4, Object3D, Quaternion, Vector2, Vector3, Vector4 } from "three"
-import { Coords, Resolution, State } from "./types"
+import { Color, Quaternion, Vector2, Vector3, Vector4 } from "three"
+import { Resolution, State } from "./types"
+import { caseReducers as interactionActions } from "./interactions"
+import { assign } from "./helpers"
 
 export * from "./types"
-
-const pi2 = 2 * Math.PI
 
 /**
  * Mark classes as copyable by immer, which also make the middleware treat them
@@ -80,42 +80,15 @@ export const initialState: State = {
     height: 0
   },
   drag: { start: null },
+  gesture: {},
   preventStrobing: true
 }
-
-export function createCoords(): Coords {
-  return { position: new Vector3(), scale: new Vector3(), quaternion: new Quaternion() }
-}
-export function copyCoords(from: Coords, to: Coords = createCoords()): Coords {
-  to.position.copy(from.position)
-  to.quaternion.copy(from.quaternion)
-  to.scale.copy(from.scale)
-  return to
-}
-
-export function aspectRatio(coords: Coords) {
-  return coords.scale.x / coords.scale.y
-}
-
-class Object3DCoords extends Object3D {
-  from(coords: Coords) {
-    copyCoords(coords, this)
-    this.updateMatrixWorld()
-    return this
-  }
-
-  to(coords: Coords) {
-    copyCoords(this, coords)
-  }
-}
-
-const o = new Object3DCoords()
-const m = new Matrix4()
 
 const slice = createSlice({
   name: "simulation",
   initialState,
   reducers: {
+    ...interactionActions,
     setPreventStrobing(state, { payload }: PayloadAction<boolean>) {
       state.preventStrobing = payload
     },
@@ -144,55 +117,6 @@ const slice = createSlice({
         portal.coords.scale.y + 2 * borderWidth,
         1
       )
-    },
-    drag(
-      { spacemap: { coords: spacemap }, viewport, viewer, drag },
-      {
-        payload: { x, y, end = false, start = false }
-      }: PayloadAction<{ x: number; y: number; end?: boolean; start?: boolean }>
-    ) {
-      if (start || !drag.start) {
-        drag.start = {
-          coords: copyCoords(spacemap),
-          x,
-          y
-        }
-      }
-
-      const dx = x - drag.start.x,
-        dy = y - drag.start.y,
-        dragStart = drag.start.coords
-
-      const v = new Vector3(dx / viewport.width, -dy / viewport.height)
-      o.from(viewer.coords).localToWorld(v)
-
-      const s = o.from(dragStart)
-      s.position.set(0, 0, 0)
-      s.updateMatrixWorld()
-      s.localToWorld(v)
-
-      spacemap.position.x = dragStart.position.x - v.x
-      spacemap.position.y = dragStart.position.y - v.y
-
-      if (end) {
-        drag.start = null
-      }
-    },
-    rotate(
-      { spacemap: { coords: spacemap }, viewport },
-      { payload: { dx, dy } }: PayloadAction<{ dx: number; dy: number }>
-    ) {
-      const feedbackAngle = (dy / viewport.height) * pi2,
-        portalAngle = (dx / viewport.width) * pi2
-      o.from(spacemap)
-        .rotateZ(portalAngle + feedbackAngle)
-        .to(spacemap)
-      spacemap.position.applyMatrix4(m.makeRotationZ(portalAngle))
-    },
-    zoom({ spacemap }, { payload: distance }: PayloadAction<number>) {
-      const pps = spacemap.pixelsPerScale
-      spacemap.coords.scale.x += distance / pps
-      spacemap.coords.scale.y += distance / pps
     },
     /**
      * width: width of feedback target, defaults to the current resolution
@@ -263,16 +187,6 @@ const slice = createSlice({
   }
 })
 
-function assign<T>(from: T, to: T, k: (keyof T)[]) {
-  k.forEach(k => {
-    if (k === "coords") {
-      copyCoords(from[k] as any, to[k] as any)
-    } else {
-      to[k] = from[k]
-    }
-  })
-}
-
 export const {
   reducer,
   actions: {
@@ -290,6 +204,7 @@ export const {
     zoom,
     setViewer,
     updatePortal,
+    updateGesture,
     drag,
     center,
     setPreventStrobing,
@@ -297,6 +212,7 @@ export const {
   }
 } = slice
 
+slice.actions
 function cleanColor(color: string): string {
   return `#${new Color(color).getHexString()}`
 }

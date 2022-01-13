@@ -1,6 +1,6 @@
-import { faFileDownload } from "@fortawesome/free-solid-svg-icons"
+import { faCompress, faExpand, faFileDownload } from "@fortawesome/free-solid-svg-icons"
 import saveAs from "file-saver"
-import { useCallback, useMemo } from "react"
+import { EventHandler, useCallback, useEffect, useMemo, useState } from "react"
 import styled from "styled-components"
 import { Publish, Account } from "./cloud"
 import { useAppDispatch, useAppSelector } from "./hooks"
@@ -8,9 +8,11 @@ import * as simulation from "./simulation"
 import * as io from "./io"
 import { common } from "./ui"
 import { useRouter } from "next/router"
+import { useService } from "./studio/service"
 
 export const EditMenuPanel = (props: any) => (
   <Menu {...props}>
+    <Fullscreen />
     <Recenter />
     <ClearScreen />
     <Download />
@@ -21,6 +23,7 @@ export const EditMenuPanel = (props: any) => (
 
 export const ViewMenuPanel = (props: any) => (
   <Menu {...props}>
+    <Fullscreen />
     <Recenter />
     <ClearScreen />
     <FitToScreen />
@@ -96,4 +99,22 @@ function Edit() {
       }
     }, [dispatch, router, service])
   return <Button onClick={copyAndEdit}>Edit</Button>
+}
+
+function Fullscreen() {
+  const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement)
+  const studio = useService()
+  useEffect(() => {
+    const listener = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    document.addEventListener("fullscreenchange", listener)
+    return () => void document.removeEventListener("fullscreenchange", listener)
+  })
+  return (
+    <IconButton
+      onClick={() => (isFullscreen ? document.exitFullscreen() : studio?.requestFullscreen())}
+      icon={isFullscreen ? faCompress : faExpand}
+    />
+  )
 }

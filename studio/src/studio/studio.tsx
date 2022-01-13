@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react"
+import { forwardRef, PropsWithChildren, RefObject, useEffect, useMemo } from "react"
 import styled from "styled-components"
 import { Providers } from "../providers"
 import { SimulationPanel, useService as useSimService } from "../simulation"
@@ -10,6 +10,7 @@ import { IoPanel, useService as useIoService } from "../io"
 import { bootstrap } from "../ui"
 import { useAppDispatch, useAppSelector } from "../hooks"
 import { Mode, setMode } from "./model"
+import { useBinding } from "./service"
 
 const Layout = styled.div`
   width: 100vw;
@@ -80,18 +81,25 @@ const LoadingPanel = styled.div`
     )
   }
 
-const StudioContainer: React.FC<{ loaded: boolean }> = ({ loaded, children }) => (
-  <Layout>{loaded ? children : <Loading />}</Layout>
-)
+const StudioContainer = ({
+  loaded,
+  containerRef,
+  children
+}: {
+  loaded?: boolean
+  containerRef?: any
+  children?: any
+}) => <Layout ref={containerRef}>{loaded ? children : <Loading />}</Layout>
 
 export { Simulation, Info, Controls, EditMenu, ViewMenu, Io, Layout, Loading, StudioContainer }
 
-export function useStudio(mode: Mode) {
+export function useStudio(mode: Mode, ref: RefObject<HTMLDivElement>) {
   const dispatch = useAppDispatch(),
     io = useIoService(),
     simulation = useSimService(),
     currentMode = useAppSelector(s => s.studio.mode)
 
+  useBinding(useMemo(() => ({ requestFullscreen: () => ref.current?.requestFullscreen() }), [ref]))
   useEffect(() => void dispatch(setMode(mode)), [dispatch, mode])
   return useMemo(
     () => ({ io, simulation, modeLoaded: currentMode === mode }),

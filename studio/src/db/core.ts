@@ -2,7 +2,6 @@ import Dexie, { Table } from "dexie"
 import type * as documents from "./documents"
 import type * as keyframes from "./keyframes"
 import type * as images from "./images"
-
 export class Database extends Dexie {
   documents!: Table<documents.DbDocument, Id>
   keyframes!: Table<keyframes.DbKeyframe, Id>
@@ -22,6 +21,14 @@ export class Database extends Dexie {
 
 const db = new Database()
 export default db
+
+// Log unhandled dexie errors rather than generate
+// an unhandledrejection event. Otherwise, every
+// promise needs a catch block.
+const dexiePromise: any = Dexie.Promise
+dexiePromise.PSD.onunhandled = (e: any) => {
+  console.log("Dexie:", e.stack)
+}
 
 export function getExisting<T>(table: Table<T>, id: string): Promise<T> {
   return table.get(id).then(doc => {

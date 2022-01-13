@@ -71,7 +71,7 @@ export const openDocument = createAppThunk(
     } else {
       throw Error(`Document ${id} does not exist`)
     }
-    return convertDocument(io!, doc)
+    return convertDocument(io, doc)
   }
 )
 

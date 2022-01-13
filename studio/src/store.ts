@@ -5,6 +5,7 @@ import { reducer as stats } from "./stats"
 import { reducer as io } from "./io"
 import { reducer as cloud } from "./cloud"
 import { reducer as studio } from "./studio"
+import { rejectionLogger } from "./utils"
 
 export const createStore = () =>
   configureStore({
@@ -14,7 +15,7 @@ export const createStore = () =>
         serializableCheck: {
           isSerializable: (value: any) => isPlain(value) || isDraftable(value)
         } as any
-      }),
+      }).concat(rejectionLogger),
     reducer: {
       simulation,
       stats,

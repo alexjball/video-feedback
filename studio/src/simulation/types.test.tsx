@@ -1,5 +1,5 @@
 import { initialState } from "./model"
-import { State } from "./types"
+import { State } from "./model"
 
 describe("types", () => {
   it("accepts valid state", () => {

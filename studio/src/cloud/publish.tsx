@@ -20,7 +20,13 @@ export function LoggedIn() {
     dispatch = useAppDispatch(),
     publish = useCallback(() => dispatch(publishDocument(docId!)), [dispatch, docId])
 
-  return <OverlayButton trigger="click" overlay={PublishModal({ publish })} disabled={!docOpen} />
+  return (
+    <OverlayButton
+      trigger="click"
+      overlay={<PublishModal publish={publish} />}
+      disabled={!docOpen}
+    />
+  )
 }
 
 function NotLoggedIn() {
