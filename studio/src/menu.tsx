@@ -16,6 +16,7 @@ export const EditMenuPanel = (props: any) => (
     <Recenter />
     <ClearScreen />
     <Download />
+    <Portfolio />
     <Publish />
     <Account />
   </Menu>
@@ -85,6 +86,15 @@ function FitToScreen() {
   const dispatch = useAppDispatch(),
     fit = useCallback(() => dispatch(simulation.model.fitToScreen()), [dispatch])
   return <Button onClick={fit}>Fit to Screen</Button>
+}
+
+function Portfolio() {
+  const modified = useAppSelector(s => s.io.selection.modified)
+  return (
+    <Button disabled={modified} href="/portfolio">
+      Portfolio
+    </Button>
+  )
 }
 
 function Edit() {

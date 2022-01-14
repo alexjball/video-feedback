@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid"
-import db, { documents, keyframes } from "../db"
+import db, { documents } from "../db"
 import { createAppThunk } from "../hooks"
 import * as simulation from "../simulation"
 import { SimulationService } from "../simulation"
@@ -18,7 +18,7 @@ export const addKeyframe = createAppThunk(
   async ({ simulation, io }: Services) => {
     const result = await simulation!.convert(256)
     const keyframe = await db.keyframes.create(result.state, result.blob)
-    return convertKeyframe(io!, keyframe)
+    return io.convertKeyframe(keyframe)
   }
 )
 
@@ -32,7 +32,7 @@ export const snapshotKeyframe = createAppThunk(
       state: result.state,
       thumbnail: { id: current.thumbnailId, blob: result.blob }
     })
-    return convertKeyframe(io!, keyframe)
+    return io.convertKeyframe(keyframe)
   },
   { condition: hasSelection }
 )
@@ -71,7 +71,7 @@ export const openDocument = createAppThunk(
     } else {
       throw Error(`Document ${id} does not exist`)
     }
-    return convertDocument(io, doc)
+    return io.convertDocument(doc)
   }
 )
 
@@ -93,37 +93,20 @@ export const saveAsDocument = createAppThunk(
           name: k.name,
           thumbnail: {
             id: nanoid(),
-            blob: io!.resolveBlob(k.thumbnail)!
+            blob: io.resolveBlob(k.thumbnail)!
           }
         }))
       }
     await db.documents.put(document)
-    return convertDocument(io!, await db.documents.get(docId))
+    return io.convertDocument(await db.documents.get(docId))
   }
 )
 
 export const viewDocument = createAppThunk(
   model.thunks.viewDocument,
   async ({ document, io }: { document: documents.Document; io: IoService }) =>
-    convertDocument(io!, document)
+    io.convertDocument(document)
 )
-
-function convertDocument(io: IoService, document: documents.Document) {
-  return {
-    ...document,
-    keyframes: document.keyframes.map(k => convertKeyframe(io, k))
-  }
-}
-
-function convertKeyframe(io: IoService, from: keyframes.Keyframe): model.Keyframe {
-  const { thumbnail, ...keyframe } = from
-
-  return {
-    ...keyframe,
-    thumbnail: io.createUrl(thumbnail.blob),
-    thumbnailId: thumbnail.id
-  }
-}
 
 function currentFrame(s: RootState) {
   const id = s.io.selection.keyframeId

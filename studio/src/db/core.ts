@@ -22,12 +22,11 @@ export class Database extends Dexie {
 const db = new Database()
 export default db
 
-// Log unhandled dexie errors rather than generate
-// an unhandledrejection event. Otherwise, every
-// promise needs a catch block.
 const dexiePromise: any = Dexie.Promise
-dexiePromise.PSD.onunhandled = (e: any) => {
-  console.log("Dexie:", e.stack)
+dexiePromise.PSD.onunhandled = () => {
+  // swallow unhandled dexie errors rather than generate
+  // an unhandledrejection event. Otherwise, every
+  // promise needs a catch block.
 }
 
 export function getExisting<T>(table: Table<T>, id: string): Promise<T> {

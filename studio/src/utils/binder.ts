@@ -18,6 +18,12 @@ export class Binder<S> {
     return this.binders.map(bind => bind(state)).some(Boolean)
   }
 
+  /**
+   * Binds a handler to a part of the state tree. When state is applied to the
+   * binder, it computes `selector(state)`. On the first apply and whenever
+   * state changes, as determined by `isEqual`, the `bind` handler is called
+   * with the selected state.
+   */
   add<T>(selector: Selector<S, T>, bind: Bind<T>, isEqual: IsEqual<T> = byDeepEqual) {
     let prev: { value: T }
     this.binders.push(state => {

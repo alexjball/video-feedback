@@ -1,11 +1,11 @@
 import { isEqual } from "lodash"
 import { nanoid } from "nanoid"
 import { useEffect, useMemo } from "react"
-import db, { documents } from "../db"
+import db, { documents, keyframes } from "../db"
 import { useAppDispatch, useAppSelector, useAppStore } from "../hooks"
 import * as simulation from "../simulation"
 import { createService, isDefined } from "../utils"
-import { updateStateId } from "./model"
+import * as model from "./model"
 
 export type IoService = NonNullable<ReturnType<typeof useService>>
 export const { Provider, useService } = createService(() => {
@@ -13,9 +13,11 @@ export const { Provider, useService } = createService(() => {
   useStateId()
   usePushUpdatesToDatabase()
   const cache = useBlobCache()
-  return cache
+  const loader = useModelLoader(cache)
+  return useMemo(() => ({ ...cache, ...loader }), [cache, loader])
 })
 
+type BlobCache = ReturnType<typeof useBlobCache>
 function useBlobCache() {
   return useMemo(() => {
     const urlsByBlob = new Map<Blob, string>(),
@@ -40,6 +42,29 @@ function useBlobCache() {
       }
     }
   }, [])
+}
+
+function useModelLoader(blobCache: BlobCache) {
+  return useMemo(() => {
+    return {
+      convertDocument(document: documents.Document): model.Document {
+        return {
+          ...document,
+          keyframes: document.keyframes.map(k => this.convertKeyframe(k))
+        }
+      },
+
+      convertKeyframe(from: keyframes.Keyframe): model.Keyframe {
+        const { thumbnail, ...keyframe } = from
+
+        return {
+          ...keyframe,
+          thumbnail: blobCache.createUrl(thumbnail.blob),
+          thumbnailId: thumbnail.id
+        }
+      }
+    }
+  }, [blobCache])
 }
 
 function useApplySelection() {
@@ -73,7 +98,7 @@ function useStateId() {
     }),
     isEqual
   )
-  useEffect(() => void dispatch(updateStateId(nanoid())), [modifiers, dispatch])
+  useEffect(() => void dispatch(model.updateStateId(nanoid())), [modifiers, dispatch])
 }
 
 function usePushUpdatesToDatabase() {

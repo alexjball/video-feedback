@@ -1,11 +1,9 @@
-import { useEffect, useRef } from "react"
-import { Io, Layout, Loading, Simulation, StudioContainer, useStudio, ViewMenu } from "./studio"
-import { useAppDispatch, useAppSelector } from "../hooks"
-import { setMode } from "./model"
-import { viewPublicDocument } from "../cloud"
-import * as ioFeature from "../io"
-import * as simulationFeature from "../simulation"
 import { isRejected } from "@reduxjs/toolkit"
+import { useEffect, useRef } from "react"
+import { viewPublicDocument } from "../cloud"
+import { useAppDispatch, useAppSelector } from "../hooks"
+import * as simulationFeature from "../simulation"
+import { Io, Simulation, StudioContainer, useStudio, ViewMenu } from "./studio"
 
 // TODO: clear db on auth failure or change. store current user in db and
 // compare with auth

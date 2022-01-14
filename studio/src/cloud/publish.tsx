@@ -20,13 +20,7 @@ export function LoggedIn() {
     dispatch = useAppDispatch(),
     publish = useCallback(() => dispatch(publishDocument(docId!)), [dispatch, docId])
 
-  return (
-    <OverlayButton
-      trigger="click"
-      overlay={<PublishModal publish={publish} />}
-      disabled={!docOpen}
-    />
-  )
+  return <OverlayButton trigger="click" overlay={PublishModal(publish)} disabled={!docOpen} />
 }
 
 function NotLoggedIn() {
@@ -64,7 +58,7 @@ const Button = styled(common.Button)``,
       </div>
     </OverlayTrigger>
   ),
-  PublishModal = ({ publish }: { publish: () => void }) => (
+  PublishModal = (publish: () => void) => (
     <Popover>
       <Popover.Header as="h3">Generate a public link to your patterns</Popover.Header>
       <PopoverBody>

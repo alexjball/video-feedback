@@ -5,6 +5,7 @@ import { reducer as stats } from "./stats"
 import { reducer as io } from "./io"
 import { reducer as cloud } from "./cloud"
 import { reducer as studio } from "./studio"
+import { reducer as portfolio } from "./portfolio"
 import { rejectionLogger } from "./utils"
 
 export const createStore = () =>
@@ -21,7 +22,8 @@ export const createStore = () =>
       stats,
       io,
       cloud,
-      studio
+      studio,
+      portfolio
     }
   })
 
