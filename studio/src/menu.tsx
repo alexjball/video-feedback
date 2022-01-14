@@ -89,12 +89,7 @@ function FitToScreen() {
 }
 
 function Portfolio() {
-  const modified = useAppSelector(s => s.io.selection.modified)
-  return (
-    <Button disabled={modified} href="/portfolio">
-      Portfolio
-    </Button>
-  )
+  return <Button href="/">Portfolio</Button>
 }
 
 function Edit() {

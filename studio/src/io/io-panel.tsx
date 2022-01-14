@@ -14,7 +14,7 @@
 // https://github.com/atlassian/react-beautiful-dnd/blob/master/stories/src/horizontal/author-app.jsx
 // https://github.com/atlassian/react-beautiful-dnd/blob/master/stories/src/primatives/author-list.jsx
 
-import { useCallback, useMemo } from "react"
+import { useCallback, useEffect, useMemo } from "react"
 import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautiful-dnd"
 import styled from "styled-components"
 import { useAppDispatch, useAppSelector } from "../hooks"
@@ -27,6 +27,7 @@ import { faCheck, faTrash, faUndo, faPlus } from "@fortawesome/free-solid-svg-ic
 import { common } from "../ui"
 
 export default function IoPanel(props: any) {
+  useConfirmUnsaved()
   const selection = useSelectionState()
   return (
     <Io {...props}>
@@ -176,6 +177,25 @@ function useSelectionState() {
       viewOnly
     }
   }, [dispatch, hasSelection, ioService, isModified, simulationService, viewOnly])
+}
+
+function useConfirmUnsaved() {
+  const modified = useAppSelector(s => s.io.selection.modified)
+
+  useEffect(() => {
+    const handler: any = (e: any) => {
+      if (!modified) return
+      // Cancel the event
+      e.preventDefault() // If you prevent default behavior in Mozilla Firefox prompt will always be shown
+      // Chrome requires returnValue to be set
+      e.returnValue = ""
+    }
+    // It seems to be important that we use the property rather than addEventListener
+    window.onbeforeunload = handler
+    return () => {
+      window.onbeforeunload = null
+    }
+  }, [modified])
 }
 
 type SelectionState = ReturnType<typeof useSelectionState>
