@@ -180,11 +180,12 @@ function useSelectionState() {
 }
 
 function useConfirmUnsaved() {
-  const modified = useAppSelector(s => s.io.selection.modified)
+  const modified = useAppSelector(s => s.studio.mode !== "view" && s.io.selection.modified)
 
   useEffect(() => {
+    if (!modified) return
+
     const handler: any = (e: any) => {
-      if (!modified) return
       // Cancel the event
       e.preventDefault() // If you prevent default behavior in Mozilla Firefox prompt will always be shown
       // Chrome requires returnValue to be set
