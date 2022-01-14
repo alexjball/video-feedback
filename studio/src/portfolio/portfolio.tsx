@@ -27,7 +27,8 @@ export default function Portfolio() {
       <Row>
         <Col as="p">
           These patterns are stored locally on your computer. You can sign in to publish and share
-          links to your work.
+          links to your work from the editor. View the source code and file feedback on{" "}
+          <a href="https://github.com/alexjball/video-feedback">Github</a>.
         </Col>
       </Row>
       <Commands />
@@ -154,7 +155,6 @@ const ListItem: React.FC<{ document: io.model.Document }> = ({ document }) => {
     }
   `,
   ListGroupItem = styled(bootstrap.ListGroupItem)`
-    color: unset !important;
     padding: 0.5rem;
 
     :hover input {
