@@ -9,6 +9,7 @@ import * as io from "./io"
 import { common } from "./ui"
 import { useRouter } from "next/router"
 import { useService } from "./studio/service"
+import Link from "next/link"
 
 export const EditMenuPanel = (props: any) => (
   <Menu {...props}>
@@ -89,7 +90,21 @@ function FitToScreen() {
 }
 
 function Portfolio() {
-  return <Button href="/">Portfolio</Button>
+  const modified = useAppSelector(s => s.io.selection.modified),
+    confirmNav = useCallback(
+      (e: any) => {
+        if (modified && !confirm("Leave this page? Changes you made may not be saved.")) {
+          e.preventDefault()
+        }
+      },
+      [modified]
+    )
+
+  return (
+    <Link href="/" passHref>
+      <Button onClick={confirmNav}>Portfolio</Button>
+    </Link>
+  )
 }
 
 function Edit() {

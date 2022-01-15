@@ -30,7 +30,7 @@ const Form = styled.div`
   Control = styled.div`
     position: relative;
     pointer-events: all;
-    background-color: white;
+    background-color: var(--bs-secondary);
     opacity: 0.8;
     border-radius: 5px;
     box-shadow: 0 0 8px grey;

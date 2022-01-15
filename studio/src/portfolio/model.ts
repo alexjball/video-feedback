@@ -1,4 +1,5 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit"
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit"
+import db from "../db/core"
 import * as io from "../io"
 
 interface State {
@@ -13,7 +14,7 @@ const initialState: State = {
 
 export const {
   reducer,
-  actions: { setDocuments, setSelected }
+  actions: { setDocuments, setSelected, setTitle }
 } = createSlice({
   name: "portfolio",
   initialState,
@@ -23,6 +24,19 @@ export const {
     },
     setSelected(state, { payload: id }: PayloadAction<string>) {
       state.selected = id === state.selected ? null : id
+    },
+    setTitle(state, { payload: { id, title } }: PayloadAction<{ id: string; title: string }>) {
+      const d = state.documents?.find(d => d.id === id)
+      if (d) {
+        d.name = title
+      }
     }
   }
 })
+
+export const updateTitle = createAsyncThunk(
+  "portfolio/updateTitle",
+  async ({ id, title }: { id: string; title: string }) => {
+    await db.documents.update(id, { name: title })
+  }
+)

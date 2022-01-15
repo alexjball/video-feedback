@@ -107,7 +107,7 @@ function usePushUpdatesToDatabase() {
     s =>
       s.io.document && {
         id: s.io.document.id,
-        title: s.io.document.title,
+        name: s.io.document.title,
         keyframes: s.io.keyframes.map(k => k.id)
       },
     isEqual

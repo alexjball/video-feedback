@@ -1,17 +1,16 @@
-import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons"
 import { isFulfilled } from "@reduxjs/toolkit"
+import Link from "next/link"
 import router, { useRouter } from "next/router"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import styled from "styled-components"
 import { Account } from "../cloud"
 import { useAppDispatch, useAppSelector } from "../hooks"
 import * as io from "../io"
 import { bootstrap, common } from "../ui"
 import { usePortfolio } from "./hooks"
-import { setSelected } from "./model"
-import Link from "next/link"
+import * as model from "./model"
 
-const { Container, Col, Row, Spinner, ListGroup } = bootstrap
+const { Container, Col, Row, Spinner, ListGroup, Form } = bootstrap
 
 // TODO: Unify the checkbox and clickable-card UI's
 export default function Portfolio() {
@@ -66,7 +65,7 @@ const Button = styled(common.Button)``,
       }, [dispatch, service])
     return (
       <Button disabled={loading} onClick={openNew}>
-        New
+        New Pattern
       </Button>
     )
   },
@@ -101,7 +100,7 @@ function PatternList({ docs }: { docs: io.model.Document[] | null }) {
 const ListItem: React.FC<{ document: io.model.Document }> = ({ document }) => {
     const dispatch = useAppDispatch(),
       selected = useAppSelector(s => s.portfolio.selected === document.id),
-      select = useCallback(() => dispatch(setSelected(document.id)), [dispatch, document.id])
+      select = useCallback(() => dispatch(model.setSelected(document.id)), [dispatch, document.id])
     return (
       // <ListGroupItem onClick={select} className="d-flex flex-row border-0" key={document.id} action>
       //   <FormCheck readOnly className="align-self-center" checked={selected} type="checkbox" />
@@ -109,7 +108,7 @@ const ListItem: React.FC<{ document: io.model.Document }> = ({ document }) => {
       // </ListGroupItem>
       <ListGroupItem className="d-flex flex-row border-0" key={document.id} action>
         {/* <FormCheck readOnly className="align-self-center" checked={selected} type="checkbox" /> */}
-        <DocumentCard className="flex-grow-1 ms-2" document={document} />
+        <DocumentCard className="flex-grow-1" document={document} />
       </ListGroupItem>
     )
   },
@@ -123,8 +122,8 @@ const ListItem: React.FC<{ document: io.model.Document }> = ({ document }) => {
         onClick={() => router.push(`/edit?doc=${document.id}`)}
         className={className}
         style={{ userSelect: "none" }}>
-        <Card.Body>
-          <Card.Title>{document.name ?? "Untitled"}</Card.Title>
+        <Card.Body className="pt-2">
+          <Title document={document} />
           <ThumbnailContainer>
             {document.keyframes.map(k => (
               <Thumbnail key={k.id} src={k.thumbnail} />
@@ -134,6 +133,40 @@ const ListItem: React.FC<{ document: io.model.Document }> = ({ document }) => {
       </Card>
     )
   },
+  Title = ({ document }: { document: io.model.Document }) => {
+    const [title, setTitle] = useState(document.name ?? ""),
+      timeout = useRef<ReturnType<typeof setTimeout>>(),
+      dispatch = useAppDispatch(),
+      updateTitle = useCallback(
+        (title: string) => {
+          if (timeout.current) clearTimeout(timeout.current)
+          setTitle(title)
+          timeout.current = setTimeout(
+            () => dispatch(model.updateTitle({ id: document.id, title })),
+            1000
+          )
+        },
+        [dispatch, document.id]
+      )
+    return (
+      <TitleInput
+        type="text"
+        className="fs-5 mb-2"
+        value={title}
+        onChange={(e: any) => updateTitle(e.target.value)}
+        onClick={(e: any) => e.stopPropagation()}
+        placeholder="Untitled"
+      />
+    )
+  },
+  TitleInput = styled(Form.Control)`
+    &,
+    :focus {
+      background-color: transparent;
+      color: var(--bs-body-color);
+    }
+    border: none;
+  `,
   FormCheck = styled(bootstrap.FormCheck)`
     /* cursor: pointer; */
     input {
@@ -147,17 +180,22 @@ const ListItem: React.FC<{ document: io.model.Document }> = ({ document }) => {
   `,
   Card = styled(bootstrap.Card)`
     transition: transform 0.2s;
-    :hover {
+    &:hover {
       transform: scale(1.02);
     }
-    :active {
+    :active input:active {
+      transform: scale(1);
+    }
+    &:active {
       transform: scale(0.98);
     }
   `,
   ListGroupItem = styled(bootstrap.ListGroupItem)`
     padding: 0.5rem;
-
-    :hover input {
+    @media (prefers-color-scheme: dark) {
+      background-color: var(--bs-gray-900);
+    }
+    /* :hover input {
       :checked {
         transform: scale(1.2);
       }
@@ -169,7 +207,7 @@ const ListItem: React.FC<{ document: io.model.Document }> = ({ document }) => {
 
     :active input {
       transform: scale(0.7) !important;
-    }
+    } */
   `,
   ThumbnailContainer = styled.div`
     display: flex;
