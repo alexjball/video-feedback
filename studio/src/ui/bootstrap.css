@@ -1,0 +1,6 @@
+/* Or slate or cyborg */
+@import "bootswatch/dist/darkly/bootstrap.min.css" (prefers-color-scheme: dark);
+@import "bootswatch/dist/flatly/bootstrap.min.css" (prefers-color-scheme: light);
+
+/* Default */
+/* @import "bootstrap/dist/css/bootstrap.min.css"; */

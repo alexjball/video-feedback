@@ -26,7 +26,7 @@ export default function Portfolio() {
       </Row>
       <Row>
         <Col as="p">
-          These patterns are stored locally on your computer. You can sign in to publish and share
+          These patterns are stored locally on your device. You can sign in to publish and share
           links to your work from the editor. View the source code and file feedback on{" "}
           <a href="https://github.com/alexjball/video-feedback">Github</a>.
         </Col>
@@ -124,7 +124,7 @@ const ListItem: React.FC<{ document: io.model.Document }> = ({ document }) => {
         className={className}
         style={{ userSelect: "none" }}>
         <Card.Body>
-          <Card.Title>{document.id}</Card.Title>
+          <Card.Title>{document.name ?? "Untitled"}</Card.Title>
           <ThumbnailContainer>
             {document.keyframes.map(k => (
               <Thumbnail key={k.id} src={k.thumbnail} />
