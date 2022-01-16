@@ -35,7 +35,7 @@ export function declareThunk<Returned = undefined, ThunkArg = void>(
   }
 }
 
-function createActionMatcher<T>(typePrefix: string, suffix: string): any {
+function createActionMatcher(typePrefix: string, suffix: string): any {
   return createAction(typePrefix + "/" + suffix, () => {
     throw Error("Do not dispatch. Should only be used for matching.")
   })

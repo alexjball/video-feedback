@@ -5,5 +5,5 @@ export default function Page() {
   const router = useRouter(),
     { doc: docId } = router.query
 
-  return <Editor docId={typeof docId === "string" ? docId : "default"} />
+  return <Editor docId={typeof docId === "string" ? docId : undefined} />
 }

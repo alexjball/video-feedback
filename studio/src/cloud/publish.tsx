@@ -1,33 +1,92 @@
+/* eslint-disable react/no-children-prop */
 import { faShare, faCopy } from "@fortawesome/free-solid-svg-icons"
 import { common, bootstrap } from "../ui"
 import { useAppDispatch, useAppSelector } from "../hooks"
-import React, { useCallback } from "react"
+import React, { useCallback, useRef, useState } from "react"
 import { publishDocument } from "./actions"
 import styled from "styled-components"
 import Clipboard from "react-clipboard.js"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { forwardRef } from "react"
+import { useEffect } from "react"
+import { OverlayInjectedProps } from "react-bootstrap/esm/Overlay"
+import { Publication, usePublication } from "./model"
 
-const { OverlayTrigger, Tooltip, Spinner } = bootstrap
+const { OverlayTrigger, Tooltip, Spinner, Overlay } = bootstrap
+const { TooltipButton } = common
 
-export function Publish() {
+export function Publish({ docId: id, parentFocused, ...props }: any) {
   const authenticated = useAppSelector(s => !!s.cloud.uid)
-  return authenticated ? <LoggedIn /> : <NotLoggedIn />
+  const docId = useAppSelector(s => id ?? s.io.document?.id)
+
+  return authenticated ? (
+    <LoggedIn {...props} docId={docId} parentFocused={parentFocused} />
+  ) : (
+    <NotLoggedIn {...props} />
+  )
 }
 
-export function LoggedIn() {
-  const docId = useAppSelector(s => s.io.document?.id),
-    docOpen = !!docId,
-    dispatch = useAppDispatch(),
-    publish = useCallback(() => dispatch(publishDocument(docId!)), [dispatch, docId])
+export function LoggedIn({ docId, parentFocused, ...props }: any) {
+  const dispatch = useAppDispatch(),
+    [showModal, setShowModal] = useState(false),
+    [showTooltip, setShowTooltip] = useState(false),
+    publish = usePublication(docId),
+    onClick = useCallback(() => {
+      if (!showModal) {
+        setShowModal(true)
+        if (publish.status !== "current") dispatch(publishDocument(docId!))
+      } else {
+        setShowModal(false)
+      }
+    }, [dispatch, docId, publish.status, showModal]),
+    target = useRef(null),
+    disabled = !docId
 
-  return <OverlayButton trigger="click" overlay={PublishModal(publish)} disabled={!docOpen} />
+  useEffect(() => {
+    if (!parentFocused) setShowModal(false)
+  }, [parentFocused])
+
+  return (
+    <>
+      <TooltipButton
+        defaultShow={false}
+        onToggle={s => setShowTooltip(s)}
+        showTooltip={showTooltip && !showModal}
+        ref={target}
+        icon={faShare}
+        tooltip={"Publish"}
+        onClick={onClick}
+        disabled={disabled}
+        {...props}
+      />
+      <Overlay target={target.current} show={showModal} placement="bottom">
+        {props => <PublishStatus {...props} publish={publish} />}
+      </Overlay>
+    </>
+  )
 }
 
-function NotLoggedIn() {
-  return <OverlayButton overlay={<Tooltip>Sign in to publish</Tooltip>} />
+function NotLoggedIn(props: any) {
+  return <TooltipButton icon={faShare} {...props} disabled={true} tooltip="Sign in to publish" />
 }
 
-const Button = styled(common.Button)``,
+const PublishStatus = forwardRef<HTMLDivElement, OverlayInjectedProps & { publish: Publication }>(
+    function PublishModal({ popper, publish, ...props }, ref) {
+      const { status, header, body } = useStatus(publish)
+      useEffect(() => popper.scheduleUpdate?.(), [popper, status])
+
+      return (
+        <Popover
+          {...props}
+          onFocus={() => console.log("focus")}
+          onBlur={() => console.log("blur")}
+          ref={ref}>
+          <Popover.Header>{header}</Popover.Header>
+          <PopoverBody>{body}</PopoverBody>
+        </Popover>
+      )
+    }
+  ),
   Popover = styled(bootstrap.Popover)`
     pointer-events: all;
   `,
@@ -45,56 +104,33 @@ const Button = styled(common.Button)``,
       margin-right: 0.25rem;
     }
   `,
-  OverlayButton: React.FC<{ trigger?: any; overlay: any; disabled?: boolean }> = ({
-    trigger,
-    overlay,
-    disabled
-  }) => (
-    <OverlayTrigger placement="bottom" trigger={trigger} overlay={overlay}>
-      <div style={{ pointerEvents: "all" }}>
-        <common.IconButton icon={faShare} disabled={disabled}>
-          Share
-        </common.IconButton>
-      </div>
-    </OverlayTrigger>
-  ),
-  PublishModal = (publish: () => void) => (
-    <Popover>
-      <Popover.Header as="h3">Generate a public link to your patterns</Popover.Header>
-      <PopoverBody>
-        <Button size="sm" onClick={publish}>
-          Publish
-        </Button>
-        <Status />
-      </PopoverBody>
-    </Popover>
-  ),
-  Status = () => {
-    const publish = useAppSelector(s => s.cloud.publish)
-    switch (publish.status) {
+  useStatus = (publish: Publication) => {
+    const status = publish.status
+    switch (status) {
       case "pending":
-        return <Spinner animation="border" />
+        return { status, header: "Publishing...", body: <Spinner animation="border" /> }
       case "current":
       case "outdated":
-        return <TextClipboard value={publish.url} />
+        return { status, header: "Published", body: <TextClipboard value={publish.url} /> }
       case "error":
-        return (
-          <div>
-            Error: {publish.reason} {publish.code}
-          </div>
-        )
+        return {
+          status,
+          header: "Error",
+          body: (
+            <div>
+              Error: {publish.reason} {publish.code}
+            </div>
+          )
+        }
       default:
-        return null
+        return { status, header: "Unknown Error", body: null }
     }
   },
-  ClipboardContainer = styled.div`
-    display: flex;
-  `,
   TextClipboard = ({ value }: { value: string }) => (
-    <ClipboardContainer>
+    <div className="d-flex">
       <input type="text" readOnly value={value} />
-      <Clipboard className="btn btn-primary btn-sm" data-clipboard-text={value}>
+      <Clipboard className="btn btn-primary btn" data-clipboard-text={value}>
         <FontAwesomeIcon icon={faCopy} />
       </Clipboard>
-    </ClipboardContainer>
+    </div>
   )

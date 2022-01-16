@@ -18,7 +18,7 @@ export const EditMenuPanel = (props: any) => (
     <ClearScreen />
     <Download />
     <Portfolio />
-    <Publish />
+    <Publish>Share</Publish>
     <Account />
   </Menu>
 )
@@ -91,13 +91,18 @@ function FitToScreen() {
 
 function Portfolio() {
   const modified = useAppSelector(s => s.io.selection.modified),
+    docId = useAppSelector(s => s.io.document?.id),
+    dispatch = useAppDispatch(),
     confirmNav = useCallback(
       (e: any) => {
+        if (!docId) return
         if (modified && !confirm("Leave this page? Changes you made may not be saved.")) {
           e.preventDefault()
+          return
         }
+        dispatch(io.model.closeDocument(docId))
       },
-      [modified]
+      [dispatch, docId, modified]
     )
 
   return (

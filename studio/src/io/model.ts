@@ -80,6 +80,9 @@ const slice = createSlice({
         const [k] = keyframes.splice(currentIndex, 1)
         keyframes.splice(index, 0, k)
       }
+    },
+    closeDocument(state, action: PayloadAction<string>) {
+      return initialState
     }
   },
   extraReducers: builder =>
@@ -141,7 +144,7 @@ const slice = createSlice({
 
 export const {
   reducer,
-  actions: { moveKeyframe, selectKeyframe, updateStateId }
+  actions: { moveKeyframe, selectKeyframe, updateStateId, closeDocument }
 } = slice
 
 export const thunks = {

@@ -23,7 +23,7 @@ export const {
       state.documents = docs
     },
     setSelected(state, { payload: id }: PayloadAction<string>) {
-      state.selected = id === state.selected ? null : id
+      state.selected = id
     },
     setTitle(state, { payload: { id, title } }: PayloadAction<{ id: string; title: string }>) {
       const d = state.documents?.find(d => d.id === id)

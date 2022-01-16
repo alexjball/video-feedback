@@ -13,7 +13,7 @@ type ThunkConfig = {
 }
 
 export const createAppThunk = <Returned, ThunkArg = void>(
-  typeOrActions: string | AsyncThunkActions<Returned>,
+  typeOrActions: string | AsyncThunkActions<Returned, any>,
   payloadCreator: AsyncThunkPayloadCreator<Returned, ThunkArg, ThunkConfig>,
   options?: AsyncThunkOptions<ThunkArg, ThunkConfig>
 ) =>

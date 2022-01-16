@@ -1,6 +1,6 @@
 import { isEqual } from "lodash"
 import { nanoid } from "nanoid"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import db, { documents, keyframes } from "../db"
 import { useAppDispatch, useAppSelector, useAppStore } from "../hooks"
 import * as simulation from "../simulation"
@@ -102,25 +102,29 @@ function useStateId() {
 }
 
 function usePushUpdatesToDatabase() {
-  const viewOnly = useAppSelector(s => s.studio.mode === "view")
-  const document: documents.DbDocument | undefined = useAppSelector(
-    s =>
-      s.io.document && {
-        id: s.io.document.id,
-        name: s.io.document.title,
-        keyframes: s.io.keyframes.map(k => k.id)
-      },
-    isEqual
-  )
+  const viewOnly = useAppSelector(s => s.studio.mode === "view"),
+    previous = useRef<documents.DbDocument | undefined>(undefined),
+    document: documents.DbDocument | undefined = useAppSelector(
+      s =>
+        s.io.document && {
+          id: s.io.document.id,
+          name: s.io.document.title,
+          keyframes: s.io.keyframes.map(k => k.id)
+        },
+      isEqual
+    )
   useEffect(
     () =>
       void (async () => {
         try {
-          if (document && !viewOnly) {
+          if (document && previous.current && !viewOnly) {
             await db.documents.update(document)
           }
         } catch (e) {
           console.error("error updating document", e)
+        }
+        if (document !== previous.current) {
+          previous.current = document
         }
       })(),
     [document, viewOnly]

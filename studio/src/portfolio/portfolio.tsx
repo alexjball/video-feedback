@@ -1,15 +1,19 @@
+import { faCopy, faEdit, faTrash } from "@fortawesome/free-solid-svg-icons"
 import { isFulfilled } from "@reduxjs/toolkit"
+import classNames from "classnames"
 import Link from "next/link"
-import router, { useRouter } from "next/router"
+import router from "next/router"
 import { useCallback, useRef, useState } from "react"
 import styled from "styled-components"
-import { Account } from "../cloud"
+import { Account, Publish } from "../cloud"
+import db from "../db"
 import { useAppDispatch, useAppSelector } from "../hooks"
 import * as io from "../io"
 import { bootstrap, common } from "../ui"
 import { usePortfolio } from "./hooks"
 import * as model from "./model"
 
+const { TooltipButton } = common
 const { Container, Col, Row, Spinner, ListGroup, Form } = bootstrap
 
 // TODO: Unify the checkbox and clickable-card UI's
@@ -69,19 +73,12 @@ const Button = styled(common.Button)``,
       </Button>
     )
   },
-  Open = () => {
-    const id = useAppSelector(s => s.portfolio.selected)
-    return (
-      <Link href={`/edit?doc=${id}`} passHref>
-        <Button disabled={!id}>Open</Button>
-      </Link>
-    )
-  },
   Commands = () => {
-    const hasSelection = useAppSelector(s => !!s.portfolio.selected)
     return (
       <Row>
-        <CommandContainer className="mb-2">{hasSelection ? <Open /> : <Create />}</CommandContainer>
+        <CommandContainer className="mb-2">
+          <Create />
+        </CommandContainer>
       </Row>
     )
   }
@@ -106,24 +103,40 @@ const ListItem: React.FC<{ document: io.model.Document }> = ({ document }) => {
       //   <FormCheck readOnly className="align-self-center" checked={selected} type="checkbox" />
       //   <DocumentCard className="flex-grow-1 ms-2" document={document} />
       // </ListGroupItem>
-      <ListGroupItem className="d-flex flex-row border-0" key={document.id} action>
+      <ListGroupItem
+        forwardedAs="div"
+        className="d-flex flex-row border-0"
+        key={document.id}
+        action
+        active={selected}>
         {/* <FormCheck readOnly className="align-self-center" checked={selected} type="checkbox" /> */}
-        <DocumentCard className="flex-grow-1" document={document} />
+        <DocumentCard
+          className="flex-grow-1"
+          selected={selected}
+          onClick={select}
+          document={document}
+        />
       </ListGroupItem>
     )
   },
-  DocumentCard: React.FC<{ document: io.model.Document; className?: string }> = ({
-    document,
-    className
-  }) => {
-    const router = useRouter()
+  DocumentCard: React.FC<{
+    document: io.model.Document
+    className?: string
+    onClick?: () => void
+    selected?: boolean
+  }> = ({ document, selected, className, onClick }) => {
     return (
-      <Card
-        onClick={() => router.push(`/edit?doc=${document.id}`)}
-        className={className}
-        style={{ userSelect: "none" }}>
+      <Card className={className} onClick={onClick} style={{ userSelect: "none" }}>
         <Card.Body className="pt-2">
-          <Title document={document} />
+          <div className="d-flex">
+            <Title className="w-50 me-2" document={document} />
+            <div className="flex-grow-1" />
+            <Link href={`/edit?doc=${document.id}`} passHref>
+              <CardButton tooltip={"Edit"} icon={faEdit} />
+            </Link>
+            <PublishButton parentFocused={!!selected} docId={document.id} />
+            <Delete document={document} />
+          </div>
           <ThumbnailContainer>
             {document.keyframes.map(k => (
               <Thumbnail key={k.id} src={k.thumbnail} />
@@ -133,7 +146,45 @@ const ListItem: React.FC<{ document: io.model.Document }> = ({ document }) => {
       </Card>
     )
   },
-  Title = ({ document }: { document: io.model.Document }) => {
+  CardButton = styled(TooltipButton).attrs(p => ({
+    className: classNames(p.className, "ms-2", "align-self-center")
+  }))`
+    transition: all 0.3s;
+    opacity: 0;
+  `,
+  PublishButton = styled(Publish).attrs(p => ({
+    className: classNames(p.className, "ms-2", "align-self-center")
+  }))`
+    opacity: 0;
+    transition: all 0.3s;
+  `,
+  Delete = ({ document }: { document: io.model.Document }) => {
+    const [show, setShow] = useState(false),
+      [confirming, setConfirming] = useState(false),
+      onClick = useCallback(() => {
+        if (confirming) {
+          setConfirming(false)
+          db.documents.delete(document.id).catch(e => console.error("Could not delete document", e))
+        } else {
+          setConfirming(true)
+        }
+      }, [confirming, document.id]),
+      onToggle = useCallback((nextShow: boolean) => {
+        if (!nextShow) setConfirming(false)
+        setShow(nextShow)
+      }, [])
+    return (
+      <CardButton
+        showTooltip={show}
+        tooltip={confirming ? "Are you sure?" : "Delete"}
+        variant={confirming ? "danger" : "primary"}
+        icon={faTrash}
+        onClick={onClick}
+        onToggle={onToggle}
+      />
+    )
+  },
+  Title = ({ document, className }: { document: io.model.Document; className: string }) => {
     const [title, setTitle] = useState(document.name ?? ""),
       timeout = useRef<ReturnType<typeof setTimeout>>(),
       dispatch = useAppDispatch(),
@@ -151,7 +202,7 @@ const ListItem: React.FC<{ document: io.model.Document }> = ({ document }) => {
     return (
       <TitleInput
         type="text"
-        className="fs-5 mb-2"
+        className={"fs-5 mb-2 " + className}
         value={title}
         onChange={(e: any) => updateTitle(e.target.value)}
         onClick={(e: any) => e.stopPropagation()}
@@ -166,6 +217,9 @@ const ListItem: React.FC<{ document: io.model.Document }> = ({ document }) => {
       color: var(--bs-body-color);
     }
     border: none;
+    border-bottom: 2px solid rgba(0, 0, 0, 0);
+    border-radius: 0;
+    transition: all 0.3s;
   `,
   FormCheck = styled(bootstrap.FormCheck)`
     /* cursor: pointer; */
@@ -179,7 +233,7 @@ const ListItem: React.FC<{ document: io.model.Document }> = ({ document }) => {
     }
   `,
   Card = styled(bootstrap.Card)`
-    transition: transform 0.2s;
+    /* transition: transform 0.2s;
     &:hover {
       transform: scale(1.02);
     }
@@ -188,26 +242,28 @@ const ListItem: React.FC<{ document: io.model.Document }> = ({ document }) => {
     }
     &:active {
       transform: scale(0.98);
-    }
+    } */
   `,
   ListGroupItem = styled(bootstrap.ListGroupItem)`
     padding: 0.5rem;
+    cursor: unset !important;
     @media (prefers-color-scheme: dark) {
       background-color: var(--bs-gray-900);
     }
-    /* :hover input {
-      :checked {
-        transform: scale(1.2);
-      }
-      :not(:checked) {
-        transform: scale(1.5);
-      }
-      opacity: 1;
+
+    ${Card}:hover ${TitleInput}, &.active ${TitleInput} {
+      border-bottom: 2px solid var(--bs-primary);
+      transform: scale(1.05);
     }
 
-    :active input {
-      transform: scale(0.7) !important;
-    } */
+    ${Card}:hover ${CardButton}, 
+    ${CardButton}:focus, 
+    &.active ${CardButton}, 
+    ${Card}:hover ${PublishButton}, 
+    ${PublishButton}:focus, 
+    &.active ${PublishButton} {
+      opacity: 1;
+    }
   `,
   ThumbnailContainer = styled.div`
     display: flex;

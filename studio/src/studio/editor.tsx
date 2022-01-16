@@ -1,6 +1,6 @@
 import { isRejected } from "@reduxjs/toolkit"
 import { useRouter } from "next/router"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import db from "../db"
 import { useAppDispatch, useAppSelector } from "../hooks"
 import { openDocument } from "../io/actions"
@@ -13,13 +13,12 @@ export function Editor({ docId }: { docId?: string }) {
     router = useRouter(),
     ref = useRef(null),
     { io, modeLoaded } = useStudio("edit", ref),
-    currentDocId = useAppSelector(s => s.io.document?.id),
-    loaded = Boolean(modeLoaded && docId && currentDocId === docId)
+    [loaded, setLoaded] = useState(false)
 
   useEffect(
     () =>
       void (async () => {
-        if (docId && isDefined(io)) {
+        if (docId && modeLoaded && isDefined(io)) {
           await dispatch(simFeat.model.fitToScreen())
           const result = await dispatch(
             openDocument({ io, id: docId, create: docId === "default" })
@@ -28,10 +27,12 @@ export function Editor({ docId }: { docId?: string }) {
             await db.documents.delete(docId)
             await db.documents.create(docId)
             router.reload()
+          } else {
+            setLoaded(true)
           }
         }
       })(),
-    [currentDocId, dispatch, docId, io, router]
+    [dispatch, docId, io, modeLoaded, router]
   )
 
   return (
