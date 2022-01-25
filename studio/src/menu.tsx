@@ -128,7 +128,6 @@ function Edit() {
 
 function Fullscreen() {
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement)
-  const studio = useService()
   useEffect(() => {
     const listener = () => {
       setIsFullscreen(!!document.fullscreenElement)
@@ -138,7 +137,7 @@ function Fullscreen() {
   })
   return (
     <IconButton
-      onClick={() => (isFullscreen ? document.exitFullscreen() : studio?.requestFullscreen())}
+      onClick={() => (isFullscreen ? document.exitFullscreen() : document.body.requestFullscreen())}
       icon={isFullscreen ? faCompress : faExpand}
     />
   )

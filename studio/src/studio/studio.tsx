@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import styled from "styled-components"
 import { ControlsPanel } from "../controls"
 import { useAppDispatch, useAppSelector } from "../hooks"
@@ -7,9 +7,12 @@ import { LegendPanel } from "../legend"
 import { EditMenuPanel, ViewMenuPanel } from "../menu"
 import { SimulationPanel, useService as useSimService } from "../simulation"
 import { StatsPanel } from "../stats"
-import { bootstrap } from "../ui"
-import { Mode, setMode } from "./model"
-import { useBinding } from "./service"
+import { bootstrap, common } from "../ui"
+import * as model from "./model"
+
+const { Modal } = bootstrap
+const { Button } = common
+const storage = typeof localStorage !== "undefined" ? localStorage : undefined
 
 const Layout = styled.div`
   width: 100vw;
@@ -80,28 +83,86 @@ const LoadingPanel = styled.div`
     )
   }
 
-const StudioContainer = ({
-  loaded,
-  containerRef,
-  children
-}: {
-  loaded?: boolean
-  containerRef?: any
-  children?: any
-}) => <Layout ref={containerRef}>{loaded ? children : <Loading />}</Layout>
+const offscreenCanvasUrl =
+    "https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas#browser_compatibility",
+  Disclaimer: React.FC<{ studio: StudioHook }> = ({
+    studio: { supportedBrowser, acknowledgeEpilepsyWarning, acknowledgedEpilepsyWarning }
+  }) => {
+    return supportedBrowser === false ? (
+      <StudioModal show title="Unsupported Browser">
+        This page relies on the <a href={offscreenCanvasUrl}>OffscreenCanvas</a> web API. Please use
+        a Chromium-based browser like Chrome or Edge to view this page.
+      </StudioModal>
+    ) : acknowledgedEpilepsyWarning === false ? (
+      <StudioModal
+        title="Warning: Epilepsy Trigger"
+        show={!acknowledgedEpilepsyWarning}
+        acknowledge={acknowledgeEpilepsyWarning}>
+        This page can produce bright strobing colors.
+      </StudioModal>
+    ) : null
+  },
+  StudioModal: React.FC<{ title: string; show: boolean; acknowledge?: any }> = ({
+    show,
+    title,
+    acknowledge,
+    children
+  }) => {
+    return (
+      <Modal show={show} centered backdrop="static" backdropClassName="opacity-0" keyboard={false}>
+        <Modal.Header>
+          <Modal.Title>{title}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>{children}</Modal.Body>
+        {acknowledge && (
+          <Modal.Footer>
+            <Button onClick={acknowledge}>Okay, continue</Button>
+          </Modal.Footer>
+        )}
+      </Modal>
+    )
+  }
+const Studio: React.FC<{ studio: StudioHook }> = ({ studio, children }) => {
+  return (
+    <Layout>
+      {studio.initialized && studio.loaded ? children : <Loading />}
+      <Disclaimer studio={studio} />
+    </Layout>
+  )
+}
 
-export { Simulation, Info, Controls, EditMenu, ViewMenu, Io, Layout, Loading, StudioContainer }
+export { Simulation, Info, Controls, EditMenu, ViewMenu, Io, Layout, Loading, Studio, Disclaimer }
 
-export function useStudio(mode: Mode, ref: RefObject<HTMLDivElement>) {
+type StudioHook = ReturnType<typeof useStudio>
+
+export function useStudio(mode: model.Mode) {
   const dispatch = useAppDispatch(),
     io = useIoService(),
     simulation = useSimService(),
-    currentMode = useAppSelector(s => s.studio.mode)
+    state = useAppSelector(s => s.studio),
+    [loaded, setLoaded] = useState(false)
 
-  useBinding(useMemo(() => ({ requestFullscreen: () => ref.current?.requestFullscreen() }), [ref]))
-  useEffect(() => void dispatch(setMode(mode)), [dispatch, mode])
+  useEffect(() => void dispatch(model.setMode(mode)), [dispatch, mode])
+  useEffect(() => {
+    dispatch(model.setAcknowledgedEpilepsyWarning(storage?.getItem("simulationConsent") === "true"))
+    dispatch(model.setSupportedBrowser(typeof OffscreenCanvas !== "undefined"))
+  }, [dispatch])
+
   return useMemo(
-    () => ({ io, simulation, modeLoaded: currentMode === mode }),
-    [currentMode, io, mode, simulation]
+    () => ({
+      io,
+      simulation,
+      initialized:
+        state.mode === mode && state.supportedBrowser && state.acknowledgedEpilepsyWarning,
+      supportedBrowser: state.supportedBrowser,
+      acknowledgedEpilepsyWarning: state.acknowledgedEpilepsyWarning,
+      acknowledgeEpilepsyWarning: () => {
+        storage?.setItem("simulationConsent", "true")
+        dispatch(model.setAcknowledgedEpilepsyWarning(true))
+      },
+      loaded,
+      setLoaded
+    }),
+    [dispatch, io, loaded, mode, simulation, state]
   )
 }

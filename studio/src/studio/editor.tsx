@@ -1,24 +1,23 @@
 import { isRejected } from "@reduxjs/toolkit"
 import { useRouter } from "next/router"
-import { useEffect, useRef, useState } from "react"
+import { useEffect } from "react"
 import db from "../db"
-import { useAppDispatch, useAppSelector } from "../hooks"
+import { useAppDispatch } from "../hooks"
 import { openDocument } from "../io/actions"
 import * as simFeat from "../simulation"
 import { isDefined } from "../utils"
-import { Controls, EditMenu, Info, Io, Simulation, StudioContainer, useStudio } from "./studio"
+import { Controls, EditMenu, Info, Io, Simulation, Studio, useStudio } from "./studio"
 
 export function Editor({ docId }: { docId?: string }) {
   const dispatch = useAppDispatch(),
     router = useRouter(),
-    ref = useRef(null),
-    { io, modeLoaded } = useStudio("edit", ref),
-    [loaded, setLoaded] = useState(false)
+    studio = useStudio("edit"),
+    { io, initialized, setLoaded } = studio
 
   useEffect(
     () =>
       void (async () => {
-        if (docId && modeLoaded && isDefined(io)) {
+        if (docId && initialized && isDefined(io)) {
           await dispatch(simFeat.model.fitToScreen())
           const result = await dispatch(
             openDocument({ io, id: docId, create: docId === "default" })
@@ -32,16 +31,16 @@ export function Editor({ docId }: { docId?: string }) {
           }
         }
       })(),
-    [dispatch, docId, io, modeLoaded, router]
+    [dispatch, docId, initialized, io, router, setLoaded]
   )
 
   return (
-    <StudioContainer containerRef={ref} loaded={loaded}>
+    <Studio studio={studio}>
       <Controls />
       <Io />
       <EditMenu />
       <Info />
       <Simulation />
-    </StudioContainer>
+    </Studio>
   )
 }

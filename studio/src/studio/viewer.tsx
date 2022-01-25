@@ -1,9 +1,9 @@
 import { isRejected } from "@reduxjs/toolkit"
-import { useEffect, useRef } from "react"
+import { useEffect } from "react"
 import { viewPublicDocument } from "../cloud"
-import { useAppDispatch, useAppSelector } from "../hooks"
+import { useAppDispatch } from "../hooks"
 import * as simulationFeature from "../simulation"
-import { Io, Simulation, StudioContainer, useStudio, ViewMenu } from "./studio"
+import { Io, Simulation, Studio, useStudio, ViewMenu } from "./studio"
 
 // TODO: clear db on auth failure or change. store current user in db and
 // compare with auth
@@ -23,28 +23,30 @@ import { Io, Simulation, StudioContainer, useStudio, ViewMenu } from "./studio"
  */
 export function Viewer({ authorUid, docId }: { authorUid?: string; docId?: string }) {
   const dispatch = useAppDispatch(),
-    ref = useRef(null),
-    { modeLoaded, io } = useStudio("view", ref),
-    currentDocId = useAppSelector(s => s.io.document?.id),
-    loaded = Boolean(modeLoaded && docId && currentDocId === docId)
+    studio = useStudio("view"),
+    { initialized, setLoaded, io } = studio
 
   useEffect(
     () =>
       void (async () => {
-        if (authorUid && docId && io) {
+        if (initialized && authorUid && docId && io) {
           await dispatch(simulationFeature.model.fitToScreen())
           const result = await dispatch(viewPublicDocument({ io, authorUid, docId }))
-          if (isRejected(result)) alert("Couldn't load document")
+          if (isRejected(result)) {
+            alert("Couldn't load document")
+          } else {
+            setLoaded(true)
+          }
         }
       })(),
-    [authorUid, dispatch, docId, io]
+    [authorUid, dispatch, docId, initialized, io, setLoaded]
   )
 
   return (
-    <StudioContainer containerRef={ref} loaded={loaded}>
+    <Studio studio={studio}>
       <Io />
       <ViewMenu />
       <Simulation />
-    </StudioContainer>
+    </Studio>
   )
 }

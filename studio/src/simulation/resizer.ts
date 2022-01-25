@@ -50,7 +50,6 @@ export default class Resizer {
   }
 
   /** Assumes source is the same size as the canvas  */
-  // TODO: un-flip
   copyToCanvas(renderer: WebGLRenderer, source: WebGLRenderTarget) {
     let x = 0,
       y = 0,
