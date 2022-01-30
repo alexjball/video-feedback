@@ -1,4 +1,10 @@
-import { Color, ShaderMaterial, WebGLRenderer, WebGLRenderTarget } from "three"
+import {
+  Color,
+  ShaderMaterial,
+  ShaderMaterialParameters,
+  WebGLRenderer,
+  WebGLRenderTarget
+} from "three"
 import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass"
 import {
   baseVertexShader,
@@ -67,7 +73,7 @@ export default class Destination {
   }
 }
 
-const colorShader = {
+const colorShader: ShaderMaterialParameters = {
   uniforms: {
     source: { value: null },
     depth: { value: null },
@@ -138,7 +144,7 @@ const colorShader = {
     }`
 }
 
-const depthShader = {
+const depthShader: ShaderMaterialParameters = {
   uniforms: {
     source: { value: null },
     prevDestination: { value: null },

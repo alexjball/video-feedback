@@ -3,7 +3,7 @@ import { immerable } from "immer"
 import { Color, Quaternion, Vector2, Vector3, Vector4 } from "three"
 import { Resolution, State } from "./types"
 import { caseReducers as interactionActions } from "./interactions"
-import { assign } from "./helpers"
+import { assign, copyCoords, createCoords, Object3DCoords } from "./helpers"
 
 export * from "./types"
 
@@ -17,6 +17,10 @@ function markImmerable() {
 }
 markImmerable()
 
+const initialColors = {
+  border: "#f5f5ff",
+  background: "#1b1d36"
+}
 /**
  * The portal, viewer, and feedback geometries are 1x1 squares centered on the
  * origin. Therefore width and height are equal to scale!
@@ -29,10 +33,10 @@ export const initialState: State = {
       scale: new Vector3(1.2, 1.2, 1),
       quaternion: new Quaternion()
     },
-    color: "#f5f5ff"
+    color: initialColors.border
   },
   background: {
-    color: "#4d518f"
+    color: initialColors.background
   },
   spacemap: {
     coords: {
@@ -47,14 +51,14 @@ export const initialState: State = {
   },
   feedback: {
     nFrames: 5,
-    colorCycle: 0.3,
+    colorCycle: 0.1,
     colorGain: 0.3,
-    fsPeriod: 0.1,
-    fsAmplitude: 0.1,
+    fsPeriod: 0.15,
+    fsAmplitude: 0.2,
     fsPhase: 0,
-    fsPop: 0.5,
-    fsColor1: "#000000",
-    fsColor2: "#ffffff",
+    fsPop: 0.1,
+    fsColor1: initialColors.background,
+    fsColor2: initialColors.border,
     invertColor: false,
     resolution: {
       width: 0,
@@ -66,7 +70,8 @@ export const initialState: State = {
       position: new Vector3(0, 0, 0),
       scale: new Vector3(1, 1, 1),
       quaternion: new Quaternion()
-    }
+    },
+    nTiles: 1
   },
   viewer: {
     coords: {
@@ -110,11 +115,14 @@ const slice = createSlice({
     setInvertColor({ feedback }, { payload }: PayloadAction<boolean>) {
       feedback.invertColor = payload
     },
-    setBorderWidth({ border, portal }, { payload: borderWidth }: PayloadAction<number>) {
+    setBorderWidth(
+      { border, portal: { coords, nTiles } },
+      { payload: borderWidth }: PayloadAction<number>
+    ) {
       border.width = borderWidth
       border.coords.scale.set(
-        portal.coords.scale.x + 2 * borderWidth,
-        portal.coords.scale.y + 2 * borderWidth,
+        nTiles * coords.scale.x + 2 * borderWidth,
+        nTiles * coords.scale.y + 2 * borderWidth,
         1
       )
     },
@@ -124,6 +132,10 @@ const slice = createSlice({
      * height: height of feedback target, defaults to matching aspect given width
      */
     updatePortal(state, { payload }: PayloadAction<UpdatePortal>) {
+      if (payload.nTiles) {
+        state.portal.nTiles = payload.nTiles
+      }
+
       const res = state.feedback.resolution,
         width = payload.width ?? res.width,
         aspect = payload.aspect ?? res.width / res.height,
@@ -160,7 +172,7 @@ const slice = createSlice({
       Object.assign(state.feedback, payload)
     },
     restore(state, { payload }: PayloadAction<State>) {
-      assign(payload.portal, state.portal, ["coords"])
+      assign(payload.portal, state.portal, ["coords", "nTiles"])
       assign(payload.border, state.border, ["color", "width", "coords"])
       assign(payload.background, state.background, ["color"])
       assign(payload.feedback, state.feedback, [
@@ -236,15 +248,20 @@ type UpdatePortal = {
   aspect?: number
   height?: number
   width?: number
+  nTiles?: number
 }
 
 function resizePortal({ width, height }: Resolution, { feedback, portal, border }: State) {
   feedback.resolution.height = Math.round(height)
   feedback.resolution.width = Math.round(width)
-  portal.coords.scale.copy(unitAspect(width / height))
+
+  const scale = unitAspect(width / height),
+    nTiles = portal.nTiles
+  portal.coords.scale.copy(scale)
+
   border.coords.scale.set(
-    portal.coords.scale.x + 2 * border.width,
-    portal.coords.scale.y + 2 * border.width,
+    nTiles * portal.coords.scale.x + 2 * border.width,
+    nTiles * portal.coords.scale.y + 2 * border.width,
     1
   )
 }

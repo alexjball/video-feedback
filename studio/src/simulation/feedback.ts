@@ -2,6 +2,7 @@ import {
   Color,
   Mesh,
   MeshBasicMaterial,
+  MirroredRepeatWrapping,
   Object3D,
   PlaneGeometry,
   RGBAFormat,
@@ -21,6 +22,12 @@ export default class Feedback {
 
   /** Maps destination regions to source regions.  */
   private spacemap = new Object3D()
+
+  /**
+   * The portal transform is applied to the container, and the tiling transform
+   * is applied to the base portal.
+   */
+  private portalContainer = new Object3D()
 
   /**
    * The current view of the feedback. It is updated at the end of `iterate`.
@@ -54,8 +61,9 @@ export default class Feedback {
 
   constructor(view: Simulation) {
     this.view = view
-    this.view.scene.add(this.portal, this.spacemap)
+    this.portalContainer.add(this.portal)
     this.spacemap.add(this.camera)
+    this.view.scene.add(this.portalContainer, this.spacemap)
   }
 
   readonly binder = new Binder<State>()
@@ -67,7 +75,7 @@ export default class Feedback {
       s => s.portal.coords,
       v => {
         copyCoords(v, this.camera)
-        copyCoords(v, this.portal)
+        copyCoords(v, this.portalContainer)
       }
     )
     .add(
@@ -95,6 +103,10 @@ export default class Feedback {
       s => s.feedback.resolution,
       v => this.setSize(v.width, v.height)
     )
+    .add(
+      s => s.portal.nTiles,
+      v => this.setTiling(v)
+    )
 
   markDirty({ color = false, depth = false }) {
     this.delayFrames.forEach(frame => frame.markDirty(color, depth))
@@ -120,6 +132,12 @@ export default class Feedback {
         .map(() => new Frames(width, height))
     ]
     if (this.currentFrameIndex >= n) this.currentFrameIndex = 1
+  }
+
+  setTiling(nTiles: number) {
+    this.portal.scale.set(nTiles, nTiles, 1)
+    this.destinationFrame.setTiling(nTiles)
+    this.delayFrames.forEach(frame => frame.setTiling(nTiles))
   }
 
   setSize(width: number, height: number) {
@@ -245,8 +263,16 @@ class Frames {
   }
 
   constructor(width = 0, height = 0) {
-    this.color = new WebGLRenderTarget(width, height, { format: RGBAFormat })
-    this.depth = new WebGLRenderTarget(width, height, { format: RGBAFormat })
+    this.color = this.createTarget(width, height)
+    this.depth = this.createTarget(width, height)
+  }
+
+  createTarget(width: number, height: number) {
+    const target = new WebGLRenderTarget(width, height, { format: RGBAFormat }),
+      texture = target.texture
+    texture.wrapS = MirroredRepeatWrapping
+    texture.wrapT = MirroredRepeatWrapping
+    return target
   }
 
   markDirty(color = false, depth = false) {
@@ -270,6 +296,11 @@ class Frames {
   dispose() {
     this.color.dispose()
     this.depth.dispose()
+  }
+
+  setTiling(nTiles: number) {
+    this.color.texture.repeat.set(nTiles, nTiles)
+    this.depth.texture.repeat.set(nTiles, nTiles)
   }
 
   setSize(width: number, height: number) {

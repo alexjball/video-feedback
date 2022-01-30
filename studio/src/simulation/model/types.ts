@@ -72,7 +72,8 @@ function defineState<C extends Runtype>(Coords: C) {
       resolution: Resolution
     }),
     portal: R({
-      coords: Coords
+      coords: Coords,
+      nTiles: Number
     }),
     viewer: R({
       coords: Coords

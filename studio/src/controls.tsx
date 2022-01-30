@@ -187,7 +187,7 @@ const config: ControlConfig[] = [
     props: {
       legend: "fixed set period",
       min: 0.01,
-      max: 0.3,
+      max: 1,
       step: 0.001
     }
   },
@@ -256,6 +256,17 @@ const config: ControlConfig[] = [
       legend: "num. feedback frames",
       min: 1,
       max: 30,
+      step: 1
+    }
+  },
+  {
+    Component: RangeInput,
+    selector: s => s.simulation.portal.nTiles,
+    actionCreator: v => updatePortal({ nTiles: v }),
+    props: {
+      legend: "Tiling",
+      min: 1,
+      max: 5,
       step: 1
     }
   },

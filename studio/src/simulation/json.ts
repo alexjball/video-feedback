@@ -1,7 +1,6 @@
-import { Quaternion, Vector2, Vector3, Vector4 } from "three"
-import { State } from "./model"
 import { cloneDeepWith } from "lodash"
-import { JsonState } from "./model"
+import { Quaternion, Vector2, Vector3, Vector4 } from "three"
+import { JsonState, State } from "./model"
 
 /** Converts simulation state to a JSON-serializable format */
 export function deflate(s: State): JsonState {
@@ -11,14 +10,6 @@ export function deflate(s: State): JsonState {
 /** Converts a previously-deflated JSON object into simulation state. */
 export function inflate(json: JsonState): State {
   return cloneDeepWith(json, inflater)
-}
-
-/** Serialized classes included in the model state */
-const jsonTypes: Record<string, { new (): any }> = {
-  Quaternion: Quaternion,
-  Vector2: Vector2,
-  Vector3: Vector3,
-  Vector4: Vector4
 }
 
 const labelsByCtors = new Map()

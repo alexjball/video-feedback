@@ -148,13 +148,21 @@ const simulation = singleton(
         throw Error("Not initialized")
       }
       this.renderLoop.pause()
+      const texture = this.simulation.feedback.currentFrames.color.texture,
+        repeat = texture.repeat.clone()
+      texture.repeat.set(1, 1)
+
       const result = this.resizer.convert(
         this.renderer,
         this.simulation.feedback.currentFrames.color,
         height,
         width
       )
-      result.finally(() => this.renderLoop.unpause())
+      result.finally(() => {
+        // Restore the texture repeating
+        texture.repeat.copy(repeat)
+        this.renderLoop.unpause()
+      })
       return result
     }
 
