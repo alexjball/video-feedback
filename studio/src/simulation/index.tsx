@@ -10,7 +10,6 @@ export function SimulationPanel(props: BaseProps) {
   const interactions = useInteractions()
   return <Renderer {...props} {...interactions} />
 }
-export * from "./json"
 
 const Renderer = dynamic(() => import("./renderer"), {
   ssr: false

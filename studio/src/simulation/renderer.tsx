@@ -4,8 +4,7 @@ import { BaseProps, Canvas } from "../canvas"
 import { useAppStore } from "../hooks"
 import { StatsJs, useStats } from "../stats"
 import { settablePromise, SettablePromise, useSingleton } from "../utils"
-import { deflate, inflate } from "./json"
-import { setViewer, State, JsonState, fitToScreen } from "./model"
+import { setViewer, State, JsonState, inflateUnchecked, deflateUnchecked } from "./model"
 import { PlaybackAction, PlaybackState, SimulationService, useBinding } from "./service"
 import type { Request, Response } from "./renderer.worker"
 
@@ -153,14 +152,14 @@ class Client {
       type: "exportCurrentFrame",
       height,
       width
-    }).then(({ state, blob }) => ({ state: inflate(state), blob }))
+    }).then(({ state, blob }) => ({ state: inflateUnchecked(state), blob }))
 
   initialize = (canvas: OffscreenCanvas, initialState: State) =>
     this.post(
       {
         type: "initialize",
         canvas,
-        state: deflate(initialState)
+        state: deflateUnchecked(initialState)
       },
       [canvas]
     )
@@ -168,7 +167,7 @@ class Client {
   setState = (state: State) =>
     this.post({
       type: "setState",
-      state: deflate(state)
+      state: deflateUnchecked(state)
     })
 
   setPlayback = (action: PlaybackAction) =>

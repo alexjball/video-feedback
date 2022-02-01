@@ -1,11 +1,11 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit"
 import { immerable } from "immer"
 import { Color, Quaternion, Vector2, Vector3, Vector4 } from "three"
-import { Resolution, State } from "./types"
+import { Resolution, State } from "../types"
 import { caseReducers as interactionActions } from "./interactions"
 import { assign, copyCoords, createCoords, Object3DCoords } from "./helpers"
 
-export * from "./types"
+export * from "../types"
 
 /**
  * Mark classes as copyable by immer, which also make the middleware treat them
@@ -26,6 +26,7 @@ const initialColors = {
  * origin. Therefore width and height are equal to scale!
  */
 export const initialState: State = {
+  version: 1,
   border: {
     width: 0.1,
     coords: {

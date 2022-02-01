@@ -1,7 +1,6 @@
 import { WebGLRenderer } from "three"
 import { Binder, isDefined, singleton } from "../utils"
-import { inflate, deflate } from "./json"
-import { State, JsonState } from "./model"
+import { State, JsonState, inflateUnchecked, deflateUnchecked } from "./model"
 import RenderLoop from "./render-loop"
 import Resizer from "./resizer"
 import { PlaybackAction, PlaybackState } from "./service"
@@ -63,7 +62,7 @@ onmessage = ({ data: message }: MessageEvent<Message>) => {
     case "exportCurrentFrame":
       simulation
         .convert(message.width, message.height)
-        .then(blob => ack(message, { state: deflate(simulation.currentState!), blob }))
+        .then(blob => ack(message, { state: deflateUnchecked(simulation.currentState!), blob }))
       break
     case "setPlayback":
       simulation.setPlayback(message.action)
@@ -115,7 +114,7 @@ const simulation = singleton(
     }
 
     setState(state: JsonState) {
-      this.currentState = inflate(state)
+      this.currentState = inflateUnchecked(state)
     }
 
     setPlayback(action: PlaybackAction) {

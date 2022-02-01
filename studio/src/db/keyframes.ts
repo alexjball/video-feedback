@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid"
-import { deflate, inflate, model } from "../simulation"
+import { model } from "../simulation"
 import { Modify } from "../utils"
 import db, { BaseTable, getExisting, Id } from "./core"
 import images, { Image } from "./images"
@@ -60,7 +60,7 @@ export class Keyframes extends BaseTable<DbKeyframe, Keyframe> {
 export function deflateKeyframe(k: Partial<Keyframe>): DbKeyframe {
   const o: any = { ...k }
   if (k.state) {
-    o.state = model.JsonState.check(deflate(k.state))
+    o.state = model.deflate(k.state)
   }
   if (k.thumbnail) {
     o.thumbnail = k.thumbnail.id
@@ -71,7 +71,7 @@ export function deflateKeyframe(k: Partial<Keyframe>): DbKeyframe {
 async function inflateKeyframe(k: DbKeyframe): Promise<Keyframe> {
   return {
     ...k,
-    state: model.State.check(inflate(k.state)),
+    state: model.inflate(k.state),
     thumbnail: await images.get(k.thumbnail)
   }
 }

@@ -4,7 +4,7 @@ import db, { documents, keyframes } from "../db"
 import { firestore, storage } from "../firebase"
 import { createAppThunk } from "../hooks"
 import * as io from "../io"
-import { inflate, model as simulation } from "../simulation"
+import { model as simulation } from "../simulation"
 import * as model from "./model"
 
 /**
@@ -109,7 +109,7 @@ function inflateKeyframes({
 
       return {
         ...keyframe,
-        state: simulation.State.check(inflate(keyframe.state)),
+        state: simulation.inflate(keyframe.state),
         thumbnail: { id: thumbnailId, blob }
       }
     })
