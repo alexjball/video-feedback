@@ -16,6 +16,10 @@ import {
   setFeedbackOptions
 } from "./simulation/model"
 import { AppDispatch, RootState } from "./store"
+import { ColorChangeHandler, SketchPicker, SketchPickerProps } from "react-color"
+import { bootstrap } from "./ui"
+
+const { Popover, OverlayTrigger, Button } = bootstrap
 
 const Form = styled.div`
     display: flex;
@@ -41,14 +45,16 @@ const Form = styled.div`
       opacity: 1;
     }
 
-    input[type="color"] {
-      width: 100%;
-    }
-
     select,
     button {
       margin-left: 0.5rem;
     }
+  `,
+  ColorButton = styled.div`
+    width: 100%;
+    height: 2rem;
+    cursor: pointer;
+    border-radius: 5px;
   `
 
 function RangeInput({
@@ -90,17 +96,31 @@ function ColorInput({
   value?: string
   onChange?: (v: string) => void
 }) {
-  const update: ChangeEventHandler<HTMLInputElement> = useCallback(
-    e => onChange(e.target.value),
-    [onChange]
-  )
+  const update: ColorChangeHandler = useCallback(c => onChange(c.hex), [onChange])
+
   return (
     <Control>
       <fieldset>
         <legend>{legend}</legend>
-        <input type="color" value={value} onInput={update} />
+        <ColorPicker disableAlpha={true} color={value} onChange={update} />
       </fieldset>
     </Control>
+  )
+}
+
+function ColorPicker({ color, onChange }: SketchPickerProps & { color: string }) {
+  const popover = (
+    <Popover id="color-popover">
+      <Popover.Body>
+        <SketchPicker disableAlpha={true} color={color} onChange={onChange} />
+      </Popover.Body>
+    </Popover>
+  )
+
+  return (
+    <OverlayTrigger trigger="click" placement="bottom" overlay={popover}>
+      <ColorButton style={{ backgroundColor: color, borderColor: color }} />
+    </OverlayTrigger>
   )
 }
 
