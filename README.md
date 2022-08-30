@@ -2,6 +2,8 @@
 
 A simple app to simulate the effects of video feedback in software.
 
+[Play with some patterns](https://patterns.alexjball.com/view?u=yB0Wqy404CZEvyYhiCetDRAIR7A3&doc=sJ_4Ubl48WmM6m4RSk6-6)
+
 [3D mode](https://alexjball.github.io/video-feedback/demo_3d.html)
 
 [2D mode](https://alexjball.github.io/video-feedback/studio.html)
