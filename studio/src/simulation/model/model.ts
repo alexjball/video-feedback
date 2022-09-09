@@ -2,8 +2,8 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit"
 import { immerable } from "immer"
 import { Color, Quaternion, Vector2, Vector3, Vector4 } from "three"
 import { Resolution, State } from "../types"
+import { assign } from "./helpers"
 import { caseReducers as interactionActions } from "./interactions"
-import { assign, copyCoords, createCoords, Object3DCoords } from "./helpers"
 
 export * from "../types"
 
@@ -26,7 +26,7 @@ const initialColors = {
  * origin. Therefore width and height are equal to scale!
  */
 export const initialState: State = {
-  version: 1,
+  version: 2,
   border: {
     width: 0.1,
     coords: {
@@ -51,7 +51,7 @@ export const initialState: State = {
     pixelsPerScale: 2e3
   },
   feedback: {
-    nFrames: 5,
+    nFrames: 1,
     colorCycle: 0.1,
     colorGain: 0.3,
     fsPeriod: 0.15,
@@ -61,6 +61,7 @@ export const initialState: State = {
     fsColor1: initialColors.background,
     fsColor2: initialColors.border,
     invertColor: false,
+    seedOpacity: 0,
     resolution: {
       width: 0,
       height: 0

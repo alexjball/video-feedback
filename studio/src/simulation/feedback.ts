@@ -44,6 +44,8 @@ export default class Feedback {
    */
   private destinationFrame = new Frames()
 
+  private seed = new Texture()
+
   /**
    * The frames that are displayed in order, creating a smooth delayed effect.
    */
@@ -91,7 +93,8 @@ export default class Feedback {
         fsColor1: s.feedback.fsColor1,
         fsColor2: s.feedback.fsColor2,
         preventStrobing: s.preventStrobing,
-        fsPop: s.feedback.fsPop
+        fsPop: s.feedback.fsPop,
+        seedOpacity: s.feedback.seedOpacity
       }),
       v => this.destination.updateUniforms(v)
     )
@@ -179,7 +182,8 @@ export default class Feedback {
       renderer,
       destination: this.destinationFrame.color,
       depth: this.destinationFrame.depth,
-      source: this.sourceFrame.color
+      source: this.sourceFrame.color,
+      seed: this.seed
     })
   }
 

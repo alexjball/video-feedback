@@ -2,19 +2,20 @@ import {
   Color,
   ShaderMaterial,
   ShaderMaterialParameters,
+  Texture,
   WebGLRenderer,
   WebGLRenderTarget
 } from "three"
 import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass"
 import {
-  baseVertexShader,
-  processColor,
-  encodeDecodeDepth,
   applyMirroring,
+  baseVertexShader,
+  colorConversion,
+  constants,
+  encodeDecodeDepth,
   minStrobeDepth,
   noise,
-  constants,
-  colorConversion
+  processColor
 } from "./shader"
 
 export default class Destination {
@@ -43,6 +44,7 @@ export default class Destination {
     depth,
     destination,
     prevDestination,
+    seed,
     type = "color"
   }: {
     renderer: WebGLRenderer
@@ -50,6 +52,7 @@ export default class Destination {
     prevDestination?: WebGLRenderTarget
     source: WebGLRenderTarget
     depth?: WebGLRenderTarget
+    seed?: Texture
     type?: keyof InstanceType<typeof Destination>["targets"]
   }) {
     const material = this.targets[type]
@@ -59,6 +62,9 @@ export default class Destination {
     }
     if (depth) {
       material.uniforms.depth.value = depth.texture
+    }
+    if (seed) {
+      material.uniforms.seed.value = seed
     }
     material.uniformsNeedUpdate = true
     this.fsQuad.material = material
@@ -88,7 +94,9 @@ const colorShader: ShaderMaterialParameters = {
     fsPhase: { value: 0 },
     fsPop: { value: 0 },
     fsColor1: { value: new Color(0, 0, 0) },
-    fsColor2: { value: new Color(1, 1, 1) }
+    fsColor2: { value: new Color(1, 1, 1) },
+    seed: { value: null },
+    seedOpacity: { value: 0.0 }
   },
 
   vertexShader: baseVertexShader,
@@ -98,6 +106,7 @@ const colorShader: ShaderMaterialParameters = {
     uniform float fsAmplitude;
     uniform float fsPhase;
     uniform float fsPop;
+    uniform float seedOpacity;
     uniform vec3 fsColor1;
     uniform vec3 fsColor2;
 
@@ -108,6 +117,7 @@ const colorShader: ShaderMaterialParameters = {
     uniform float colorCycle;
     uniform bool preventStrobing;
     uniform sampler2D source;
+    uniform sampler2D seed;
     uniform sampler2D depth;
     varying vec2 vUv;
 
@@ -135,7 +145,10 @@ const colorShader: ShaderMaterialParameters = {
             c = color.xyz,
             pop = hsv2rgb(vec3(mod(distance(vUv, vec2(0.4, 0.6)) * 2. / (fsPeriod * 10.), 1.), 1., 1.)),
             shift = sin(vUv.xxx * PI2 / fsPeriod + PI2 * fsPhase);
-        c += fsAmplitude * (shift * dc + fsPop * pop);
+        vec4 seedColor = texture2D(seed, vUv);
+        
+        // TODO: apply opacity to seed, default to transparent
+        c += fsAmplitude * (shift * dc + fsPop * pop + seedOpacity * seedColor.a * seedColor.rgb);
 
         color.xyz = clamp(c, min(fsColor1, fsColor2), max(fsColor1, fsColor2));
       }
