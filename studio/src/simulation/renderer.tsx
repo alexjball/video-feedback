@@ -1,12 +1,12 @@
 import { nanoid } from "nanoid"
-import React, { useEffect } from "react"
+import { useEffect } from "react"
 import { BaseProps, Canvas } from "../canvas"
 import { useAppStore } from "../hooks"
 import { StatsJs, useStats } from "../stats"
 import { settablePromise, SettablePromise, useSingleton } from "../utils"
-import { setViewer, State, JsonState, inflateUnchecked, deflateUnchecked } from "./model"
-import { PlaybackAction, PlaybackState, SimulationService, useBinding } from "./service"
+import { deflateUnchecked, inflateUnchecked, JsonState, setViewer, State } from "./model"
 import type { Request, Response } from "./renderer.worker"
+import { PlaybackAction, PlaybackState, SimulationService, useBinding } from "./service"
 
 export default function Renderer(props: BaseProps) {
   return <Canvas {...useInstance()} {...props} />

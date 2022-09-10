@@ -5,7 +5,9 @@ import { useAppDispatch, useAppSelector } from "../hooks"
 import { IoPanel, useService as useIoService } from "../io"
 import { LegendPanel } from "../legend"
 import { EditMenuPanel, ViewMenuPanel } from "../menu"
-import { SimulationPanel, useService as useSimService } from "../simulation"
+import { PaintPanel } from "../paint"
+import { useService as useSimService } from "../simulation"
+import { PaintRenderer } from "../simulation/paint-renderer"
 import { StatsPanel } from "../stats"
 import { bootstrap, common } from "../ui"
 import * as model from "./model"
@@ -53,12 +55,14 @@ const InfoPanel = styled.div`
     <InfoPanel>
       <StatsPanel />
       <LegendPanel />
+      <PaintPanel className="m-4" />
     </InfoPanel>
   )
 
-const Simulation = styled(SimulationPanel)`
-  grid-column: 1 / span 3;
-  grid-row: 1 / span 3;
+const Simulation = styled(PaintRenderer)`
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
   z-index: 0;
   pointer-events: all;
 `
