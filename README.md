@@ -8,6 +8,6 @@ A simple app to simulate the effects of video feedback in software.
 
 [2D mode](https://alexjball.github.io/video-feedback/studio.html)
 
-[Explanation and Discussion.](http://www.theseasquirt.com/2016/04/video-feedback-simulator.html)
+[Explanation and Discussion.](https://web.archive.org/web/20160815112606/http://www.theseasquirt.com:80/projects/2016/04/27/video-feedback-simulator.html)
 
 [An example of a real camera-monitor system.](https://www.youtube.com/watch?v=ulPmf6ZPPwI)
