@@ -1,6 +1,7 @@
 import { WebGLRenderer } from "three"
 import { Binder, isDefined, singleton } from "../utils"
-import { State, JsonState, inflateUnchecked, deflateUnchecked } from "./model"
+import { deflateUnchecked, inflateUnchecked, JsonState, State } from "./model"
+import { Painter } from "./painter"
 import RenderLoop from "./render-loop"
 import Resizer from "./resizer"
 import { PlaybackAction, PlaybackState } from "./service"
@@ -93,7 +94,8 @@ const renderStart = (frame: number) =>
 const simulation = singleton(
   class {
     frameIndex = 0
-    simulation = new Simulation()
+    seeder = new Painter()
+    simulation = new Simulation(this.seeder)
     resizer = new Resizer()
     settler = new Settler()
     renderLoop: RenderLoop
@@ -168,6 +170,7 @@ const simulation = singleton(
     dispose() {
       this.simulation.dispose()
       this.renderer?.dispose()
+      this.seeder.dispose()
     }
 
     private renderFrame = () => {
@@ -178,6 +181,7 @@ const simulation = singleton(
         {
           // Bind state
           this.binder.apply(this.currentState)
+          this.seeder.binder.apply(this.currentState)
           this.simulation.render(this.currentState, this.renderer)
           // Compute settled status from depth frame
           settled = this.settler.compute(

@@ -1,8 +1,8 @@
 import { PayloadAction } from "@reduxjs/toolkit"
-import type { Gesture, State } from "./model"
 import { Vector3 } from "three"
 import { createCaseReducers } from "../../utils"
-import { o, pi2, m, copyCoords, getCenter, getAngle, getLength } from "./helpers"
+import { copyCoords, getAngle, getCenter, getLength, m, o, pi2 } from "./helpers"
+import type { Gesture, State } from "./model"
 
 function applyPan(
   { gesture, viewer, spacemap: { coords: spacemap }, viewport }: State,
@@ -67,7 +67,10 @@ function applyZoom({ spacemap: { coords: spacemap }, gesture }: State, update: G
 }
 
 export const caseReducers = createCaseReducers({} as State, {
-  updateGesture(state, { payload: update }: PayloadAction<Gesture>) {
+  updateGesture(
+    state,
+    { payload: update = { pointers: [], type: "primary" } }: PayloadAction<Gesture | undefined>
+  ) {
     const {
       gesture,
       spacemap: { coords: spacemap }

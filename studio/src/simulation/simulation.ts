@@ -10,6 +10,7 @@ import { unitOrthoCamera } from "../camera"
 import { Binder } from "../utils"
 import Feedback from "./feedback"
 import { copyCoords, State } from "./model"
+import { Painter } from "./painter"
 
 export default class Simulation {
   readonly scene: Scene
@@ -18,14 +19,14 @@ export default class Simulation {
   readonly border: Mesh<PlaneGeometry, MeshBasicMaterial>
   readonly background: Mesh<PlaneGeometry, MeshBasicMaterial>
 
-  constructor() {
+  constructor(seed: Painter) {
     const o = this.createScene()
     this.scene = o.scene
     this.viewer = o.viewer
     this.border = o.border
     this.background = o.background
 
-    this.feedback = new Feedback(this)
+    this.feedback = new Feedback(this, seed)
   }
 
   render(state: State, renderer: WebGLRenderer) {

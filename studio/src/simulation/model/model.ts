@@ -88,7 +88,9 @@ export const initialState: State = {
   },
   drag: { start: null },
   gesture: {},
-  preventStrobing: true
+  preventStrobing: true,
+  paint: {},
+  inputMode: "transform"
 }
 
 const slice = createSlice({
@@ -197,6 +199,12 @@ const slice = createSlice({
         currentWidth = state.feedback.resolution.width
       resizePortal({ width: currentWidth, height: currentWidth / aspect }, state)
       setViewToContainPortal(state)
+    },
+    toggleInputMode(state) {
+      const targets = State.fields.inputMode.alternatives.map(l => l.value)
+      const curr = targets.indexOf(state.inputMode),
+        next = (curr + 1) % targets.length
+      state.inputMode = targets[next]
     }
   }
 })
@@ -214,12 +222,10 @@ export const {
     setBackgroundColor,
     setBorderColor,
     restore,
-    rotate,
     zoom,
     setViewer,
     updatePortal,
     updateGesture,
-    drag,
     center,
     setPreventStrobing,
     setFeedbackOptions

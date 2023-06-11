@@ -2,7 +2,6 @@ import {
   Color,
   ShaderMaterial,
   ShaderMaterialParameters,
-  Texture,
   WebGLRenderer,
   WebGLRenderTarget
 } from "three"
@@ -52,7 +51,7 @@ export default class Destination {
     prevDestination?: WebGLRenderTarget
     source: WebGLRenderTarget
     depth?: WebGLRenderTarget
-    seed?: Texture
+    seed?: WebGLRenderTarget
     type?: keyof InstanceType<typeof Destination>["targets"]
   }) {
     const material = this.targets[type]
@@ -64,7 +63,7 @@ export default class Destination {
       material.uniforms.depth.value = depth.texture
     }
     if (seed) {
-      material.uniforms.seed.value = seed
+      material.uniforms.seed.value = seed.texture
     }
     material.uniformsNeedUpdate = true
     this.fsQuad.material = material

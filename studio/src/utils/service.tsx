@@ -7,7 +7,7 @@ type Setter<T> = (s: T) => void
 export function createService<Service>(providerHook?: () => Service): {
   Provider: React.FC
   useService: () => Maybe<Service>
-  useBinding: (impl: Service) => void
+  useBinding: (impl?: Service) => void
 } {
   const Context = createContext<{ value: Maybe<Service>; setValue: Setter<Maybe<Service>> }>({
     value: undefined,
@@ -32,7 +32,7 @@ export function createService<Service>(providerHook?: () => Service): {
       )
     },
 
-    useBinding(impl: Service) {
+    useBinding(impl?: Service) {
       const { setValue } = useContext(Context)
       useEffect(() => {
         setValue(impl)

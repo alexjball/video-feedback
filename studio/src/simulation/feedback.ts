@@ -17,6 +17,10 @@ import Destination from "./destination"
 import { copyCoords, State } from "./model"
 import type Simulation from "./simulation"
 
+interface Seeder {
+  seed: WebGLRenderTarget
+}
+
 export default class Feedback {
   readonly view: Simulation
 
@@ -44,7 +48,7 @@ export default class Feedback {
    */
   private destinationFrame = new Frames()
 
-  private seed = new Texture()
+  private seeder: Seeder
 
   /**
    * The frames that are displayed in order, creating a smooth delayed effect.
@@ -61,8 +65,9 @@ export default class Feedback {
 
   readonly debug = new DepthView(this)
 
-  constructor(view: Simulation) {
+  constructor(view: Simulation, seeder: Seeder) {
     this.view = view
+    this.seeder = seeder
     this.portalContainer.add(this.portal)
     this.spacemap.add(this.camera)
     this.view.scene.add(this.portalContainer, this.spacemap)
@@ -183,7 +188,7 @@ export default class Feedback {
       destination: this.destinationFrame.color,
       depth: this.destinationFrame.depth,
       source: this.sourceFrame.color,
-      seed: this.seed
+      seed: this.seeder.seed
     })
   }
 

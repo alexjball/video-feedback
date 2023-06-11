@@ -4,7 +4,6 @@ import { createAppThunk } from "../hooks"
 import * as simulation from "../simulation"
 import { SimulationService } from "../simulation"
 import { RootState } from "../store"
-import { isDefined } from "../utils"
 import * as model from "./model"
 import { IoService } from "./service"
 

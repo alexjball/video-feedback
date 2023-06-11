@@ -1,23 +1,10 @@
 import { cloneDeep } from "lodash"
-import { HTMLProps, PointerEventHandler, useMemo } from "react"
-import { useAppDispatch } from "../hooks"
+import { HTMLProps, PointerEventHandler, useEffect, useState } from "react"
+import { useAppDispatch, useAppSelector } from "../hooks"
 import { toggleShow } from "../stats"
 import { AppDispatch } from "../store"
-import { Gesture, updateGesture, zoom } from "./model"
+import { Gesture, State, updateGesture, zoom } from "./model"
 import { getPointer } from "./model/helpers"
-
-type DivProps = Required<HTMLProps<HTMLDivElement>>
-type PointerCallbacks = Pick<
-  DivProps,
-  | "onPointerDown"
-  | "onPointerMove"
-  | "onPointerUp"
-  | "onPointerCancel"
-  | "onPointerLeave"
-  | "onPointerOut"
->
-type Callbacks = Pick<DivProps, "onWheel" | "onContextMenu" | "onKeyDown" | "tabIndex"> &
-  PointerCallbacks
 
 /**
  * Interactions:
@@ -25,53 +12,64 @@ type Callbacks = Pick<DivProps, "onWheel" | "onContextMenu" | "onKeyDown" | "tab
  * Keyboard: drag, zoom, rotate, toggle panels
  * Touch: drag, zoom rotate
  */
-export function useInteractions(): Callbacks {
+export function useInteractions(): InputProps {
   const dispatch = useAppDispatch()
-  return useMemo(() => {
-    let rotating = false,
-      dragging = false
+  const mode = useAppSelector(s => s.simulation.inputMode)
+  const [handler, setHandler] = useState<InputHandler>(() => createHandler(dispatch, mode))
 
-    const stopInteractions = () => {
-        dragging = false
-        rotating = false
-      },
-      ignore = (e: any) => e.preventDefault(),
-      pointer = new PointerControl(dispatch)
+  useEffect(() => {
+    // Clear the gesture when mode changes away
+    if (mode !== "transform") dispatch(updateGesture())
+  }, [dispatch, mode])
 
-    return {
-      tabIndex: 0,
-
-      onWheel: e => void dispatch(zoom(e.deltaY)),
-      onContextMenu: ignore,
-
-      onPointerDown: pointer.addPointer,
-      onPointerMove: pointer.movePointer,
-      onPointerUp: pointer.removePointer,
-      onPointerCancel: pointer.removePointer,
-      onPointerLeave: pointer.removePointer,
-      onPointerOut: pointer.removePointer,
-
-      onKeyDown: e => {
-        if (e.key === "t") dispatch(toggleShow())
-      }
+  useEffect(() => {
+    if (handler.mode !== mode) {
+      setHandler(createHandler(dispatch, mode))
     }
-  }, [dispatch])
+  }, [dispatch, handler.mode, mode])
+
+  return handler.props
 }
 
-type Handler = PointerEventHandler<HTMLDivElement>
-class PointerControl {
-  dispatch
+const createHandler = (dispatch: AppDispatch, mode: State["inputMode"]): InputHandler => {
+  return new {
+    paint: PaintHandler,
+    transform: TransformHandler
+  }[mode](dispatch)
+}
+
+const ignore = (e: any) => e.preventDefault()
+type Mode = State["inputMode"]
+type InputProps = HTMLProps<HTMLDivElement>
+
+abstract class InputHandler {
   p: Gesture = { type: "primary", pointers: [] }
 
-  constructor(dispatch: AppDispatch) {
-    this.dispatch = dispatch
+  constructor(readonly dispatch: AppDispatch, readonly mode: Mode) {}
+
+  get props(): InputProps {
+    return this.baseProps()
   }
 
-  private updateGesture() {
-    this.dispatch(updateGesture(cloneDeep(this.p)))
+  baseProps(): InputProps {
+    return {
+      tabIndex: 0,
+      onContextMenu: ignore,
+      onKeyDown: e => {
+        if (e.key === "t") this.dispatch(toggleShow())
+      },
+      onPointerDown: this.addPointer,
+      onPointerMove: this.movePointer,
+      onPointerUp: this.removePointer,
+      onPointerCancel: this.removePointer,
+      onPointerLeave: this.removePointer,
+      onPointerOut: this.removePointer
+    }
   }
 
-  addPointer: Handler = e => {
+  abstract onGesture(): void
+
+  addPointer: PointerHandler = e => {
     if (this.p.pointers.length >= 2) {
       return
     } else if (this.p.pointers.length === 0) {
@@ -82,23 +80,62 @@ class PointerControl {
       x: e.clientX,
       y: e.clientY
     })
-    this.updateGesture()
+    this.onGesture()
   }
 
-  movePointer: Handler = e => {
+  movePointer: PointerHandler = e => {
     const pointer = getPointer(this.p, e.pointerId)!
     if (!pointer) return
 
     pointer.x = e.clientX
     pointer.y = e.clientY
-    this.updateGesture()
+    this.onGesture()
   }
 
-  removePointer: Handler = e => {
+  removePointer: PointerHandler = e => {
     const i = this.p.pointers.findIndex(p => p.id === e.pointerId)
     if (i !== -1) {
       this.p.pointers.splice(i, 1)
-      this.updateGesture()
+      this.onGesture()
+    }
+  }
+}
+
+type PointerHandler = PointerEventHandler<HTMLDivElement>
+class TransformHandler extends InputHandler {
+  override get props(): InputProps {
+    return {
+      ...this.baseProps(),
+      onWheel: e => void this.dispatch(zoom(e.deltaY))
+    }
+  }
+
+  constructor(dispatch: AppDispatch) {
+    super(dispatch, "transform")
+  }
+
+  override onGesture() {
+    this.dispatch(updateGesture(cloneDeep(this.p)))
+  }
+}
+
+class PaintHandler extends InputHandler {
+  activeId?: number
+
+  constructor(dispatch: AppDispatch) {
+    super(dispatch, "paint")
+  }
+
+  override get props(): InputProps {
+    return {
+      ...this.baseProps()
+    }
+  }
+
+  override onGesture(): void {
+    const active = this.p.pointers.find(p => p.id === this.activeId)
+    if (active) {
+      this.dispatch(pushOperation({ x: active.x, y: active.y }))
     }
   }
 }
