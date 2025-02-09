@@ -1,7 +1,7 @@
 import Dexie, { Table } from "dexie"
 import type * as documents from "./documents"
-import type * as keyframes from "./keyframes"
 import type * as images from "./images"
+import type * as keyframes from "./keyframes"
 export class Database extends Dexie {
   documents!: Table<documents.DbDocument, Id>
   keyframes!: Table<keyframes.DbKeyframe, Id>
@@ -38,7 +38,7 @@ export function getExisting<T>(table: Table<T>, id: string): Promise<T> {
 
 export type Id = string
 
-export abstract class BaseTable<DbT, OrmT> {
+export abstract class BaseTable<DbT extends { id: Id; updatedAt?: Date }, OrmT> {
   table: Table<DbT, Id>
   constructor(table: Table<DbT, Id>) {
     this.table = table
@@ -47,6 +47,7 @@ export abstract class BaseTable<DbT, OrmT> {
   list(): Promise<Id[]> {
     return this.table.toCollection().primaryKeys()
   }
+
   async exists(...ids: string[]): Promise<boolean> {
     const expected = ids.length,
       count = await this.table
@@ -56,8 +57,20 @@ export abstract class BaseTable<DbT, OrmT> {
         .count()
     return count === expected
   }
+
+  async getUpdatedAt(ids: string[]): Promise<Map<string, Date | undefined>> {
+    const records = await this.table.where("id").anyOf(ids).toArray()
+    return new Map(records.map(record => [record.id, record.updatedAt]))
+  }
+
   delete(id: string) {
     return this.table.delete(id)
   }
+
+  /** Updates the updatedAt time on an existing record. */
+  async touch(id: string) {
+    await this.table.update(id, { updatedAt: new Date() })
+  }
+
   abstract get(id: string): Promise<OrmT>
 }

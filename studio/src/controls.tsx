@@ -1,4 +1,5 @@
-import React, { ChangeEventHandler, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import React, { ChangeEventHandler, useCallback, useEffect, useMemo, useState } from "react"
+import { ColorChangeHandler, SketchPicker, SketchPickerProps } from "react-color"
 import styled from "styled-components"
 import { useAppDispatch, useAppSelector } from "./hooks"
 import {
@@ -7,16 +8,15 @@ import {
   setBorderWidth,
   setColorCycle,
   setColorGain,
+  setFeedbackOptions,
   setInvertColor,
   setMirrorX,
   setMirrorY,
   setNumberFeedbackFrames,
   setPreventStrobing,
-  updatePortal,
-  setFeedbackOptions
+  updatePortal
 } from "./simulation/model"
 import { AppDispatch, RootState } from "./store"
-import { ColorChangeHandler, SketchPicker, SketchPickerProps } from "react-color"
 import { bootstrap } from "./ui"
 
 const { Popover, OverlayTrigger, Button } = bootstrap
@@ -228,7 +228,7 @@ const config: ControlConfig[] = [
     actionCreator: v => setFeedbackOptions({ fsAmplitude: v }),
     props: {
       legend: "fixed set amplitude",
-      min: 0.1,
+      min: 0.0,
       max: 0.5,
       step: 0.001
     }

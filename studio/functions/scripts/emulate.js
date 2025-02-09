@@ -1,4 +1,4 @@
-#!/bin/env node
+#!/Users/aball/.nvm/versions/node/v16.17.0/bin/node
 
 const { spawnSync } = require("child_process")
 const { demoProjectId } = require("./common")

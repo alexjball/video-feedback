@@ -1,7 +1,14 @@
+import { Timestamp } from "@firebase/firestore"
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
+import { JsonDocument } from "../db/documents"
+import { JsonKeyframe } from "../db/keyframes"
 import { useAppSelector } from "../hooks"
-import { declareThunk } from "../utils"
 import * as io from "../io"
+import { declareThunk, Modify } from "../utils"
+
+export type CloudTimes = { createdAt?: Timestamp; updatedAt?: Timestamp }
+export type CloudKeyframe = Modify<JsonKeyframe, CloudTimes>
+export type CloudDocument = Modify<JsonDocument, CloudTimes & { keyframes: CloudKeyframe[] }>
 
 export type Publication =
   | { status: "unknown" }
@@ -11,11 +18,15 @@ export type Publication =
 export interface State {
   uid: string | null
   publications: Record<string, Publication>
+  isLocalUpToDate: boolean
+  isInitiallySynced: boolean
 }
 
 const initialState: State = {
   uid: null,
-  publications: {}
+  publications: {},
+  isLocalUpToDate: false,
+  isInitiallySynced: false
 }
 
 const slice = createSlice({
@@ -24,6 +35,12 @@ const slice = createSlice({
   reducers: {
     setUser(state, { payload: uid }: PayloadAction<string | null>) {
       state.uid = uid
+    },
+    localUpToDate(state) {
+      state.isLocalUpToDate = true
+    },
+    initiallySynced(state) {
+      state.isInitiallySynced = true
     }
   },
   extraReducers: builder =>
@@ -42,15 +59,34 @@ const slice = createSlice({
         // Reset publication state in case it was edited
         state.publications[docId] = { status: "unknown" }
       })
+      .addCase(thunks.performInitialSyncToCloud.fulfilled, state => {
+        state.isInitiallySynced = true
+      })
+      .addCase(thunks.performInitialSyncToCloud.rejected, state => {
+        console.error("Failed to perform initial sync to cloud")
+        state.isInitiallySynced = true
+      })
 })
 
 export function usePublication(docId: string) {
   return useAppSelector(s => s.cloud.publications[docId] ?? { status: "unknown" })
 }
 
+export function useSyncInfo() {
+  return useAppSelector(s => ({
+    uid: s.cloud.uid,
+    isLocalUpToDate: s.cloud.isLocalUpToDate,
+    isInitiallySynced: s.cloud.isInitiallySynced
+  }))
+}
+
+export function useUid() {
+  return useAppSelector(s => s.cloud.uid)
+}
+
 export const {
   reducer,
-  actions: { setUser }
+  actions: { setUser, localUpToDate, initiallySynced }
 } = slice
 
 export const thunks = {
@@ -61,7 +97,9 @@ export const thunks = {
    */
   publishDocument: declareThunk<{ docId: string; publicUrl: string }, string>(
     "cloud/publishDocument"
-  )
+  ),
+  unpublishDocument: declareThunk<void, string>("cloud/unpublishDocument"),
+  performInitialSyncToCloud: declareThunk<void, void>("cloud/performInitialSyncToCloud")
 }
 
 export type ErrorReason =

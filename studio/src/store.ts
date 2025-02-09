@@ -1,11 +1,11 @@
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import { isDraftable } from "immer"
+import { reducer as cloud } from "./cloud"
+import { reducer as io } from "./io"
+import { reducer as portfolio } from "./portfolio"
 import { reducer as simulation } from "./simulation"
 import { reducer as stats } from "./stats"
-import { reducer as io } from "./io"
-import { reducer as cloud } from "./cloud"
 import { reducer as studio } from "./studio"
-import { reducer as portfolio } from "./portfolio"
 import { rejectionLogger } from "./utils"
 
 export const createStore = () =>
@@ -14,7 +14,8 @@ export const createStore = () =>
       getDefaultMiddleware({
         /** Allow plain JSON and immerable objects */
         serializableCheck: {
-          isSerializable: (value: any) => isPlain(value) || isDraftable(value)
+          isSerializable: (value: any) =>
+            isPlain(value) || isDraftable(value) || value instanceof Date
         } as any
       }).concat(rejectionLogger),
     reducer: {

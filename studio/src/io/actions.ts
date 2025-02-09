@@ -4,7 +4,6 @@ import { createAppThunk } from "../hooks"
 import * as simulation from "../simulation"
 import { SimulationService } from "../simulation"
 import { RootState } from "../store"
-import { isDefined } from "../utils"
 import * as model from "./model"
 import { IoService } from "./service"
 
@@ -87,8 +86,10 @@ export const saveAsDocument = createAppThunk(
       document: documents.Document = {
         id: docId,
         name: s.document?.title,
+        basedOn: s.document?.id,
         keyframes: s.keyframes.map(k => ({
           id: nanoid(),
+          basedOn: k.id,
           state: k.state,
           name: k.name,
           thumbnail: {
@@ -97,7 +98,7 @@ export const saveAsDocument = createAppThunk(
           }
         }))
       }
-    await db.documents.put(document)
+    await db.documents.create(document)
     return io.convertDocument(await db.documents.get(docId))
   }
 )

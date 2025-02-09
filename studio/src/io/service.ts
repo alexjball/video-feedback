@@ -101,15 +101,23 @@ function useStateId() {
   useEffect(() => void dispatch(model.updateStateId(nanoid())), [modifiers, dispatch])
 }
 
+type DocumentUpdate = {
+  doc: documents.DbDocument
+  keyframeUpdates: { id: string; updatedAt?: Date }[]
+}
+
 function usePushUpdatesToDatabase() {
   const viewOnly = useAppSelector(s => s.studio.mode === "view"),
-    previous = useRef<documents.DbDocument | undefined>(undefined),
-    document: documents.DbDocument | undefined = useAppSelector(
+    previous = useRef<DocumentUpdate | undefined>(undefined),
+    update: DocumentUpdate | undefined = useAppSelector(
       s =>
         s.io.document && {
-          id: s.io.document.id,
-          name: s.io.document.title,
-          keyframes: s.io.keyframes.map(k => k.id)
+          doc: {
+            id: s.io.document.id,
+            name: s.io.document.title,
+            keyframes: s.io.keyframes.map(k => k.id)
+          },
+          keyframeUpdates: s.io.keyframes.map(k => ({ id: k.id, updatedAt: k.updatedAt }))
         },
       isEqual
     )
@@ -117,16 +125,16 @@ function usePushUpdatesToDatabase() {
     () =>
       void (async () => {
         try {
-          if (document && previous.current && !viewOnly) {
-            await db.documents.update(document)
+          if (update && previous.current && !viewOnly) {
+            await db.documents.update(update.doc)
           }
         } catch (e) {
           console.error("error updating document", e)
         }
-        if (document !== previous.current) {
-          previous.current = document
+        if (update !== previous.current) {
+          previous.current = update
         }
       })(),
-    [document, viewOnly]
+    [update, viewOnly]
   )
 }

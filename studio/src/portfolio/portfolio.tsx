@@ -1,4 +1,4 @@
-import { faCopy, faEdit, faTrash } from "@fortawesome/free-solid-svg-icons"
+import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons"
 import { isFulfilled } from "@reduxjs/toolkit"
 import classNames from "classnames"
 import Link from "next/link"

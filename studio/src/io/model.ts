@@ -15,8 +15,8 @@
 // https://github.com/atlassian/react-beautiful-dnd/blob/master/stories/src/primatives/author-list.jsx
 
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
-import { declareThunk, isDefined, Modify } from "../utils"
 import type * as db from "../db"
+import { declareThunk, isDefined, Modify } from "../utils"
 export interface State {
   document?: {
     id: string
@@ -100,11 +100,9 @@ const slice = createSlice({
         state.selection = newSelection(keyframe.id)
       })
       .addCase(thunks.snapshotKeyframe.fulfilled, (state, { payload: update }) => {
-        const frame = state.keyframes.find(k => k.id === update.id)
-        if (frame) {
-          frame.state = update.state
-          frame.thumbnail = update.thumbnail
-        }
+        const index = state.keyframes.findIndex(k => k.id === update.id)
+        if (index === -1) return
+        state.keyframes[index] = update
         state.selection = newSelection(update.id)
       })
       .addCase(thunks.deleteKeyframe.fulfilled, (state, { payload: id }) => {
@@ -151,8 +149,7 @@ export const thunks = {
   addKeyframe: declareThunk<Keyframe>("io/addKeyframe"),
   deleteKeyframe: declareThunk<string>("io/deleteKeyframe"),
   undoKeyframe: declareThunk<string>("io/undoKeyframe"),
-  snapshotKeyframe:
-    declareThunk<Pick<Keyframe, "id" | "thumbnail" | "state">>("io/snapshotKeyframe"),
+  snapshotKeyframe: declareThunk<Keyframe>("io/snapshotKeyframe"),
   openDocument: declareThunk<Document>("io/openDocument"),
   viewDocument: declareThunk<Document>("io/viewDocument"),
   saveAsDocument: declareThunk<Document>("io/saveAsDocument")

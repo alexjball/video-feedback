@@ -6,6 +6,10 @@ import images, { Image } from "./images"
 
 export interface Keyframe {
   id: Id
+  createdAt?: Date
+  updatedAt?: Date
+  // If basedOn is set, this keyframe is a fork of another
+  basedOn?: Id
   name?: string
   state: model.State
   thumbnail: Image
@@ -26,8 +30,11 @@ export class Keyframes extends BaseTable<DbKeyframe, Keyframe> {
   async create(state: model.State, thumbnail: Blob) {
     const id = await db.transaction("rw", [db.keyframes, db.images], async () => {
       const image = await images.create(thumbnail)
+      const createdAt = new Date()
       return this.table.add(
         deflateKeyframe({
+          createdAt,
+          updatedAt: createdAt,
           id: nanoid(),
           state,
           thumbnail: image
@@ -42,6 +49,7 @@ export class Keyframes extends BaseTable<DbKeyframe, Keyframe> {
       if (thumbnail) {
         await images.update(thumbnail.id, thumbnail.blob)
       }
+      update.updatedAt = new Date()
       return this.table.update(id, deflateKeyframe(update))
     })
     return this.get(id)
@@ -52,6 +60,7 @@ export class Keyframes extends BaseTable<DbKeyframe, Keyframe> {
       await this.table.put(deflateKeyframe(keyframe))
     })
   }
+
   get(id: string) {
     return getExisting(this.table, id).then(inflateKeyframe)
   }

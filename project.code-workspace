@@ -6,7 +6,7 @@
   ],
   "settings": {
     "editor.codeActionsOnSave": {
-      "source.fixAll": true
+      "source.fixAll": "explicit"
     },
     "editor.wordWrap": "on",
     "editor.formatOnSave": true,
@@ -85,7 +85,14 @@
     },
     "[hlsl]": {
       "editor.defaultFormatter": "slevesque.shader"
-    }
+    },
+    "workbench.colorCustomizations": {
+      "[Night Owl Light]": {
+        "tab.activeBackground": "#d0ddd5"
+      }
+    },
+    "biome.enabled": false,
+    "typescript.tsdk": "node_modules/typescript/lib"
   },
   "extensions": {
     "recommendations": [
