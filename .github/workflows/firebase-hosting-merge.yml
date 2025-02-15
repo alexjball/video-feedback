@@ -27,3 +27,4 @@ jobs:
           channelId: live
           projectId: video-feedback-dev
           entryPoint: studio
+          firebaseToolsVersion: 10.0.1

@@ -50,7 +50,7 @@ export const publishDocument = createAppThunk(
       })
 
     if (isCacheUpToDate) {
-      console.log("Skipping publish. Document is already up to date in the cache")
+      console.debug("Skipping publish. Document is already up to date in the cache")
       return response
     } else {
       console.debug("Uploading document and thumbnails", document)
@@ -88,10 +88,10 @@ export const unpublishDocument = createAppThunk(
 export const performInitialSyncToCloud = createAppThunk(
   model.thunks.performInitialSyncToCloud,
   async (_, { dispatch }) => {
-    console.log("Performing initial sync to cloud")
     // Backfill missing updatedAt fields
-    const docs = await db.documents.list()
-    for (const docId of docs) {
+    const docIds = await db.documents.list()
+    console.log("Performing initial sync to cloud for documents", docIds)
+    for (const docId of docIds) {
       const doc = await db.documents.get(docId)
       let updatedKeyframe = false
       for (const keyframe of doc.keyframes) {
@@ -109,7 +109,8 @@ export const performInitialSyncToCloud = createAppThunk(
 
     // Sync all documents to the cloud
     console.log("Syncing documents to the cloud")
-    for (const docId of docs) {
+    for (const docId of docIds) {
+      console.log("Syncing document", docId)
       await dispatch(publishDocument(docId))
     }
     console.log("Initial sync to cloud complete")
@@ -154,11 +155,13 @@ export const loadCloudDocument = async ({
     // Update keyframes that are newer than the local version
     const localUpdateTimes = await db.keyframes.getUpdatedAt(cloudDoc.keyframes.map(k => k.id))
     for (const k of cloudDoc.keyframes) {
-      const localUpdatedAt = localUpdateTimes.get(k.id)
+      const localUpdatedAt = localUpdateTimes.has(k.id)
+        ? localUpdateTimes.get(k.id)
+        : "record-not-found"
       const remoteUpdatedAt = convertTimestamp(k.updatedAt)
 
       if (chooseVersion(localUpdatedAt, remoteUpdatedAt) == "remote") {
-        console.log("Syncing cloud keyframe to local", k, localUpdatedAt, remoteUpdatedAt)
+        console.debug("Syncing cloud keyframe to local", k, localUpdatedAt, remoteUpdatedAt)
         await db.keyframes.put(
           await inflateKeyframe(uid, cloudDoc.id, {
             ...k,
@@ -167,17 +170,21 @@ export const loadCloudDocument = async ({
           })
         )
       } else {
-        console.debug("Local is up to date, skipping keyframe download", k.id)
+        console.debug("Local is up to date, skipping keyframe download", {
+          localUpdatedAt,
+          remoteUpdatedAt,
+          id: k.id
+        })
       }
     }
 
     // Update the document if it is newer than the local version
     const localUpdatedAt = await db.documents
       .getUpdatedAt([cloudDoc.id])
-      .then(t => t.get(cloudDoc.id))
+      .then(t => (t.has(cloudDoc.id) ? t.get(cloudDoc.id) : "record-not-found"))
     const remoteUpdatedAt = convertTimestamp(cloudDoc.updatedAt)
     if (chooseVersion(localUpdatedAt, remoteUpdatedAt) == "remote") {
-      console.log("Syncing cloud document to local", cloudDoc)
+      console.debug("Syncing cloud document to local", cloudDoc)
       await db.documents.put({
         ...cloudDoc,
         updatedAt: convertTimestamp(cloudDoc.updatedAt),
@@ -185,7 +192,11 @@ export const loadCloudDocument = async ({
         keyframes: cloudDoc.keyframes.map(k => k.id)
       })
     } else {
-      console.debug("Local is up to date, skipping document download", cloudDoc.id)
+      console.debug("Local is up to date, skipping document download", {
+        localUpdatedAt,
+        remoteUpdatedAt,
+        id: cloudDoc.id
+      })
     }
   } catch (error) {
     if (error instanceof ValidationError) {
@@ -197,10 +208,22 @@ export const loadCloudDocument = async ({
   return document
 }
 
+/**
+ * Choose the version of a document to keep based on the timestamps of the local
+ * and remote versions, and the existence of the document.
+ */
 function chooseVersion(
-  localUpdatedAt: Date | undefined,
-  remoteUpdatedAt: Date | undefined
+  localUpdatedAt: Date | undefined | "record-not-found",
+  remoteUpdatedAt: Date | undefined | "record-not-found"
 ): "local" | "remote" | "equal" {
+  if (localUpdatedAt === "record-not-found" && remoteUpdatedAt === "record-not-found") {
+    return "equal"
+  } else if (localUpdatedAt === "record-not-found") {
+    return "remote"
+  } else if (remoteUpdatedAt === "record-not-found") {
+    return "local"
+  }
+
   // Prefer local if both are missing timestamps
   if (!remoteUpdatedAt && !localUpdatedAt) {
     return "local"
@@ -234,14 +257,11 @@ async function uploadDocument({ uid, document }: { uid: string; document: docume
 }
 
 async function uploadThumbnails({ uid, document }: { uid: string; document: documents.Document }) {
-  await Promise.all(
-    document.keyframes.map(keyframe => {
-      const thumbnail = keyframe.thumbnail,
-        thumbnailRef = paths.thumbnail(uid, document.id, thumbnail.id)
-
-      return uploadBytes(thumbnailRef, thumbnail.blob)
-    })
-  )
+  for (const keyframe of document.keyframes) {
+    const thumbnail = keyframe.thumbnail,
+      thumbnailRef = paths.thumbnail(uid, document.id, thumbnail.id)
+    await uploadBytes(thumbnailRef, thumbnail.blob)
+  }
 }
 
 export const paths = {

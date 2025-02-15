@@ -14,9 +14,10 @@ const hasSelection: Condition = (_, { getState }) =>
 
 export const addKeyframe = createAppThunk(
   model.thunks.addKeyframe,
-  async ({ simulation, io }: Services) => {
+  async ({ simulation, io }: Services, { getState }) => {
+    const basedOnId = getState().io.selection.keyframeId
     const result = await simulation!.convert(256)
-    const keyframe = await db.keyframes.create(result.state, result.blob)
+    const keyframe = await db.keyframes.create(result.state, result.blob, basedOnId)
     return io.convertKeyframe(keyframe)
   }
 )

@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit"
-import db from "../db/core"
+import db from "../db"
 import * as io from "../io"
 
 interface State {
@@ -37,6 +37,6 @@ export const {
 export const updateTitle = createAsyncThunk(
   "portfolio/updateTitle",
   async ({ id, title }: { id: string; title: string }) => {
-    await db.documents.update(id, { name: title })
+    await db.documents.update({ id, name: title })
   }
 )

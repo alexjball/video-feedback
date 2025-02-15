@@ -27,7 +27,7 @@ export type JsonKeyframe = DbKeyframe
 type KeyframeUpdate = Modify<Partial<Keyframe>, { id: Id }>
 
 export class Keyframes extends BaseTable<DbKeyframe, Keyframe> {
-  async create(state: model.State, thumbnail: Blob) {
+  async create(state: model.State, thumbnail: Blob, basedOnId?: Id) {
     const id = await db.transaction("rw", [db.keyframes, db.images], async () => {
       const image = await images.create(thumbnail)
       const createdAt = new Date()
@@ -35,6 +35,7 @@ export class Keyframes extends BaseTable<DbKeyframe, Keyframe> {
         deflateKeyframe({
           createdAt,
           updatedAt: createdAt,
+          basedOn: basedOnId,
           id: nanoid(),
           state,
           thumbnail: image

@@ -33,7 +33,9 @@ export class Documents extends BaseTable<DbDocument, Document> {
     const createdAt = new Date()
 
     const keyframeIds: Id[] = await Promise.all(
-      data.keyframes.map(k => keyframes.create(k.state, k.thumbnail.blob).then(k => k.id))
+      data.keyframes.map(k =>
+        keyframes.create(k.state, k.thumbnail.blob, k.basedOn).then(k => k.id)
+      )
     )
     const id = await this.table.add({
       ...data,
@@ -55,20 +57,22 @@ export class Documents extends BaseTable<DbDocument, Document> {
     })
   }
 
-  async update(doc: Document | DbDocument) {
-    console.log("updating document", doc)
-    await db.transaction("rw", docTables, () =>
-      this.table.put({
-        ...doc,
-        updatedAt: new Date(),
-        keyframes: doc.keyframes.map(k => (typeof k === "object" ? k.id : k))
-      })
-    )
+  async update(doc: Partial<Document | DbDocument>) {
+    const { id, keyframes, ...rest } = doc
+    let update: Record<string, any> = rest
+
+    if (!id) throw Error("Document must have an id")
+    if (keyframes) {
+      const dbKeyframes = keyframes.map(k => (typeof k === "object" ? k.id : k))
+      update.keyframes = dbKeyframes
+    }
+    update.updatedAt = new Date()
+    await this.table.update(id, update)
   }
 
   /** Put a document, used when syncing from the cloud. */
   async put(doc: DbDocument) {
-    console.log("putting document", doc)
+    console.debug("putting document", doc)
     await this.table.put(doc)
   }
 }
