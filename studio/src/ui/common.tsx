@@ -26,21 +26,32 @@ export const IconButton = forwardRef<HTMLButtonElement, IconProps>(function Icon
   )
 })
 
-interface TooltipProps extends IconProps {
+export interface TooltipProps extends IconProps {
   tooltip: string | OverlayChildren
   showTooltip?: boolean
   defaultShow?: boolean
   trigger?: OverlayTriggerType | OverlayTriggerType[]
   overlay?: string | OverlayChildren
   onToggle?: (nextShow: boolean) => void
+  placement?: "top" | "bottom" | "left" | "right"
 }
 export const TooltipButton = forwardRef<HTMLButtonElement, TooltipProps>(function TooltipButton(
-  { className, tooltip, showTooltip, onToggle, defaultShow, trigger, overlay, ...props },
+  {
+    className,
+    tooltip,
+    showTooltip,
+    onToggle,
+    defaultShow,
+    trigger,
+    overlay,
+    placement = "bottom",
+    ...props
+  },
   ref
 ) {
   return (
     <bootstrap.OverlayTrigger
-      placement="bottom"
+      placement={placement}
       trigger={trigger ?? ["focus", "hover"]}
       defaultShow={defaultShow}
       show={showTooltip}

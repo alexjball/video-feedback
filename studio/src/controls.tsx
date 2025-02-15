@@ -1,3 +1,4 @@
+import { faRulerHorizontal } from "@fortawesome/free-solid-svg-icons"
 import React, { ChangeEventHandler, useCallback, useEffect, useMemo, useState } from "react"
 import { ColorChangeHandler, SketchPicker, SketchPickerProps } from "react-color"
 import styled from "styled-components"
@@ -18,6 +19,7 @@ import {
 } from "./simulation/model"
 import { AppDispatch, RootState } from "./store"
 import { bootstrap } from "./ui"
+import { TooltipButton } from "./ui/common"
 
 const { Popover, OverlayTrigger, Button } = bootstrap
 
@@ -55,6 +57,9 @@ const Form = styled.div`
     height: 2rem;
     cursor: pointer;
     border-radius: 5px;
+  `,
+  FitButton = styled(TooltipButton)`
+    display: inline-block;
   `
 
 function RangeInput({
@@ -443,9 +448,13 @@ const NumberWithOptions: React.FC<{
           </option>
         ))}
       </select>
-      <button style={{ lineHeight: "25px", fontSize: "20px" }} onClick={fitToScreen}>
-        🖵
-      </button>
+      <FitButton
+        tooltip="Fit to Screen"
+        placement="top"
+        style={{ display: "inline-block" }}
+        icon={faRulerHorizontal}
+        onClick={fitToScreen}
+      />
     </label>
   )
 }

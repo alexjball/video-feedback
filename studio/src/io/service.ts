@@ -84,12 +84,13 @@ function useApplySelection() {
 
 function useStateId() {
   const dispatch = useAppDispatch()
-  const modifiers = useAppSelector(
+  const modifiers: Record<string, any> = useAppSelector(
     ({
       simulation: {
         feedback: { resolution: _1, nFrames: _2, ...feedback },
         drag: _3,
         viewport: _4,
+        gesture: _5,
         ...modifiers
       }
     }) => ({
@@ -98,7 +99,17 @@ function useStateId() {
     }),
     isEqual
   )
-  useEffect(() => void dispatch(model.updateStateId(nanoid())), [modifiers, dispatch])
+  const previous = useRef(modifiers)
+  useEffect(() => {
+    // Log what changed
+    const didChange: Record<string, any> = {}
+    for (const k of Object.keys(modifiers)) {
+      didChange[k] = !isEqual(modifiers[k], previous.current[k])
+    }
+    console.debug("state change", { didChange, modifiers, previous: previous.current })
+    dispatch(model.updateStateId(nanoid()))
+    previous.current = modifiers
+  }, [modifiers, dispatch])
 }
 
 type DocumentUpdate = {

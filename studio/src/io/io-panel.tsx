@@ -14,17 +14,18 @@
 // https://github.com/atlassian/react-beautiful-dnd/blob/master/stories/src/horizontal/author-app.jsx
 // https://github.com/atlassian/react-beautiful-dnd/blob/master/stories/src/primatives/author-list.jsx
 
-import { useCallback, useEffect, useMemo } from "react"
+import { faCheck, faPlus, faTrash, faUndo } from "@fortawesome/free-solid-svg-icons"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { DragDropContext, Draggable, Droppable, DropResult } from "react-beautiful-dnd"
 import styled from "styled-components"
 import { useAppDispatch, useAppSelector } from "../hooks"
 import * as simulation from "../simulation"
-import { isDefined } from "../utils"
-import { addKeyframe, deleteKeyframe, undoKeyframe, snapshotKeyframe } from "./actions"
-import { useService } from "./service"
-import * as model from "./model"
-import { faCheck, faTrash, faUndo, faPlus } from "@fortawesome/free-solid-svg-icons"
 import { common } from "../ui"
+import { TooltipProps } from "../ui/common"
+import { isDefined } from "../utils"
+import { addKeyframe, deleteKeyframe, snapshotKeyframe, undoKeyframe } from "./actions"
+import * as model from "./model"
+import { useService } from "./service"
 
 export default function IoPanel(props: any) {
   useConfirmUnsaved()
@@ -50,10 +51,35 @@ const Io = styled.div`
       opacity: 1;
     }
   `,
-  IconButton = styled(common.IconButton)`
+  StyledTooltip = styled(common.TooltipButton)`
     margin: 0.5rem;
     margin-bottom: 0;
   `,
+  IoPanelButton = (props: TooltipProps & { requireConfirmation?: boolean }) => {
+    const [confirming, setConfirming] = useState(false),
+      { requireConfirmation, onClick: onClickProp, onToggle, tooltip, ...rest } = props,
+      onClick = useCallback(
+        e => {
+          if (confirming || !requireConfirmation) {
+            setConfirming(false)
+            onClickProp?.(e)
+          } else {
+            setConfirming(true)
+          }
+        },
+        [confirming, onClickProp, requireConfirmation]
+      )
+    return (
+      <StyledTooltip
+        {...(rest as any)}
+        tooltip={confirming ? "Are you sure?" : tooltip}
+        variant={confirming ? "danger" : "primary"}
+        onClick={onClick}
+        onToggle={onToggle}
+        onBlur={() => setConfirming(false)}
+      />
+    )
+  },
   KeyframeContainer = styled.img<{ selected: boolean; modified: boolean }>`
     max-height: 150px;
     max-width: 150px;
@@ -133,11 +159,29 @@ const Io = styled.div`
   },
   Controls: React.FC<{ selection: SelectionState }> = ({ selection }) => {
     return (
-      <div style={{ display: "flex" }}>
-        <IconButton {...selection.update} icon={faCheck} />
-        <IconButton {...selection.undo} icon={faUndo} />
-        <IconButton {...selection.add} icon={faPlus} />
-        <IconButton {...selection.delete} icon={faTrash} />
+      <div style={{ display: "flex", pointerEvents: "all" }}>
+        <IoPanelButton
+          tooltip="Update Frame"
+          requireConfirmation
+          placement="top"
+          {...selection.update}
+          icon={faCheck}
+        />
+        <IoPanelButton
+          requireConfirmation
+          tooltip="Undo Frame"
+          placement="top"
+          {...selection.undo}
+          icon={faUndo}
+        />
+        <IoPanelButton tooltip="New Frame" placement="top" {...selection.add} icon={faPlus} />
+        <IoPanelButton
+          tooltip="Delete Frame"
+          requireConfirmation
+          placement="top"
+          {...selection.delete}
+          icon={faTrash}
+        />
       </div>
     )
   }
