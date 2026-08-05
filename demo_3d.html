@@ -100,6 +100,11 @@
                 cursor: pointer;
             }
 
+            .immersive #help-container,
+            .immersive #buttons {
+                display: none;
+            }
+
         </style>
         
 		<div id="help-container">
@@ -144,6 +149,12 @@
         </div>
                 
 		<script>
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    document.body.classList.toggle('immersive');
+                }
+            });
             initializeEventListeners();
 			init();
             demo3d.init();
